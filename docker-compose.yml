@@ -1,17 +1,76 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:alpine
     container_name: faraday-db
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: haslo123 
+      POSTGRES_PASSWORD: haslo123
       POSTGRES_DB: db
     volumes:
       - faraday_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faraday-network
+
+  backend:
+    build:
+      context: ./backend/Faraday.API
+      dockerfile: Dockerfile
+    container_name: faraday-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=db;Username=admin;Password=haslo123;
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - faraday-network
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/Faraday.API
+          target: /src
+          ignore:
+            - bin/
+            - obj/
+        - action: rebuild
+          path: ./backend/Faraday.API/Faraday.API.csproj
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: faraday-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - faraday-network
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./frontend/package.json
 
 volumes:
   faraday_pg_data:
+
+networks:
+  faraday-network:
+    driver: bridge
