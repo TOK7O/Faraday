@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Faraday.Models;
+using Faraday.API.Models;
 
-namespace Faraday.Data
+namespace Faraday.API.Data
 {
     public class FaradayDbContext : DbContext
     {

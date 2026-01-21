@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Faraday.Data;
-using Faraday.Models;
+using Faraday.API.Data;
+using Faraday.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
