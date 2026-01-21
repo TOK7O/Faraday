@@ -1,0 +1,31 @@
+@import "../../_variables.scss";
+.auth-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+
+  .auth-visual {
+    padding: 2rem;
+    margin: 1rem;
+    display: flex;
+    justify-content: end;
+    flex-direction: column;
+    width: calc(40vw - 1rem);
+    background-image: url("../../assets/00e2857721dd12760dcd3c87b9778033.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 1rem;
+
+    h1 {
+      margin: 0;
+    }
+  }
+  .auth-form {
+    width: 60vw;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}

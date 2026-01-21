@@ -1,0 +1,44 @@
+// App.scss
+@import "./variables";
+
+// Jasny motyw (wymuszony atrybutem lub domyślny)
+:root,
+html,
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-form: #{$white};
+  --text-main: #{$gray-dark};
+  --text-muted: #{lighten($gray-dark, 20%)};
+  --bg-input: #{$white};
+  --border-input: #{$cyan-light};
+  --accent-primary: #{$blue-primary};
+  --accent-secondary: #{$blue-secondary};
+  --error-color: #{$red-error};
+  --error-bg-subtle: rgba(255, 77, 77, 0.05);
+  --btn-grad-1: #{$cyan-light};
+  --btn-grad-2: #{$blue-primary};
+  --btn-text: #{$gray-dark};
+  --placeholder-color: #{lighten($gray-dark, 40%)};
+  --focus-ring: rgba(108, 175, 217, 0.2);
+  --shadow-btn: rgba(155, 242, 193, 0.4);
+}
+
+// Ciemny motyw (wyższa specyficzność przez html[data-theme])
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-form: #1a1a1a;
+  --text-main: #{$white};
+  --text-muted: #{$gray-light};
+  --bg-input: #242424;
+  --border-input: #3a3a3a;
+  --accent-primary: #{$blue-secondary};
+  --accent-secondary: #{$cyan-light};
+  --error-color: #ff6b6b;
+  --error-bg-subtle: rgba(255, 107, 107, 0.1);
+  --btn-grad-1: #{darken($green-success, 25%)};
+  --btn-grad-2: #{darken($green-pale, 35%)};
+  --btn-text: #{$white};
+  --placeholder-color: #777777;
+  --focus-ring: rgba(98, 195, 217, 0.3);
+  --shadow-btn: rgba(0, 0, 0, 0.4);
+}

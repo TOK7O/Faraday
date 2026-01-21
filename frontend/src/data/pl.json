@@ -1,0 +1,55 @@
+{
+  "loginPage": {
+    "visualSection": {
+      "title": "Witaj w Systemie",
+      "description": "Zarządzaj magazynem szybciej i inteligentniej. Dołącz do tysięcy użytkowników już dziś.",
+      "imageAlt": "Abstrakcyjne tło logowania"
+    },
+    "formSection": {
+      "header": {
+        "title": "Logowanie",
+        "subtitle": "Wprowadź swoje dane, aby kontynuować"
+      },
+      "fields": {
+        "email": {
+          "label": "Adres e-mail",
+          "placeholder": "np. nazwa@domena.pl",
+          "validation": {
+            "required": "E-mail jest wymagany",
+            "invalid": "Podany adres e-mail jest nieprawidłowy"
+          }
+        },
+        "password": {
+          "label": "Hasło",
+          "placeholder": "••••••",
+          "validation": {
+            "required": "Hasło jest wymagane",
+            "tooShort": "Hasło musi mieć minimum 2 znaki",
+            "tooLong": "Hasło jest za długie (max 32 znaki)",
+            "noNumber": "Hasło musi zawierać co najmniej jedną cyfrę",
+            "noSpecialChar": "Hasło musi zawierać znak specjalny (np. !@#$)",
+            "wrongPassword": "Podane hasło jest nieprawidłowe"
+          }
+        },
+        "terms": {
+          "label": "Akceptuję regulamin oraz politykę prywatności serwisu",
+          "links": {
+            "termsUrl": "/regulamin",
+            "privacyUrl": "/polityka-prywatnosci"
+          },
+          "validation": {
+            "required": "Musisz zaakceptować regulamin, aby kontynuować"
+          }
+        }
+      },
+      "buttons": {
+        "submit": "Zaloguj się",
+        "forgotPassword": "Zapomniałeś hasła?"
+      },
+      "footer": {
+        "text": "Nie masz konta?",
+        "linkText": "Zarejestruj się za darmo"
+      }
+    }
+  }
+}
