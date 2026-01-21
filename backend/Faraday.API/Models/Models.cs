@@ -262,9 +262,12 @@ namespace Faraday.API.Models
         public virtual User User { get; set; } = null!;
 
         public int? ProductDefinitionId { get; set; }
+        
+        [MaxLength(200)]
         public string? ProductName { get; set; } 
 
         public int? RackId { get; set; }
+        
         public string? RackCode { get; set; } 
 
         [MaxLength(2000)]
