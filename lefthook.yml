@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: false
+  commands:
+    frontend-eslint:
+      glob: "*.{js,jsx,ts,tsx}"
+      root: "frontend/"
+      run: npx eslint --fix {staged_files} && git add {staged_files}
+    
+    backend-linter:
+      glob: "*.cs" 
+      root: "backend/"         
+      run: dotnet format && git add . 
