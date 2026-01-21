@@ -18,7 +18,6 @@ const LoginPage = () => {
         <h1>{t.loginPage.formSection.header.title}</h1>
         <p>{t.loginPage.formSection.header.subtitle}</p>
         <AuthForm config={t.loginPage.formSection} />
-        <LanguageButton />
       </section>
     </div>
   );

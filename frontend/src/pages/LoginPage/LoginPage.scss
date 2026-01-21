@@ -1,4 +1,5 @@
-@import "../../_variables.scss";
+@import "../../_variables";
+
 .auth-container {
   display: flex;
   height: 100vh;
@@ -6,26 +7,35 @@
 
   .auth-visual {
     padding: 2rem;
-    margin: 1rem;
+    margin: 1.1rem;
     display: flex;
     justify-content: end;
     flex-direction: column;
     width: calc(40vw - 1rem);
-    background-image: url("../../assets/00e2857721dd12760dcd3c87b9778033.jpg");
+    //background-image: url("../../assets/lightGradient.jpg");
+    background-image:
+      linear-gradient(var(--overlay-start), var(--overlay-end)),
+      url("../../assets/lightGradient.jpg");
+
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     border-radius: 1rem;
+    color: #fff;
 
     h1 {
-      margin: 0;
+      margin-bottom: 1rem;
     }
   }
   .auth-form {
     width: 60vw;
-    padding: 3rem;
+    padding: 4rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
+
+    h1 {
+      margin-bottom: 1.5rem;
+    }
   }
 }

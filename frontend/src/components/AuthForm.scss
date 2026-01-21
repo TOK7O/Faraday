@@ -1,11 +1,10 @@
-@import "../_variables.scss";
+@import "../_variables";
 .FormRoot {
   * {
     box-sizing: border-box;
   }
   display: flex;
   flex-direction: column;
-  gap: 20px;
   width: 100%;
   margin: 0 auto;
 }
@@ -43,13 +42,14 @@
   .FormLabelRow {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
     flex-wrap: wrap;
     gap: 8px;
+    margin-top: 0.5rem;
     padding: 0 2px;
 
     .FormLabel {
-      font-size: 14px;
+      font-size: 0.9rem;
       font-weight: 700;
       color: var(--text-main);
       user-select: none;
@@ -64,12 +64,12 @@
     }
 
     .FormMessage {
-      font-size: 11px;
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--error-color);
       text-align: right;
       line-height: 1.3;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       animation: fadeInError 0.2s ease-out;
 
       &[data-show] {
@@ -154,7 +154,7 @@
       width: 20px;
       height: 20px;
       display: block;
-      color: var(--accent-primary);
+      color: var(--placeholder-color);
       transition: color 0.2s ease;
     }
 
@@ -172,15 +172,15 @@
 .Button {
   width: 100%;
   padding: 14px;
-  margin-top: 10px;
+  margin-top: 5px;
   border: none;
   border-radius: 10px;
   font-size: 16px;
   font-weight: 700;
-  color: var(--btn-text);
+  color: #fff;
   cursor: pointer;
   background: linear-gradient(
-    135deg,
+    150deg,
     var(--btn-grad-1) 0%,
     var(--btn-grad-2) 100%
   );
@@ -197,5 +197,43 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+}
+
+.FormFooter {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-input);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+
+  .LinkBold {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent-secondary);
+      text-decoration: underline;
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 4px;
+      border-radius: 2px;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
   }
 }

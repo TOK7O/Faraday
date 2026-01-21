@@ -1,19 +1,22 @@
 @import "./variables";
 
 :root {
-  color-scheme: light; // Informacja dla przeglądarki o kolorach systemowych
+  color-scheme: light;
+
+  --overlay-start: rgba(0, 0, 0, 0.1);
+  --overlay-end: rgba(0, 0, 0, 0);
 
   --bg-form: #{$white};
   --text-main: #{$gray-dark};
   --text-muted: #{lighten($gray-dark, 20%)};
   --bg-input: #{$white};
-  --border-input: #{$cyan-light};
+  --border-input: #{lighten($gray-dark, 60%)};
   --accent-primary: #{$blue-primary};
   --accent-secondary: #{$blue-secondary};
   --error-color: #{$red-error};
   --error-bg-subtle: rgba(255, 77, 77, 0.05);
-  --btn-grad-1: #{$cyan-light};
-  --btn-grad-2: #{$blue-primary};
+  --btn-grad-1: #{darken($blue-primary, 20%)};
+  --btn-grad-2: #{darken($blue-secondary, 25%)};
   --btn-text: #{$gray-dark};
   --placeholder-color: #{lighten($gray-dark, 40%)};
   --focus-ring: rgba(108, 175, 217, 0.2);
@@ -22,6 +25,9 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
+
+  --overlay-start: rgba(0, 0, 0, 0.2);
+  --overlay-end: rgba(0, 0, 0, 0.3);
 
   --bg-form: #1a1a1a;
   --text-main: #{$white};
@@ -32,8 +38,8 @@
   --accent-secondary: #{$cyan-light};
   --error-color: #ff6b6b;
   --error-bg-subtle: rgba(255, 107, 107, 0.1);
-  --btn-grad-1: #{darken($green-success, 25%)};
-  --btn-grad-2: #{darken($green-pale, 35%)};
+  --btn-grad-1: #{darken($blue-secondary, 25%)};
+  --btn-grad-2: #{darken($blue-secondary, 25%)};
   --btn-text: #{$white};
   --placeholder-color: #777777;
   --focus-ring: rgba(98, 195, 217, 0.3);
