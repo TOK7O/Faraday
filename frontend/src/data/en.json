@@ -1,0 +1,55 @@
+{
+  "loginPage": {
+    "visualSection": {
+      "title": "Welcome to the System",
+      "description": "Manage your warehouse faster and smarter. Join thousands of users today.",
+      "imageAlt": "Abstract login background"
+    },
+    "formSection": {
+      "header": {
+        "title": "Login",
+        "subtitle": "Enter your details to continue"
+      },
+      "fields": {
+        "email": {
+          "label": "Email Address",
+          "placeholder": "e.g. name@domain.com",
+          "validation": {
+            "required": "Email is required",
+            "invalid": "The provided email address is invalid"
+          }
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "••••••",
+          "validation": {
+            "required": "Password is required",
+            "tooShort": "Password must be at least 2 characters",
+            "tooLong": "Password is too long (max 32 characters)",
+            "noNumber": "Password must contain at least one number",
+            "noSpecialChar": "Password must contain a special character (e.g., !@#$)",
+            "wrongPassword": "The password provided is incorrect"
+          }
+        },
+        "terms": {
+          "label": "I accept the terms and conditions and privacy policy",
+          "links": {
+            "termsUrl": "/terms-and-conditions",
+            "privacyUrl": "/privacy-policy"
+          },
+          "validation": {
+            "required": "You must accept the terms to continue"
+          }
+        }
+      },
+      "buttons": {
+        "submit": "Sign In",
+        "forgotPassword": "Forgot password?"
+      },
+      "footer": {
+        "text": "Don't have an account?",
+        "linkText": "Sign up for free"
+      }
+    }
+  }
+}
