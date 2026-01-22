@@ -1,35 +1,33 @@
 import * as Form from "@radix-ui/react-form";
-import { EmailField } from "./ui/EmailField";
-import { PasswordField } from "./ui/PasswordField";
+import { Link } from "react-router-dom";
 import "./AuthForm.scss";
 
-const AuthForm = ({ config }: { config: any }) => {
+interface AuthFormProps {
+  config: any;
+  children: React.ReactNode;
+  onSubmit?: (e: React.FormEvent) => void;
+}
+
+const AuthForm = ({ config, children, onSubmit }: AuthFormProps) => {
   if (!config) return null;
 
-  const { fields, buttons, footer } = config;
-  const emailData = fields?.email || config.email;
-  const passwordData = fields?.password || config.password;
+  const { buttons, footer } = config;
 
   return (
-    <Form.Root className="FormRoot">
-      <EmailField data={emailData} />
-
-      <PasswordField
-        data={passwordData}
-        forgotPasswordLabel={buttons?.forgotPassword || "Forgot password?"}
-      />
+    <Form.Root className="FormRoot" onSubmit={onSubmit}>
+      {children}
 
       <Form.Submit asChild>
-        <button className="Button" style={{ marginTop: 20 }}>
-          {buttons?.submit || "Log In"}
+        <button className="Button" style={{ marginTop: "1.25rem" }}>
+          {buttons?.submit}
         </button>
       </Form.Submit>
 
       <div className="FormFooter">
-        <span>{footer?.text || "No account?"}</span>
-        <a href="#" className="LinkBold">
-          {footer?.linkText || "Register"}
-        </a>
+        <span>{footer?.text}</span>
+        <Link to={footer?.linkUrl || "#"} className="LinkBold">
+          {footer?.linkText}
+        </Link>
       </div>
     </Form.Root>
   );

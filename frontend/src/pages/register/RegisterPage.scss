@@ -1,0 +1,50 @@
+@import "../../variables";
+
+.auth-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+
+  .auth-visual {
+    padding: 2rem;
+    margin: 1.1rem;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: end;
+    flex-direction: column;
+    width: calc(40vw - 1rem);
+    background-image:
+      linear-gradient(var(--overlay-start), var(--overlay-end)),
+      url("../../assets/lightGradient.jpg");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 1rem;
+    color: #fff;
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+    p {
+      font-weight: 600;
+    }
+  }
+  .auth-form {
+    width: 60vw;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    font-size: 1.1rem;
+
+    h1 {
+      margin-bottom: 1.5rem;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+  }
+}
