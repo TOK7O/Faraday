@@ -3,47 +3,56 @@
 :root {
   color-scheme: light;
 
-  --overlay-start: rgba(0, 0, 0, 0.1);
+  --overlay-start: rgba(0, 0, 0, 0.05);
   --overlay-end: rgba(0, 0, 0, 0);
-
   --bg-form: #{$white};
+
   --text-main: #{$gray-dark};
-  --text-muted: #{lighten($gray-dark, 20%)};
-  --bg-input: #{$white};
-  --border-input: #{lighten($gray-dark, 60%)};
+  --text-muted: #{lighten($gray-dark, 25%)};
+  --placeholder-color: #{$gray-light};
+
+  --bg-input: #f7f7f7;
+  --border-input: #{lighten($gray-dark, 65%)};
+  --focus-ring: rgba(108, 175, 217, 0.25);
+
   --accent-primary: #{$blue-primary};
   --accent-secondary: #{$blue-secondary};
+
+  --btn-grad-1: #{$blue-primary};
+  --btn-grad-2: #{$blue-secondary};
+  --btn-text: #{$white};
+  --shadow-btn: rgba(108, 175, 217, 0.3);
+
   --error-color: #{$red-error};
   --error-bg-subtle: rgba(255, 77, 77, 0.05);
-  --btn-grad-1: #{darken($blue-primary, 20%)};
-  --btn-grad-2: #{darken($blue-secondary, 25%)};
-  --btn-text: #{$gray-dark};
-  --placeholder-color: #{lighten($gray-dark, 40%)};
-  --focus-ring: rgba(108, 175, 217, 0.2);
-  --shadow-btn: rgba(155, 242, 193, 0.4);
+  --success-color: #{$green-success};
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --overlay-start: rgba(0, 0, 0, 0.2);
-  --overlay-end: rgba(0, 0, 0, 0.3);
+  --overlay-start: rgba(0, 0, 0, 0.3);
+  --overlay-end: rgba(0, 0, 0, 0.5);
+  --bg-form: #{$black-deep};
 
-  --bg-form: #1a1a1a;
   --text-main: #{$white};
   --text-muted: #{$gray-light};
-  --bg-input: #242424;
-  --border-input: #3a3a3a;
+  --placeholder-color: #{darken($gray-light, 30%)};
+
+  --bg-input: #{$black-soft};
+  --border-input: #{lighten($black-deep, 15%)};
+  --focus-ring: rgba(98, 195, 217, 0.2);
+
   --accent-primary: #{$blue-secondary};
   --accent-secondary: #{$cyan-light};
-  --error-color: #ff6b6b;
-  --error-bg-subtle: rgba(255, 107, 107, 0.1);
-  --btn-grad-1: #{darken($blue-secondary, 25%)};
-  --btn-grad-2: #{darken($blue-secondary, 25%)};
+
+  --btn-grad-1: #{darken($blue-primary, 15%)};
+  --btn-grad-2: #{darken($blue-secondary, 20%)};
   --btn-text: #{$white};
-  --placeholder-color: #777777;
-  --focus-ring: rgba(98, 195, 217, 0.3);
-  --shadow-btn: rgba(0, 0, 0, 0.4);
+  --shadow-btn: rgba(0, 0, 0, 0.5);
+
+  --error-color: #{$red-soft};
+  --error-bg-subtle: rgba(255, 107, 107, 0.1);
 }
 
 input,
@@ -52,4 +61,27 @@ select,
 textarea {
   color: var(--text-main);
   background-color: var(--bg-input);
+  border: 1px solid var(--border-input);
+  font-family: inherit;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-form);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-input);
+  border-radius: 10px;
+  &:hover {
+    background: var(--text-muted);
+  }
 }
