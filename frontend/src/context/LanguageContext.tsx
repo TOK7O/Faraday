@@ -14,7 +14,7 @@ interface LanguageContextType {
 const translations = { pl, en };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({

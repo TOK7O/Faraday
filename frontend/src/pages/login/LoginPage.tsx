@@ -11,7 +11,9 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <section className="auth-visual">
-        <h1>Faraday</h1>
+        <h1>
+          Faraday<span>Systems</span>
+        </h1>
         <h2>{t.loginPage.visualSection.title}</h2>
         <p>{t.loginPage.visualSection.description}</p>
       </section>

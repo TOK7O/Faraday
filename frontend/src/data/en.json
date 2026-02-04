@@ -7,8 +7,8 @@
     },
     "formSection": {
       "header": {
-        "title": "Login",
-        "subtitle": "Enter your details to continue"
+        "title": "Sign In",
+        "subtitle": "Log in to get full access to your account and all available system features."
       },
       "fields": {
         "email": {
@@ -24,17 +24,17 @@
           "placeholder": "••••••",
           "validation": {
             "required": "Password is required",
-            "tooShort": "Password must be at least 2 characters",
+            "tooShort": "Password must be at least 8 characters long",
             "tooLong": "Password is too long (max 32 characters)",
             "noNumber": "Password must contain at least one number",
-            "noSpecialChar": "Password must contain a special character (e.g., !@#$)",
-            "wrongPassword": "The password provided is incorrect"
+            "noSpecialChar": "Password must contain a special character (e.g. !@#$)",
+            "wrongPassword": "The provided password is incorrect"
           }
         },
         "terms": {
-          "label": "I accept the terms and conditions and privacy policy",
+          "label": "I accept the Terms of Service and Privacy Policy",
           "links": {
-            "termsUrl": "/terms-and-conditions",
+            "termsUrl": "/terms",
             "privacyUrl": "/privacy-policy"
           },
           "validation": {
@@ -48,7 +48,71 @@
       },
       "footer": {
         "text": "Don't have an account?",
-        "linkText": "Sign up for free"
+        "linkText": "Register here",
+        "linkUrl": "/register"
+      }
+    }
+  },
+  "registerPage": {
+    "visualSection": {
+      "title": "Create a New Account",
+      "description": "Start your journey with our system. Set up your warehouse in minutes and optimize your workflow.",
+      "imageAlt": "Abstract registration background"
+    },
+    "formSection": {
+      "header": {
+        "title": "Registration",
+        "subtitle": "Fill out the form below to create a free account and access the management panel."
+      },
+      "fields": {
+        "email": {
+          "label": "Email Address",
+          "placeholder": "e.g. name@domain.com",
+          "validation": {
+            "required": "Email is required",
+            "invalid": "The provided email address is invalid",
+            "taken": "This email address is already assigned to another account"
+          }
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "Minimum 8 characters",
+          "validation": {
+            "required": "Password is required",
+            "tooShort": "Password must be at least 8 characters long",
+            "tooLong": "Password is too long (max 32 characters)",
+            "noNumber": "Password must contain at least one number",
+            "noSpecialChar": "Password must contain a special character (e.g. !@#$)"
+          }
+        },
+        "confirmPassword": {
+          "label": "Confirm Password",
+          "placeholder": "••••••",
+          "validation": {
+            "required": "Password confirmation is required",
+            "mismatch": "Passwords do not match",
+            "tooShort": "Password must be at least 8 characters long"
+          }
+        },
+        "terms": {
+          "label": "I accept the Terms of Service and Privacy Policy",
+          "links": {
+            "termsUrl": "/terms",
+            "privacyUrl": "/privacy-policy"
+          },
+          "validation": {
+            "required": "You must accept the terms to create an account"
+          }
+        }
+      },
+      "buttons": {
+        "submit": "Create Account",
+        "backToLogin": "Back to login"
+      },
+      "footer": {
+        "text": "Already have an account?",
+        "linkText": "Sign in",
+        "linkUrl": "/login"
       }
     }
   }
