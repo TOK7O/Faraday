@@ -3,8 +3,6 @@ import {
   Info,
   Package,
   Thermometer,
-  ShieldAlert,
-  MousePointerClick,
   Search,
 } from "lucide-react";
 import "./UserGuide.scss";
