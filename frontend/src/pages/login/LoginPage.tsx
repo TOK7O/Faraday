@@ -2,6 +2,7 @@ import { useTranslation } from "../../context/LanguageContext";
 import AuthForm from "../../components/layouts/AuthForm";
 import { EmailField } from "../../components/ui/EmailField";
 import { PasswordField } from "../../components/ui/PasswordField";
+import { Link } from "react-router-dom";
 import "./LoginPage.scss";
 
 const LoginPage = () => {
@@ -11,16 +12,22 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <section className="auth-visual">
-        <h1>
-          Faraday<span>Systems</span>
-        </h1>
-        <h2>{t.loginPage.visualSection.title}</h2>
-        <p>{t.loginPage.visualSection.description}</p>
+        <Link to="/">
+          <h1>
+            Faraday<span>Systems</span>
+          </h1>
+        </Link>
+        <div className="content-bottom">
+          <h2 className="outline-text">{t.loginPage.visualSection.title}</h2>
+          <p>{t.loginPage.visualSection.description}</p>
+        </div>
       </section>
 
       <section className="auth-form">
-        <h1>{loginStrings.header.title}</h1>
-        <p className="subtitle">{loginStrings.header.subtitle}</p>
+        <div className="form-header">
+          <h1>{loginStrings.header.title}</h1>
+          <p className="subtitle">{loginStrings.header.subtitle}</p>
+        </div>
 
         <AuthForm config={loginStrings}>
           <EmailField data={loginStrings.fields.email} />
