@@ -5,6 +5,10 @@ using Faraday.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Faraday.API.Services;
+using Faraday.API.Services.Interfaces;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +79,11 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+// Registration of WMS services.
+builder.Services.AddScoped<IRackService, RackService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IWarehouseAlgorithmService, WarehouseAlgorithmService>();
 
 var app = builder.Build();
 
