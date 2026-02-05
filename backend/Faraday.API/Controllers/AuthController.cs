@@ -32,7 +32,7 @@ namespace Faraday.API.Controllers
             {
                 return BadRequest("User already exists.");
             }
-            
+
             var user = new User
             {
                 Username = request.Username,
@@ -52,7 +52,7 @@ namespace Faraday.API.Controllers
         public async Task<ActionResult<LoginResponseDto>> Login(LoginDto request)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-            
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
                 return BadRequest("Incorrect login or password");
@@ -60,11 +60,11 @@ namespace Faraday.API.Controllers
 
             string token = CreateToken(user);
 
-            return Ok(new LoginResponseDto 
-            { 
-                Token = token, 
-                Username = user.Username, 
-                Role = user.Role.ToString() 
+            return Ok(new LoginResponseDto
+            {
+                Token = token,
+                Username = user.Username,
+                Role = user.Role.ToString()
             });
         }
 

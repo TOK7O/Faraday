@@ -48,7 +48,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Faraday WMS API", Version = "v1" });
-    
+
     // Define the security scheme for the Swagger UI (Bearer token input).
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -83,10 +83,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
-    
+
     // Automatically apply any pending migrations to the database.
-    dbContext.Database.Migrate(); 
-    
+    dbContext.Database.Migrate();
+
     // Seed default administrator account if the Users table is empty.
     if (!dbContext.Users.Any())
     {

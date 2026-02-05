@@ -34,7 +34,7 @@ namespace Faraday.API.Data
                 (typeof(Rack), nameof(Rack.MaxItemHeightMm)),
                 (typeof(Rack), nameof(Rack.MaxItemWidthMm)),
                 (typeof(Rack), nameof(Rack.MaxItemDepthMm)),
-                
+
                 (typeof(ProductDefinition), nameof(ProductDefinition.WeightKg)),
                 (typeof(ProductDefinition), nameof(ProductDefinition.RequiredMinTemp)),
                 (typeof(ProductDefinition), nameof(ProductDefinition.RequiredMaxTemp)),
@@ -55,11 +55,11 @@ namespace Faraday.API.Data
             modelBuilder.Entity<Rack>()
                 .Property(r => r.Version)
                 .IsRowVersion();
-                
+
             modelBuilder.Entity<RackSlot>()
                 .Property(r => r.Version)
                 .IsRowVersion();
-                
+
             modelBuilder.Entity<InventoryItem>()
                 .Property(r => r.Version)
                 .IsRowVersion();
