@@ -1,0 +1,106 @@
+.sidebar-logo {
+  margin-bottom: 3rem;
+  padding-left: 0.5rem;
+  span {
+    font-weight: 800;
+    font-size: 1.2rem;
+    span {
+      font-weight: 300;
+      opacity: 0.6;
+    }
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  .nav-group {
+    margin-bottom: 2rem;
+    .group-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      padding-left: 1rem;
+      font-weight: 700;
+      display: block;
+    }
+  }
+
+  .nav-item {
+    width: 100%;
+    margin: 0.2rem 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.8rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    outline: none;
+
+    &:hover {
+      background: rgba(var(--text-main), 0.05);
+      color: var(--text-main);
+    }
+
+    &[data-state="active"] {
+      background: var(--text-main);
+      color: var(--bg-form);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      transform: translateX(5px);
+    }
+  }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-input);
+
+  .logout-btn {
+    width: 100%;
+    background: rgba(255, 77, 77, 0.05);
+    border: 1px solid rgba(255, 77, 77, 0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0.7rem;
+    color: #ff4d4d;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+
+    .logout-icon-wrapper {
+      background: rgba(255, 77, 77, 0.1);
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &:hover {
+      background: #ff4d4d;
+      color: white;
+      box-shadow: 0 0 20px rgba(255, 77, 77, 0.4);
+      .logout-icon-wrapper {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+}

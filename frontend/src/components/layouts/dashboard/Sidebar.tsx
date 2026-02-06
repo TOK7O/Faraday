@@ -1,4 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
+import "./Sidebar.scss";
 import {
   LayoutDashboard,
   Package,
@@ -16,12 +17,6 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar-container">
-      <div className="sidebar-logo">
-        <span>
-          Faraday<span>Systems</span>
-        </span>
-      </div>
-
       <Tabs.List className="sidebar-nav">
         <div className="nav-group">
           <span className="group-label">
