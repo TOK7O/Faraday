@@ -1,11 +1,14 @@
 import { Activity, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { useTranslation } from "../../context/LanguageContext";
 
 const OverviewContent = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="bento-dashboard">
       <div className="bento-card large">
         <div className="card-header">
-          <Activity size={16} /> Real-time Throughput
+          <Activity size={16} /> {t.dashboardPage.content.overview.throughput}
         </div>
         <div className="card-body">
           <h2>
@@ -19,12 +22,12 @@ const OverviewContent = () => {
         </div>
       </div>
       <div className="bento-card gray">
-        <div className="card-header">Warehouse Load</div>
+        <div className="card-header">{t.dashboardPage.content.overview.warehouseLoad}</div>
         <div className="circle-progress">84%</div>
       </div>
       <div className="bento-card accent">
         <ShieldCheck size={20} />
-        <p>Security Protocol Active</p>
+        <p>{t.dashboardPage.content.overview.securityProtocol}</p>
         <ArrowUpRight size={16} className="corner-icon" />
       </div>
     </div>

@@ -117,6 +117,9 @@
     }
   },
   "homePage": {
+    "language": {
+      "toggle": "Zmień na EN"
+    },
     "nav": {
       "documentation": "Dokumentacja",
       "dashboard": "Panel",
@@ -156,13 +159,33 @@
       "logout": "Wyloguj się"
     },
     "navbar": {
-      "path": "root / dashboard / przegląd",
+      "path": "root / dashboard",
       "searchPlaceholder": "CMD+K aby szukać..."
     },
     "content": {
-      "realTimeThroughput": "Przepustowość w czasie rzeczywistym",
-      "warehouseLoad": "Obciążenie magazynu",
-      "securityProtocol": "Protokół bezpieczeństwa aktywny"
+      "overview": {
+        "title": "Przegląd",
+        "throughput": "Przepustowość w czasie rzeczywistym",
+        "warehouseLoad": "Obciążenie magazynu",
+        "securityProtocol": "Protokół bezpieczeństwa aktywny"
+      },
+      "inventory": {
+        "title": "System Inwentaryzacji (M x N)",
+        "subtitle": "Zarządzanie regałami zgodnie z zasadą FIFO",
+        "rack": "Regał",
+        "dimensions": "Wymiary",
+        "temp": "Temp"
+      },
+      "personnel": {
+        "title": "Zarządzanie Personelem",
+        "placeholder": "Lista operatorów z aktywnym modułem 2FA"
+      },
+      "reports": {
+        "title": "Logi i Operacje",
+        "placeholder": "Historia operacji magazynowych (CSV Export)",
+        "generator": "Generator raportów PDF/CSV"
+      },
+      "pageNotFound": "404 - Nie znaleziono strony"
     }
   },
   "docsPage": {

@@ -117,6 +117,9 @@
     }
   },
   "homePage": {
+    "language": {
+      "toggle": "Switch to PL"
+    },
     "nav": {
       "documentation": "Documentation",
       "dashboard": "Dashboard",
@@ -156,13 +159,33 @@
       "logout": "Logout"
     },
     "navbar": {
-      "path": "root / dashboard / overview",
+      "path": "root / dashboard",
       "searchPlaceholder": "CMD+K to search..."
     },
     "content": {
-      "realTimeThroughput": "Real-time Throughput",
-      "warehouseLoad": "Warehouse Load",
-      "securityProtocol": "Security Protocol Active"
+      "overview": {
+        "title": "Overview",
+        "throughput": "Real-time Throughput",
+        "warehouseLoad": "Warehouse Load",
+        "securityProtocol": "Security Protocol Active"
+      },
+      "inventory": {
+        "title": "Inventory System (M x N)",
+        "subtitle": "Manage racks according to FIFO principle",
+        "rack": "Rack",
+        "dimensions": "Dimensions",
+        "temp": "Temp"
+      },
+      "personnel": {
+        "title": "Personnel Management",
+        "placeholder": "List of operators with active 2FA module"
+      },
+      "reports": {
+        "title": "Logs & Operations",
+        "placeholder": "Warehouse operations history (CSV Export)",
+        "generator": "PDF/CSV Report Generator"
+      },
+      "pageNotFound": "404 - Page not found"
     }
   },
   "docsPage": {

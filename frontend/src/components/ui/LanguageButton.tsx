@@ -1,7 +1,7 @@
 import { useTranslation } from "../../context/LanguageContext";
 
 const LanguageButton = () => {
-  const { lang, setLang } = useTranslation();
+  const { lang, setLang, t } = useTranslation();
 
   const toggleLang = () => {
     setLang(lang === "pl" ? "en" : "pl");
@@ -9,7 +9,7 @@ const LanguageButton = () => {
 
   return (
     <button onClick={toggleLang}>
-      {lang === "pl" ? "Zmień na EN" : "Zmień na PL"}
+      {t.homePage.language.toggle}
     </button>
   );
 };

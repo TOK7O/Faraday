@@ -1,9 +1,13 @@
+import { useTranslation } from "../../context/LanguageContext";
+
 const PersonnelContent = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="standard-view">
-      <h2>Zarządzanie Personelem</h2>
+      <h2>{t.dashboardPage.content.personnel.title}</h2>
       <div className="placeholder-card">
-        Lista operatorów z aktywnym modułem 2FA
+        {t.dashboardPage.content.personnel.placeholder}
       </div>
     </div>
   );

@@ -1,9 +1,13 @@
+import { useTranslation } from "../../context/LanguageContext";
+
 const ReportsContent = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="standard-view">
-      <h2>Logi i Operacje</h2>
+      <h2>{t.dashboardPage.content.reports.title}</h2>
       <div className="placeholder-card">
-        Historia operacji magazynowych (CSV Export)
+        {t.dashboardPage.content.reports.placeholder}
       </div>
     </div>
   );
