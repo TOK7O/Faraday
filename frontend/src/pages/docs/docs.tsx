@@ -1,8 +1,11 @@
 import { BookOpen, Info, Package, Thermometer, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./docs.scss";
+import { useTranslation } from "../../context/LanguageContext";
 
 const Documentation = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="faraday-docs">
       <div className="bg-grid-overlay"></div>
@@ -12,7 +15,7 @@ const Documentation = () => {
           Faraday<span>Systems</span>
         </Link>
         <Link to="/dashboard" className="btn-dashboard">
-          Dashboard
+          {t.docsPage.nav.dashboard}
         </Link>
       </header>
 
@@ -20,62 +23,61 @@ const Documentation = () => {
         <aside className="docs-sidebar">
           <div className="sidebar-header">
             <BookOpen size={18} />
-            <span>User Manual</span>
+            <span>{t.docsPage.sidebar.userManual}</span>
           </div>
           <nav>
             <a href="#intro" className="active">
-              Introduction
+              {t.docsPage.sidebar.nav.introduction}
             </a>
           </nav>
         </aside>
 
         <main className="docs-content">
           <section id="intro" className="docs-section">
-            <div className="status-pill">v1.0 Guide</div>
+            <div className="status-pill">{t.docsPage.content.intro.guide}</div>
             <h1>
-              Welcome to <span className="outline-text">Faraday</span> WMS
+              {t.docsPage.content.intro.title.split("Faraday")[0]}
+              <span className="outline-text">Faraday</span>
+              {t.docsPage.content.intro.title.split("Faraday")[1]}
             </h1>
             <p className="lead-text">
-              The Faraday system is an intelligent warehouse management tool
-              featuring automated stock allocation and real-time environmental
-              monitoring.
+              {t.docsPage.content.intro.description}
             </p>
 
             <div className="info-card">
               <div className="card-glass-effect"></div>
               <Info className="icon" size={20} />
               <div className="info-text">
-                <strong>Quick Tip:</strong> The system automatically selects the
-                best storage location based on temperature requirements and
-                dimensions. No manual allocation needed.
+                <strong>{t.docsPage.content.intro.quickTip.label}</strong> {t.docsPage.content.intro.quickTip.text}
               </div>
             </div>
           </section>
 
           <section id="adding" className="docs-section">
             <h2>
-              <Package size={22} /> Adding Products
+              <Package size={22} /> {t.docsPage.content.addingProducts.title}
             </h2>
             <div className="step-list">
               <div className="step-item">
                 <span className="step-num">01</span>
                 <p>
-                  Navigate to the <strong>Warehouse</strong> tab in your
-                  dashboard.
+                  {t.docsPage.content.addingProducts.steps.step1.split("Warehouse")[0]}
+                  <strong>Warehouse</strong>
+                  {t.docsPage.content.addingProducts.steps.step1.split("Warehouse")[1]}
                 </p>
               </div>
               <div className="step-item">
                 <span className="step-num">02</span>
                 <p>
-                  Click the <strong>Add Product</strong> button in the top-right
-                  corner.
+                  {t.docsPage.content.addingProducts.steps.step2.split("Add Product")[0]}
+                  <strong>{t.docsPage.content.addingProducts.steps.step2.includes("Add Product") ? "Add Product" : (t.docsPage.content.addingProducts.steps.step2.includes("Dodaj produkt") ? "Dodaj produkt" : "")}</strong>
+                  {t.docsPage.content.addingProducts.steps.step2.includes("Add Product") ? t.docsPage.content.addingProducts.steps.step2.split("Add Product")[1] : (t.docsPage.content.addingProducts.steps.step2.includes("Dodaj produkt") ? t.docsPage.content.addingProducts.steps.step2.split("Dodaj produkt")[1] : "")}
                 </p>
               </div>
               <div className="step-item">
                 <span className="step-num">03</span>
                 <p>
-                  Enter the barcode, dimensions, and specific temperature range
-                  requirements.
+                  {t.docsPage.content.addingProducts.steps.step3}
                 </p>
               </div>
             </div>
@@ -83,32 +85,31 @@ const Documentation = () => {
             <div className="hint-box">
               <Search size={14} />
               <span>
-                Note: Each barcode must be unique within the global system
-                database.
+                {t.docsPage.content.addingProducts.hint}
               </span>
             </div>
           </section>
 
           <section id="monitoring" className="docs-section">
             <h2>
-              <Thermometer size={22} /> Environmental Monitoring
+              <Thermometer size={22} /> {t.docsPage.content.monitoring.title}
             </h2>
             <p>
-              Faraday provides real-time telemetry for shelf temperature and
-              weight load.
+              {t.docsPage.content.monitoring.description}
             </p>
             <div className="indicator-grid">
               <div className="indicator-item">
                 <span className="dot success"></span>
                 <div className="indicator-desc">
-                  <strong>Green:</strong> All parameters are within safe limits.
+                  <strong>{t.docsPage.content.monitoring.indicators.green.split(":")[0]}:</strong>
+                  {t.docsPage.content.monitoring.indicators.green.split(":")[1]}
                 </div>
               </div>
               <div className="indicator-item">
                 <span className="dot error"></span>
                 <div className="indicator-desc">
-                  <strong>Red:</strong> Threshold exceeded. Immediate
-                  intervention required.
+                  <strong>{t.docsPage.content.monitoring.indicators.red.split(":")[0]}:</strong>
+                  {t.docsPage.content.monitoring.indicators.red.split(":")[1]}
                 </div>
               </div>
             </div>

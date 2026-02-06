@@ -115,5 +115,93 @@
         "linkUrl": "/login"
       }
     }
+  },
+  "homePage": {
+    "nav": {
+      "documentation": "Dokumentacja",
+      "dashboard": "Panel",
+      "login": "Zaloguj się"
+    },
+    "hero": {
+      "statusPill": "System Operacyjny v1.0",
+      "title": {
+        "line1": "Zautomatyzowana",
+        "line2": "Inteligencja",
+        "line3": "Magazynowa"
+      },
+      "description": "Przekształcamy surowe dane z czujników w precyzyjną logistykę. Faraday to coś więcej niż WMS – to system operacyjny dla Twojego magazynu.",
+      "liveEnvironment": {
+        "title": "Środowisko na Żywo",
+        "avgTemp": "Śr. Temp.",
+        "humidity": "Wilgotność"
+      }
+    }
+  },
+  "dashboardPage": {
+    "sidebar": {
+      "groups": {
+        "terminal": "Terminal",
+        "securityLogs": "Bezpieczeństwo i Logi",
+        "settings": "Ustawienia"
+      },
+      "nav": {
+        "overview": "Przegląd",
+        "inventory": "Inwentarz",
+        "personnel": "Personel",
+        "operations": "Operacje",
+        "reports": "Raporty",
+        "theme": "Motyw",
+        "language": "Język"
+      },
+      "logout": "Wyloguj się"
+    },
+    "navbar": {
+      "path": "root / dashboard / przegląd",
+      "searchPlaceholder": "CMD+K aby szukać..."
+    },
+    "content": {
+      "realTimeThroughput": "Przepustowość w czasie rzeczywistym",
+      "warehouseLoad": "Obciążenie magazynu",
+      "securityProtocol": "Protokół bezpieczeństwa aktywny"
+    }
+  },
+  "docsPage": {
+    "nav": {
+      "dashboard": "Panel"
+    },
+    "sidebar": {
+      "userManual": "Instrukcja obsługi",
+      "nav": {
+        "introduction": "Wprowadzenie"
+      }
+    },
+    "content": {
+      "intro": {
+        "guide": "Przewodnik v1.0",
+        "title": "Witaj w Faraday WMS",
+        "description": "System Faraday to inteligentne narzędzie do zarządzania magazynem, oferujące automatyczne przydzielanie zapasów i monitorowanie środowiska w czasie rzeczywistym.",
+        "quickTip": {
+          "label": "Szybka wskazówka:",
+          "text": "System automatycznie wybiera najlepszą lokalizację do przechowywania na podstawie wymagań temperaturowych i wymiarów. Nie jest wymagana ręczna alokacja."
+        }
+      },
+      "addingProducts": {
+        "title": "Dodawanie produktów",
+        "steps": {
+          "step1": "Przejdź do zakładki Magazyn w panelu sterowania.",
+          "step2": "Kliknij przycisk Dodaj produkt w prawym górnym rogu.",
+          "step3": "Wprowadź kod kreskowy, wymiary i specyficzne wymagania dotyczące zakresu temperatur."
+        },
+        "hint": "Uwaga: Każdy kod kreskowy musi być unikalny w globalnej bazie danych systemu."
+      },
+      "monitoring": {
+        "title": "Monitorowanie środowiska",
+        "description": "Faraday zapewnia telemetrię w czasie rzeczywistym dla temperatury półek i obciążenia wagowego.",
+        "indicators": {
+          "green": "Zielony: Wszystkie parametry mieszczą się w bezpiecznych granicach.",
+          "red": "Czerwony: Przekroczono próg. Wymagana natychmiastowa interwencja."
+        }
+      }
+    }
   }
 }

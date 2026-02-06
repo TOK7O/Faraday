@@ -11,8 +11,11 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import "./DashboardPage.scss";
+import { useTranslation } from "../../context/LanguageContext";
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-grid-bg"></div>
@@ -26,41 +29,41 @@ const DashboardPage = () => {
 
         <nav className="sidebar-nav">
           <div className="nav-group">
-            <span className="group-label">Terminal</span>
+            <span className="group-label">{t.dashboardPage.sidebar.groups.terminal}</span>
             <a href="#" className="nav-item active">
-              <LayoutDashboard size={18} /> Overview
+              <LayoutDashboard size={18} /> {t.dashboardPage.sidebar.nav.overview}
             </a>
             <a href="#" className="nav-item">
-              <Package size={18} /> Inventory
+              <Package size={18} /> {t.dashboardPage.sidebar.nav.inventory}
             </a>
           </div>
 
           <div className="nav-group">
-            <span className="group-label">Security & Logs</span>
+            <span className="group-label">{t.dashboardPage.sidebar.groups.securityLogs}</span>
             <a href="#" className="nav-item">
-              <Users size={18} /> Personnel
+              <Users size={18} /> {t.dashboardPage.sidebar.nav.personnel}
             </a>
             <a href="#" className="nav-item">
-              <History size={18} /> Operations
+              <History size={18} /> {t.dashboardPage.sidebar.nav.operations}
             </a>
             <a href="#" className="nav-item">
-              <History size={18} /> Raports
+              <History size={18} /> {t.dashboardPage.sidebar.nav.reports}
             </a>
           </div>
           <div className="nav-group">
-            <span className="group-label">Settings</span>
+            <span className="group-label">{t.dashboardPage.sidebar.groups.settings}</span>
             <a href="#" className="nav-item">
-              <Users size={18} /> Theme
+              <Users size={18} /> {t.dashboardPage.sidebar.nav.theme}
             </a>
             <a href="#" className="nav-item">
-              <Users size={18} /> Language
+              <Users size={18} /> {t.dashboardPage.sidebar.nav.language}
             </a>
           </div>
         </nav>
 
         <div className="sidebar-footer">
           <button className="logout-btn">
-            <LogOut size={18} /> Logout
+            <LogOut size={18} /> {t.dashboardPage.sidebar.logout}
           </button>
         </div>
       </aside>
@@ -68,13 +71,13 @@ const DashboardPage = () => {
       <main className="dashboard-main">
         <header className="dashboard-navbar">
           <div className="navbar-left">
-            <div className="path-display">root / dashboard / overview</div>
+            <div className="path-display">{t.dashboardPage.navbar.path}</div>
           </div>
 
           <div className="navbar-actions">
             <div className="search-wrapper">
               <Search size={16} />
-              <input type="text" placeholder="CMD+K to search..." />
+              <input type="text" placeholder={t.dashboardPage.navbar.searchPlaceholder} />
             </div>
 
             <button className="action-btn">
@@ -93,7 +96,7 @@ const DashboardPage = () => {
           <div className="bento-dashboard">
             <div className="bento-card large">
               <div className="card-header">
-                <Activity size={16} /> Real-time Throughput
+                <Activity size={16} /> {t.dashboardPage.content.realTimeThroughput}
               </div>
               <div className="card-body">
                 <h2>
@@ -112,13 +115,13 @@ const DashboardPage = () => {
             </div>
 
             <div className="bento-card gray">
-              <div className="card-header">Warehouse Load</div>
+              <div className="card-header">{t.dashboardPage.content.warehouseLoad}</div>
               <div className="circle-progress">84%</div>
             </div>
 
             <div className="bento-card accent">
               <ShieldCheck size={20} />
-              <p>Security Protocol Active</p>
+              <p>{t.dashboardPage.content.securityProtocol}</p>
               <ArrowUpRight size={16} className="corner-icon" />
             </div>
           </div>

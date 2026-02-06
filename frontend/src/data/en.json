@@ -115,5 +115,93 @@
         "linkUrl": "/login"
       }
     }
+  },
+  "homePage": {
+    "nav": {
+      "documentation": "Documentation",
+      "dashboard": "Dashboard",
+      "login": "Login"
+    },
+    "hero": {
+      "statusPill": "System Operational v1.0",
+      "title": {
+        "line1": "Automated",
+        "line2": "Warehouse",
+        "line3": "Intelligence"
+      },
+      "description": "We transform raw sensor data into precision logistics. Faraday is more than a WMS – it is the operating system for your warehouse.",
+      "liveEnvironment": {
+        "title": "Live Environment",
+        "avgTemp": "Avg. Temp",
+        "humidity": "Humidity"
+      }
+    }
+  },
+  "dashboardPage": {
+    "sidebar": {
+      "groups": {
+        "terminal": "Terminal",
+        "securityLogs": "Security & Logs",
+        "settings": "Settings"
+      },
+      "nav": {
+        "overview": "Overview",
+        "inventory": "Inventory",
+        "personnel": "Personnel",
+        "operations": "Operations",
+        "reports": "Reports",
+        "theme": "Theme",
+        "language": "Language"
+      },
+      "logout": "Logout"
+    },
+    "navbar": {
+      "path": "root / dashboard / overview",
+      "searchPlaceholder": "CMD+K to search..."
+    },
+    "content": {
+      "realTimeThroughput": "Real-time Throughput",
+      "warehouseLoad": "Warehouse Load",
+      "securityProtocol": "Security Protocol Active"
+    }
+  },
+  "docsPage": {
+    "nav": {
+      "dashboard": "Dashboard"
+    },
+    "sidebar": {
+      "userManual": "User Manual",
+      "nav": {
+        "introduction": "Introduction"
+      }
+    },
+    "content": {
+      "intro": {
+        "guide": "v1.0 Guide",
+        "title": "Welcome to Faraday WMS",
+        "description": "The Faraday system is an intelligent warehouse management tool featuring automated stock allocation and real-time environmental monitoring.",
+        "quickTip": {
+          "label": "Quick Tip:",
+          "text": "The system automatically selects the best storage location based on temperature requirements and dimensions. No manual allocation needed."
+        }
+      },
+      "addingProducts": {
+        "title": "Adding Products",
+        "steps": {
+          "step1": "Navigate to the Warehouse tab in your dashboard.",
+          "step2": "Click the Add Product button in the top-right corner.",
+          "step3": "Enter the barcode, dimensions, and specific temperature range requirements."
+        },
+        "hint": "Note: Each barcode must be unique within the global system database."
+      },
+      "monitoring": {
+        "title": "Environmental Monitoring",
+        "description": "Faraday provides real-time telemetry for shelf temperature and weight load.",
+        "indicators": {
+          "green": "Green: All parameters are within safe limits.",
+          "red": "Red: Threshold exceeded. Immediate intervention required."
+        }
+      }
+    }
   }
 }
