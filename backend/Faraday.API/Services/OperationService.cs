@@ -207,10 +207,14 @@ namespace Faraday.API.Services
                 
                 var product = itemToMove.Product;
 
-                 // Temperature check
-                 if (targetRack.MinTemperature > product.RequiredMinTemp || targetRack.MaxTemperature < product.RequiredMaxTemp)
-                     throw new InvalidOperationException($"Temperature mismatch. Rack: {targetRack.MinTemperature}-{targetRack.MaxTemperature}, Product needs: {product.RequiredMinTemp}-{product.RequiredMaxTemp}");
-
+                // Temperature check
+                if (targetRack.MinTemperature > product.RequiredMinTemp || targetRack.MaxTemperature < product.RequiredMaxTemp)
+                {
+                    throw new InvalidOperationException(
+                        $"Temperature mismatch. " +
+                        $"Rack: {targetRack.MinTemperature:0.##}°C - {targetRack.MaxTemperature:0.##}°C, " +
+                        $"Product needs: {product.RequiredMinTemp:0.##}°C - {product.RequiredMaxTemp:0.##}°C");
+                }
 
                 // Dimensions check
                 if (product.WidthMm > targetRack.MaxItemWidthMm || 

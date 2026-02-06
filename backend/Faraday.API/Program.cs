@@ -84,6 +84,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<IRackService, RackService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IWarehouseAlgorithmService, WarehouseAlgorithmService>();
+builder.Services.AddScoped<IOperationService, OperationService>();
 
 var app = builder.Build();
 
