@@ -7,83 +7,15 @@ import {
   Bell,
   Search,
   History,
-  ShieldCheck,
-  Activity,
-  ArrowUpRight,
   FileText,
   Palette,
   Languages,
 } from "lucide-react";
 import "./DashboardPage.scss";
-
-const OverviewContent = () => (
-  <div className="bento-dashboard">
-    <div className="bento-card large">
-      <div className="card-header">
-        <Activity size={16} /> Real-time Throughput
-      </div>
-      <div className="card-body">
-        <h2>
-          142.8 <small>ops/m</small>
-        </h2>
-        <div className="mini-graph">
-          {[30, 50, 40, 80, 60, 90, 70].map((h, i) => (
-            <div key={i} className="bar" style={{ height: `${h}%` }}></div>
-          ))}
-        </div>
-      </div>
-    </div>
-    <div className="bento-card gray">
-      <div className="card-header">Warehouse Load</div>
-      <div className="circle-progress">84%</div>
-    </div>
-    <div className="bento-card accent">
-      <ShieldCheck size={20} />
-      <p>Security Protocol Active</p>
-      <ArrowUpRight size={16} className="corner-icon" />
-    </div>
-  </div>
-);
-
-const InventoryContent = () => (
-  <div className="inventory-view">
-    <div className="view-header">
-      <h2>System Inwentaryzacji (M x N)</h2>
-      <p>Zarządzanie regałami zgodnie z zasadą FIFO</p>
-    </div>
-    <div className="rack-grid-container">
-      <div className="rack-preview-card">
-        <div className="rack-info">
-          <h3>Regał R-01</h3>
-          <span>Wymiary: 5 x 10 | Temp: 0 - 5°C</span>
-        </div>
-        <div className="slots-grid">
-          {Array.from({ length: 50 }).map((_, i) => (
-            <div key={i} className="slot-pixel" title={`Slot ${i + 1}`}></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const PersonnelContent = () => (
-  <div className="standard-view">
-    <h2>Zarządzanie Personelem</h2>
-    <div className="placeholder-card">
-      Lista operatorów z aktywnym modułem 2FA
-    </div>
-  </div>
-);
-
-const ReportsContent = () => (
-  <div className="standard-view">
-    <h2>Logi i Operacje</h2>
-    <div className="placeholder-card">
-      Historia operacji magazynowych (CSV Export)
-    </div>
-  </div>
-);
+import OverviewContent from "../../components/layouts/OverviewContent";
+import InventoryContent from "../../components/layouts/InventoryContent";
+import PersonnelContent from "../../components/layouts/PersonnelContent";
+import ReportsContent from "../../components/layouts/ReportsContent";
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
