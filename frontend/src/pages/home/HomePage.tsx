@@ -1,7 +1,7 @@
 import { Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./HomePage.scss";
-import { useTranslation } from "../../context/LanguageContext";
+import { useTranslation } from "@/context/LanguageContext";
 
 const HomePage = () => {
   const { t } = useTranslation();

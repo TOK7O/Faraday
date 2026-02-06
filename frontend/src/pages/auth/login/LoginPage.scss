@@ -1,5 +1,3 @@
-@use "../../variables";
-
 .auth-container {
   display: flex;
   height: 100vh;
@@ -25,7 +23,7 @@
     background-color: #1a1a1a;
     background-image:
       linear-gradient(var(--overlay-start), var(--overlay-end)),
-      url("../../assets/lightGradient.jpg");
+      url("../../../assets/lightGradient.jpg");
     background-size: cover;
     background-position: center;
 

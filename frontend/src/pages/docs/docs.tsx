@@ -1,7 +1,7 @@
 import { BookOpen, Info, Package, Thermometer, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./docs.scss";
-import { useTranslation } from "../../context/LanguageContext";
+import { useTranslation } from "@/context/LanguageContext";
 
 const Documentation = () => {
   const { t } = useTranslation();

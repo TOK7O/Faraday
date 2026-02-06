@@ -1,4 +1,4 @@
-import { useTranslation } from "../../../context/LanguageContext";
+import { useTranslation } from "../../../context/LanguageContext.tsx";
 
 const PersonnelContent = () => {
   const { t } = useTranslation();

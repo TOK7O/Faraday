@@ -1,4 +1,4 @@
-import { useTranslation } from "../../../context/LanguageContext";
+import { useTranslation } from "../../../../context/LanguageContext.tsx";
 import "./InventoryContent.scss";
 
 const InventoryContent = () => {

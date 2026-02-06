@@ -1,5 +1,5 @@
 import { Activity, ShieldCheck, ArrowUpRight } from "lucide-react";
-import { useTranslation } from "../../../context/LanguageContext";
+import { useTranslation } from "../../../context/LanguageContext.tsx";
 
 const OverviewContent = () => {
   const { t } = useTranslation();

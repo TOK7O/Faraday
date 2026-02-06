@@ -17,13 +17,12 @@ import {
   X,
   Info,
 } from "lucide-react";
-
 import "./DashboardPage.scss";
-import OverviewContent from "../../components/layouts/dashboard/OverviewContent";
-import InventoryContent from "../../components/layouts/dashboard/InventoryContent";
-import PersonnelContent from "../../components/layouts/dashboard/PersonnelContent";
-import ReportsContent from "../../components/layouts/dashboard/ReportsContent";
-import { useTranslation } from "../../context/LanguageContext";
+import OverviewContent from "./views/OverviewContent.tsx";
+import InventoryContent from "./views/Inventory/InventoryContent.tsx";
+import PersonnelContent from "./views/PersonnelContent.tsx";
+import ReportsContent from "./views/ReportsContent.tsx";
+import { useTranslation } from "@/context/LanguageContext";
 
 const DashboardPage = () => {
   const { t } = useTranslation();

@@ -9,7 +9,7 @@ import {
   Languages,
   LogOut,
 } from "lucide-react";
-import { useTranslation } from "../../../context/LanguageContext";
+import { useTranslation } from "@/context/LanguageContext.tsx";
 
 const Sidebar = () => {
   const { t } = useTranslation();
