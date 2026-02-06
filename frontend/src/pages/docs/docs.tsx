@@ -40,15 +40,14 @@ const Documentation = () => {
               <span className="outline-text">Faraday</span>
               {t.docsPage.content.intro.title.split("Faraday")[1]}
             </h1>
-            <p className="lead-text">
-              {t.docsPage.content.intro.description}
-            </p>
+            <p className="lead-text">{t.docsPage.content.intro.description}</p>
 
             <div className="info-card">
               <div className="card-glass-effect"></div>
               <Info className="icon" size={20} />
               <div className="info-text">
-                <strong>{t.docsPage.content.intro.quickTip.label}</strong> {t.docsPage.content.intro.quickTip.text}
+                <strong>{t.docsPage.content.intro.quickTip.label}</strong>{" "}
+                {t.docsPage.content.intro.quickTip.text}
               </div>
             </div>
           </section>
@@ -61,32 +60,62 @@ const Documentation = () => {
               <div className="step-item">
                 <span className="step-num">01</span>
                 <p>
-                  {t.docsPage.content.addingProducts.steps.step1.split("Warehouse")[0]}
+                  {
+                    t.docsPage.content.addingProducts.steps.step1.split(
+                      "Warehouse",
+                    )[0]
+                  }
                   <strong>Warehouse</strong>
-                  {t.docsPage.content.addingProducts.steps.step1.split("Warehouse")[1]}
+                  {
+                    t.docsPage.content.addingProducts.steps.step1.split(
+                      "Warehouse",
+                    )[1]
+                  }
                 </p>
               </div>
               <div className="step-item">
                 <span className="step-num">02</span>
                 <p>
-                  {t.docsPage.content.addingProducts.steps.step2.split("Add Product")[0]}
-                  <strong>{t.docsPage.content.addingProducts.steps.step2.includes("Add Product") ? "Add Product" : (t.docsPage.content.addingProducts.steps.step2.includes("Dodaj produkt") ? "Dodaj produkt" : "")}</strong>
-                  {t.docsPage.content.addingProducts.steps.step2.includes("Add Product") ? t.docsPage.content.addingProducts.steps.step2.split("Add Product")[1] : (t.docsPage.content.addingProducts.steps.step2.includes("Dodaj produkt") ? t.docsPage.content.addingProducts.steps.step2.split("Dodaj produkt")[1] : "")}
+                  {
+                    t.docsPage.content.addingProducts.steps.step2.split(
+                      "Add Product",
+                    )[0]
+                  }
+                  <strong>
+                    {t.docsPage.content.addingProducts.steps.step2.includes(
+                      "Add Product",
+                    )
+                      ? "Add Product"
+                      : t.docsPage.content.addingProducts.steps.step2.includes(
+                            "Dodaj produkt",
+                          )
+                        ? "Dodaj produkt"
+                        : ""}
+                  </strong>
+                  {t.docsPage.content.addingProducts.steps.step2.includes(
+                    "Add Product",
+                  )
+                    ? t.docsPage.content.addingProducts.steps.step2.split(
+                        "Add Product",
+                      )[1]
+                    : t.docsPage.content.addingProducts.steps.step2.includes(
+                          "Dodaj produkt",
+                        )
+                      ? t.docsPage.content.addingProducts.steps.step2.split(
+                          "Dodaj produkt",
+                        )[1]
+                      : ""}
                 </p>
               </div>
               <div className="step-item">
                 <span className="step-num">03</span>
-                <p>
-                  {t.docsPage.content.addingProducts.steps.step3}
-                </p>
+                <p>{t.docsPage.content.addingProducts.steps.step3}</p>
               </div>
             </div>
 
             <div className="hint-box">
               <Search size={14} />
-              <span>
-                {t.docsPage.content.addingProducts.hint}
-              </span>
+              <span>{t.docsPage.content.addingProducts.hint}</span>
             </div>
           </section>
 
@@ -94,21 +123,29 @@ const Documentation = () => {
             <h2>
               <Thermometer size={22} /> {t.docsPage.content.monitoring.title}
             </h2>
-            <p>
-              {t.docsPage.content.monitoring.description}
-            </p>
+            <p>{t.docsPage.content.monitoring.description}</p>
             <div className="indicator-grid">
               <div className="indicator-item">
                 <span className="dot success"></span>
                 <div className="indicator-desc">
-                  <strong>{t.docsPage.content.monitoring.indicators.green.split(":")[0]}:</strong>
+                  <strong>
+                    {
+                      t.docsPage.content.monitoring.indicators.green.split(
+                        ":",
+                      )[0]
+                    }
+                    :
+                  </strong>
                   {t.docsPage.content.monitoring.indicators.green.split(":")[1]}
                 </div>
               </div>
               <div className="indicator-item">
                 <span className="dot error"></span>
                 <div className="indicator-desc">
-                  <strong>{t.docsPage.content.monitoring.indicators.red.split(":")[0]}:</strong>
+                  <strong>
+                    {t.docsPage.content.monitoring.indicators.red.split(":")[0]}
+                    :
+                  </strong>
                   {t.docsPage.content.monitoring.indicators.red.split(":")[1]}
                 </div>
               </div>

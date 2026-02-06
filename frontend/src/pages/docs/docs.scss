@@ -2,8 +2,8 @@
 
 .faraday-docs {
   background-color: var(--bg-form);
-  min-height: 100vh;
-  width: 100%;
+  height: 100vh;
+  width: 100vw;
   position: relative;
   font-family: "Space Grotesk", sans-serif;
   color: var(--text-main);
@@ -69,11 +69,11 @@
 
   .docs-sidebar {
     width: 100%;
-    padding: 2rem 5%;
+    padding: 1rem 3%;
     border-bottom: 1px solid var(--border-input);
 
     @media (min-width: 992px) {
-      width: 300px;
+      width: 20%;
       height: calc(100vh - 70px);
       position: sticky;
       top: 70px;
@@ -119,7 +119,7 @@
   .docs-content {
     flex: 1;
     padding: 3rem 5%;
-    max-width: 900px;
+    //max-width: 900px;
 
     .docs-section {
       margin-bottom: 6rem;

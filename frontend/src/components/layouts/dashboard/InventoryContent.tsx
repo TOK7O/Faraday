@@ -1,4 +1,5 @@
-import { useTranslation } from "../../context/LanguageContext";
+import { useTranslation } from "../../../context/LanguageContext";
+import "./InventoryContent.scss";
 
 const InventoryContent = () => {
   const { t } = useTranslation();
@@ -13,7 +14,10 @@ const InventoryContent = () => {
         <div className="rack-preview-card">
           <div className="rack-info">
             <h3>{t.dashboardPage.content.inventory.rack} R-01</h3>
-            <span>{t.dashboardPage.content.inventory.dimensions}: 5 x 10 | {t.dashboardPage.content.inventory.temp}: 0 - 5°C</span>
+            <span>
+              {t.dashboardPage.content.inventory.dimensions}: 5 x 10 |{" "}
+              {t.dashboardPage.content.inventory.temp}: 0 - 5°C
+            </span>
           </div>
           <div className="slots-grid">
             {Array.from({ length: 50 }).map((_, i) => (

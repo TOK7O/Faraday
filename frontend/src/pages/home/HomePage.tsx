@@ -37,26 +37,32 @@ const HomePage = () => {
           </div>
           <h1>
             {t.homePage.hero.title.line1} <br />
-            <span className="outline-text">{t.homePage.hero.title.line2}</span> <br />
+            <span className="outline-text">
+              {t.homePage.hero.title.line2}
+            </span>{" "}
+            <br />
             {t.homePage.hero.title.line3}
           </h1>
-          <p>
-            {t.homePage.hero.description}
-          </p>
+          <p>{t.homePage.hero.description}</p>
         </div>
 
         <div className="hero-widget">
           <div className="glass-card">
             <div className="card-head">
-              <Activity size={16} /> <span>{t.homePage.hero.liveEnvironment.title}</span>
+              <Activity size={16} />{" "}
+              <span>{t.homePage.hero.liveEnvironment.title}</span>
             </div>
             <div className="sensor-data">
               <div className="reading">
-                <span className="label">{t.homePage.hero.liveEnvironment.avgTemp}</span>
+                <span className="label">
+                  {t.homePage.hero.liveEnvironment.avgTemp}
+                </span>
                 <span className="val">4.2°C</span>
               </div>
               <div className="reading">
-                <span className="label">{t.homePage.hero.liveEnvironment.humidity}</span>
+                <span className="label">
+                  {t.homePage.hero.liveEnvironment.humidity}
+                </span>
                 <span className="val">32%</span>
               </div>
             </div>

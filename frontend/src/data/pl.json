@@ -160,7 +160,7 @@
     },
     "navbar": {
       "path": "root / dashboard",
-      "searchPlaceholder": "CMD+K aby szukać..."
+      "searchPlaceholder": "Szukaj..."
     },
     "content": {
       "overview": {
@@ -193,36 +193,38 @@
       "dashboard": "Panel"
     },
     "sidebar": {
-      "userManual": "Instrukcja obsługi",
+      "userManual": "Instrukcja Obsługi",
       "nav": {
-        "introduction": "Wprowadzenie"
+        "introduction": "Wprowadzenie",
+        "addingProducts": "Dodawanie Produktów",
+        "monitoring": "Monitoring"
       }
     },
     "content": {
       "intro": {
         "guide": "Przewodnik v1.0",
         "title": "Witaj w Faraday WMS",
-        "description": "System Faraday to inteligentne narzędzie do zarządzania magazynem, oferujące automatyczne przydzielanie zapasów i monitorowanie środowiska w czasie rzeczywistym.",
+        "description": "System Faraday to inteligentne narzędzie do zarządzania magazynem, oferujące automatyczną alokację zapasów i monitorowanie środowiska w czasie rzeczywistym.",
         "quickTip": {
-          "label": "Szybka wskazówka:",
-          "text": "System automatycznie wybiera najlepszą lokalizację do przechowywania na podstawie wymagań temperaturowych i wymiarów. Nie jest wymagana ręczna alokacja."
+          "label": "Szybka Porada:",
+          "text": "System automatycznie dobiera najlepszą lokalizację składowania na podstawie wymogów temperaturowych i gabarytów. Ręczna alokacja nie jest wymagana."
         }
       },
       "addingProducts": {
-        "title": "Dodawanie produktów",
+        "title": "Dodawanie Produktów",
         "steps": {
-          "step1": "Przejdź do zakładki Magazyn w panelu sterowania.",
+          "step1": "Przejdź do zakładki Warehouse w panelu sterowania.",
           "step2": "Kliknij przycisk Dodaj produkt w prawym górnym rogu.",
-          "step3": "Wprowadź kod kreskowy, wymiary i specyficzne wymagania dotyczące zakresu temperatur."
+          "step3": "Wprowadź kod kreskowy, wymiary oraz specyficzne wymagania dotyczące zakresu temperatur."
         },
-        "hint": "Uwaga: Każdy kod kreskowy musi być unikalny w globalnej bazie danych systemu."
+        "hint": "Uwaga: Każdy kod kreskowy musi być unikalny w skali globalnej bazy danych systemu."
       },
       "monitoring": {
-        "title": "Monitorowanie środowiska",
-        "description": "Faraday zapewnia telemetrię w czasie rzeczywistym dla temperatury półek i obciążenia wagowego.",
+        "title": "Monitoring Środowiskowy",
+        "description": "Faraday zapewnia telemetrię w czasie rzeczywistym dla temperatury półek oraz obciążenia wagowego.",
         "indicators": {
           "green": "Zielony: Wszystkie parametry mieszczą się w bezpiecznych granicach.",
-          "red": "Czerwony: Przekroczono próg. Wymagana natychmiastowa interwencja."
+          "red": "Czerwony: Przekroczono próg alarmowy. Wymagana natychmiastowa interwencja."
         }
       }
     }

@@ -1,5 +1,5 @@
 import { Activity, ShieldCheck, ArrowUpRight } from "lucide-react";
-import { useTranslation } from "../../context/LanguageContext";
+import { useTranslation } from "../../../context/LanguageContext";
 
 const OverviewContent = () => {
   const { t } = useTranslation();
@@ -22,7 +22,9 @@ const OverviewContent = () => {
         </div>
       </div>
       <div className="bento-card gray">
-        <div className="card-header">{t.dashboardPage.content.overview.warehouseLoad}</div>
+        <div className="card-header">
+          {t.dashboardPage.content.overview.warehouseLoad}
+        </div>
         <div className="circle-progress">84%</div>
       </div>
       <div className="bento-card accent">

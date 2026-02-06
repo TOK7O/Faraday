@@ -160,7 +160,7 @@
     },
     "navbar": {
       "path": "root / dashboard",
-      "searchPlaceholder": "CMD+K to search..."
+      "searchPlaceholder": "Search..."
     },
     "content": {
       "overview": {
@@ -195,7 +195,9 @@
     "sidebar": {
       "userManual": "User Manual",
       "nav": {
-        "introduction": "Introduction"
+        "introduction": "Introduction",
+        "addingProducts": "Adding Products",
+        "monitoring": "Monitoring"
       }
     },
     "content": {
