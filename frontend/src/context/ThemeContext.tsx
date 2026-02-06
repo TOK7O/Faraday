@@ -22,14 +22,12 @@ const getSystemTheme = (): Theme =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  // ⬇️ ZAWSZE startuj z systemu
   const [theme, setTheme] = useState<Theme>(getSystemTheme);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
 
-  // 🔄 reaguj na zmiany systemu
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -41,7 +39,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     return () => mq.removeEventListener("change", handleChange);
   }, []);
 
-  // 🎨 synchronizacja z DOM
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);

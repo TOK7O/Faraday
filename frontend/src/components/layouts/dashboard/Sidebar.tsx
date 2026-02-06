@@ -6,8 +6,7 @@ import {
   Users,
   History,
   FileText,
-  Palette,
-  Languages,
+  Settings,
   LogOut,
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext.tsx";
@@ -49,12 +48,10 @@ const Sidebar = () => {
           <span className="group-label">
             {t.dashboardPage.sidebar.groups.settings}
           </span>
-          <button className="nav-item">
-            <Palette size={18} /> {t.dashboardPage.sidebar.nav.theme}
-          </button>
-          <button className="nav-item">
-            <Languages size={18} /> {t.dashboardPage.sidebar.nav.language}
-          </button>
+
+          <Tabs.Trigger className="nav-item" value="settings">
+            <Settings size={18} /> Preferences
+          </Tabs.Trigger>
         </div>
       </Tabs.List>
 

@@ -177,10 +177,16 @@ const PersonnelContent = () => {
                                     <DropdownMenu.Trigger asChild>
                                         <button className="btn-action-ht"><MoreVertical size={20} /></button>
                                     </DropdownMenu.Trigger>
-                                    <DropdownMenu.Content className="dropdown-ht" align="end" sideOffset={10}>
-                                        <DropdownMenu.Item className="dd-item"><Settings size={14} /> Configure</DropdownMenu.Item>
-                                        <DropdownMenu.Item className="dd-item danger"><Trash2 size={14} /> Terminate</DropdownMenu.Item>
-                                    </DropdownMenu.Content>
+                                    <DropdownMenu.Portal>
+                                        <DropdownMenu.Content className="dropdown-ht" align="end" sideOffset={10}>
+                                            <DropdownMenu.Item className="dd-item">
+                                                <Settings size={14} /> Configure
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item className="dd-item danger">
+                                                <Trash2 size={14} /> Terminate
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Portal>
                                 </DropdownMenu.Root>
                             </td>
                         </tr>

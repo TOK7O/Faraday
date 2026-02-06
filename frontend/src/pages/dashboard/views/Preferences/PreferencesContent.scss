@@ -1,0 +1,139 @@
+﻿.preferences-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+  animation: fadeIn 0.4s ease-out;
+
+  .view-header {
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+    .text-muted {
+      color: var(--text-muted);
+      margin: 0;
+    }
+  }
+
+  .preferences-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    max-width: 800px;
+  }
+
+  .pref-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-input);
+
+      .icon-accent {
+        color: var(--accent-primary);
+      }
+
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-main);
+      }
+    }
+
+    .options-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+  }
+
+  .option-card {
+    background: color-mix(in srgb, var(--bg-input), transparent 70%);
+    border: 1px solid var(--border-input);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    text-align: left;
+    outline: none;
+
+    &:hover {
+      background: color-mix(in srgb, var(--bg-input), transparent 40%);
+      transform: translateY(-2px);
+    }
+
+    // Active State Styling
+    &.active {
+      background: rgba(var(--accent-primary-rgb), 0.1); // Assuming you have RGB var, else use color-mix
+      background: color-mix(in srgb, var(--accent-primary), transparent 85%);
+      border-color: var(--accent-primary);
+
+      .card-icon {
+        color: var(--accent-primary);
+        background: var(--bg-form);
+      }
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-input);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+
+      .label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-main);
+      }
+
+      .sub-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+    }
+
+    .check-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 20px;
+      height: 20px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

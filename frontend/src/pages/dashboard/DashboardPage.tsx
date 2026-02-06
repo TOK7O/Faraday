@@ -6,8 +6,9 @@ import {Link} from "react-router-dom";
 // Views
 import OverviewContent from "./views/OverviewContent";
 import InventoryContent from "./views/Inventory/InventoryContent";
-import PersonnelContent from "./views/PersonnelContent";
+import PersonnelContent from "./views/Personnel/PersonnelContent";
 import ReportsContent from "./views/ReportsContent";
+import PreferencesContent from "./views/Preferences/PreferencesContent";
 
 // Components
 import Sidebar from "@/components/layouts/dashboard/Sidebar";
@@ -60,6 +61,9 @@ const DashboardPage = () => {
                             <div className="placeholder-card">
                                 {t.dashboardPage.content.reports.generator}
                             </div>
+                        </Tabs.Content>
+                        <Tabs.Content value="settings">
+                            <PreferencesContent />
                         </Tabs.Content>
                     </section>
                 </main>

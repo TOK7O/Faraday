@@ -1,8 +1,9 @@
 {
+  "type": "module",
   "devDependencies": {
+    "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.3.0",
-    "lefthook": "^2.1.0",
     "sass-embedded": "^1.97.2",
     "typescript-eslint": "^8.54.0"
   },
