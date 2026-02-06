@@ -78,7 +78,7 @@
 
     // Active State Styling
     &.active {
-      background: rgba(var(--accent-primary-rgb), 0.1); // Assuming you have RGB var, else use color-mix
+      background: rgba(var(--accent-primary-rgb), 0.1);
       background: color-mix(in srgb, var(--accent-primary), transparent 85%);
       border-color: var(--accent-primary);
 

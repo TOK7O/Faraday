@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Select from "@radix-ui/react-select";
 import {
     Plus, MoreVertical, User, Activity, ChevronDown, Check,
-    X, Mail, Fingerprint, Briefcase, Search, Settings, Trash2, ShieldCheck, Cpu
+    X, Mail, Fingerprint, Briefcase, Search, Settings, Trash2, ShieldCheck, Cpu, RefreshCcw
 } from "lucide-react";
 import "./PersonnelContent.scss";
 
@@ -14,17 +14,28 @@ interface StaffMember {
     email: string;
     role: string;
     status: "active" | "break" | "offline";
-    lastActive: string;
 }
+
+const INITIAL_STAFF: StaffMember[] = [
+    { id: "STAFF-01", name: "Jan Kowalski", email: "j.kowalski@faraday.systems", role: "Warehouse Manager", status: "active" },
+    { id: "STAFF-02", name: "Anna Nowak", email: "a.nowak@faraday.systems", role: "Forklift Operator", status: "break" },
+    { id: "STAFF-03", name: "Marek Zima", email: "m.zima@faraday.systems", role: "Logistics Specialist", status: "offline" },
+    { id: "STAFF-04", name: "Ewa Bema", email: "e.bema@faraday.systems", role: "Security Chief", status: "active" },
+];
 
 const PersonnelContent = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [staff] = useState<StaffMember[]>(INITIAL_STAFF);
 
-    const [staff] = useState<StaffMember[]>([
-        { id: "STAFF-01", name: "Jan KOWALSKI", email: "e.JanKOWALSKI@faraday.systems", role: "Warehouse Manager", status: "active", lastActive: "Now" },
-        { id: "STAFF-02", name: "Jan KOWALSKI", email: "k.JanKOWALSKI@faraday.systems", role: "Forklift Operator", status: "break", lastActive: "15m ago" },
-        { id: "STAFF-03", name: "Jan KOWALSKI", email: "m.JanKOWALSKI@faraday.systems", role: "Logistics Specialist", status: "offline", lastActive: "2h ago" },
-    ]);
+    const filteredStaff = useMemo(() => {
+        return staff.filter(person =>
+            person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            person.id.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [searchQuery, staff]);
+
+    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
 
     return (
         <div className="personnel-view-container">
@@ -35,54 +46,59 @@ const PersonnelContent = () => {
                         <span>Personnel Management System</span>
                     </div>
                     <h1>Personnel <span className="outline-text">Database</span></h1>
-                    <p className="lead-text">Manage operators, permissions, and biometric access to the warehouse cluster.</p>
+                    <p className="lead-text">Monitor operator availability and manage biometric security credentials across the cluster.</p>
+                </div>
+                <div className="sync-info">
+                    <RefreshCcw size={14} />
+                    <span>Last Sync: {new Date().toLocaleTimeString()}</span>
                 </div>
             </header>
 
             <div className="stats-grid">
-                <div className="glass-card">
-                    <div className="card-inner">
-                        <div className="icon-box"><User size={24} /></div>
-                        <div className="data">
-                            <span className="label">Total Personnel</span>
-                            <span className="value">{staff.length}</span>
+                {[
+                    { label: "Total Personnel", value: staff.length, icon: <User size={22} />, active: false },
+                    { label: "Active Now", value: staff.filter(s => s.status === 'active').length, icon: <Activity size={22} />, active: true },
+                    { label: "On Break", value: staff.filter(s => s.status === 'break').length, icon: <RefreshCcw size={22} />, active: false }
+                ].map((stat, i) => (
+                    <div className="glass-card" key={i}>
+                        <div className="card-inner">
+                            <div className={`icon-box ${stat.active ? 'active' : ''}`}>{stat.icon}</div>
+                            <div className="data">
+                                <span className="label">{stat.label}</span>
+                                <span className="value">{stat.value}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="glass-card">
-                    <div className="card-inner">
-                        <div className="icon-box active"><Activity size={24} /></div>
-                        <div className="data">
-                            <span className="label">Current Operators</span>
-                            <span className="value">{staff.filter(s => s.status === 'active').length}</span>
-                        </div>
-                    </div>
-                </div>
+                ))}
             </div>
 
             <div className="action-bar">
                 <div className="search-container">
                     <Search size={18} className="search-icon" />
-                    <input type="text" placeholder="Search personnel database..." />
+                    <input
+                        type="text"
+                        placeholder="Filter by ID or Name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
 
                 <Dialog.Root open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                     <Dialog.Trigger asChild>
                         <button className="btn-primary-ht">
                             <Plus size={18} />
-                            <span>Register New Operator</span>
+                            <span>Register Operator</span>
                         </button>
                     </Dialog.Trigger>
+
                     <Dialog.Portal>
                         <Dialog.Overlay className="dialog-overlay-ht" />
                         <Dialog.Content className="dialog-content-ht">
                             <div className="modal-accent-line" />
                             <div className="modal-header">
-                                <Dialog.Title asChild>
-                                    <h2>Operator Authorization</h2>
-                                </Dialog.Title>
+                                <Dialog.Title>Operator Authorization</Dialog.Title>
                                 <Dialog.Close asChild>
-                                    <button className="btn-close"><X size={24} /></button>
+                                    <button className="btn-close"><X size={20} /></button>
                                 </Dialog.Close>
                             </div>
 
@@ -102,30 +118,18 @@ const PersonnelContent = () => {
                                         <Select.Root defaultValue="operator">
                                             <Select.Trigger className="ht-select-trigger">
                                                 <Select.Value />
-                                                <Select.Icon className="select-chevron">
-                                                    <ChevronDown size={16} />
-                                                </Select.Icon>
+                                                <Select.Icon className="select-chevron"><ChevronDown size={14} /></Select.Icon>
                                             </Select.Trigger>
-
                                             <Select.Portal>
-                                                <Select.Content
-                                                    className="ht-select-content"
-                                                    position="popper"
-                                                    sideOffset={5}
-                                                >
+                                                <Select.Content className="ht-select-content" position="popper" sideOffset={5}>
                                                     <Select.Viewport className="ht-select-viewport">
                                                         <Select.Item className="ht-select-item" value="operator">
-                                                            <Select.ItemText>Warehouse Operator</Select.ItemText>
-                                                            <Select.ItemIndicator>
-                                                                <Check size={14}/>
-                                                            </Select.ItemIndicator>
+                                                            <Select.ItemText>Operator</Select.ItemText>
+                                                            <Select.ItemIndicator><Check size={14}/></Select.ItemIndicator>
                                                         </Select.Item>
-
                                                         <Select.Item className="ht-select-item" value="manager">
                                                             <Select.ItemText>Fleet Manager</Select.ItemText>
-                                                            <Select.ItemIndicator>
-                                                                <Check size={14}/>
-                                                            </Select.ItemIndicator>
+                                                            <Select.ItemIndicator><Check size={14}/></Select.ItemIndicator>
                                                         </Select.Item>
                                                     </Select.Viewport>
                                                 </Select.Content>
@@ -137,7 +141,7 @@ const PersonnelContent = () => {
                                         <input type="text" placeholder="FS-XXXX" />
                                     </div>
                                 </div>
-                                <button type="submit" className="btn-submit-ht">Confirm & Generate Access</button>
+                                <button type="submit" className="btn-submit-ht">Confirm & Authorize</button>
                             </form>
                         </Dialog.Content>
                     </Dialog.Portal>
@@ -148,18 +152,26 @@ const PersonnelContent = () => {
                 <table className="ht-table">
                     <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Employee</th>
-                        <th>Role</th>
+                        <th>Employee ID</th>
+                        <th>Identity</th>
+                        <th>Assigned Role</th>
                         <th>Status</th>
-                        <th className="text-right">Actions</th>
+                        <th className="text-right">Management</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {staff.map((person) => (
+                    {filteredStaff.map((person) => (
                         <tr key={person.id}>
                             <td className="id-col">{person.id}</td>
-                            <td className="name-col">{person.name}</td>
+                            <td className="name-col">
+                                <div className="user-info-cell">
+                                    <div className="avatar-mini">{getInitials(person.name)}</div>
+                                    <div className="details">
+                                        <span className="full-name">{person.name}</span>
+                                        <span className="sub-email">{person.email}</span>
+                                    </div>
+                                </div>
+                            </td>
                             <td>
                                 <div className="role-badge">
                                     <ShieldCheck size={12} />
@@ -175,15 +187,16 @@ const PersonnelContent = () => {
                             <td className="text-right">
                                 <DropdownMenu.Root>
                                     <DropdownMenu.Trigger asChild>
-                                        <button className="btn-action-ht"><MoreVertical size={20} /></button>
+                                        <button className="btn-action-ht"><MoreVertical size={18} /></button>
                                     </DropdownMenu.Trigger>
                                     <DropdownMenu.Portal>
                                         <DropdownMenu.Content className="dropdown-ht" align="end" sideOffset={10}>
                                             <DropdownMenu.Item className="dd-item">
-                                                <Settings size={14} /> Configure
+                                                <Settings size={14} /> Configure Access
                                             </DropdownMenu.Item>
+                                            <DropdownMenu.Separator className="dd-divider" />
                                             <DropdownMenu.Item className="dd-item danger">
-                                                <Trash2 size={14} /> Terminate
+                                                <Trash2 size={14} /> Revoke Permissions
                                             </DropdownMenu.Item>
                                         </DropdownMenu.Content>
                                     </DropdownMenu.Portal>
@@ -193,6 +206,9 @@ const PersonnelContent = () => {
                     ))}
                     </tbody>
                 </table>
+                {filteredStaff.length === 0 && (
+                    <div className="empty-state">No operators matching current filters.</div>
+                )}
             </div>
         </div>
     );
