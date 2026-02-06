@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import "./DashboardPage.scss";
+import {Link} from "react-router-dom";
 
 // Views
 import OverviewContent from "./views/OverviewContent";
@@ -32,7 +33,9 @@ const DashboardPage = () => {
 
                 <aside className="dashboard-sidebar desktop-only">
                     <div className="sidebar-logo">
-                        <span>Faraday<span>Systems</span></span>
+                        <Link to="/">
+                            <span>Faraday<span>Systems</span></span>
+                        </Link>
                     </div>
                     <Sidebar />
                 </aside>

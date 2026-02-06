@@ -52,3 +52,10 @@ a:hover {
   color: var(--text-main);
   text-decoration: none;
 }
+
+input, select, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  border-radius: 0;
+}

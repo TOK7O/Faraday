@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X } from "lucide-react";
 import Sidebar from "@/components/layouts/dashboard/Sidebar";
+import {Link} from "react-router-dom";
 
 const MobileNavbar = () => (
     <div className="mobile-interface">
@@ -15,7 +16,9 @@ const MobileNavbar = () => (
                 <Dialog.Content className="dialog-sidebar-content">
                     <div className="sidebar-header-mobile">
                         <div className="sidebar-logo">
-                            <span>Faraday<span>Systems</span></span>
+                            <Link to="/">
+                                <span>Faraday<span>Systems</span></span>
+                            </Link>
                         </div>
                         <Dialog.Close asChild>
                             <button className="close-btn"><X size={24} /></button>
