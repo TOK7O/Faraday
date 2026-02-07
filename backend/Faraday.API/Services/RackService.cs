@@ -4,6 +4,8 @@ using Faraday.API.Data;
 using Faraday.API.DTOs;
 using Faraday.API.Models;
 using Faraday.API.Services.Interfaces;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace Faraday.API.Services
 {
@@ -102,69 +104,192 @@ namespace Faraday.API.Services
 
         public async Task DeleteRackAsync(int id)
         {
+            // Check if Rack is empty (cannot delete if not)
+            // Optimization: Check directly in DB to avoid loading all slots into memory
+            bool hasItems = await _context.Racks
+                .Where(r => r.Id == id)
+                .SelectMany(r => r.Slots)
+                .AnyAsync(s => s.CurrentItem != null);
+
+            if (hasItems)
+            {
+                // Retrieve code only for the error message
+                var rackCode = await _context.Racks
+                    .Where(r => r.Id == id)
+                    .Select(r => r.Code)
+                    .FirstOrDefaultAsync() ?? "Unknown";
+
+                throw new InvalidOperationException(
+                    $"Cannot delete rack {rackCode} because it contains items. " +
+                    "Please move items first.");
+            }
+
             var rack = await _context.Racks.FindAsync(id);
             if (rack != null)
             {
+                // Soft delete
                 rack.IsActive = false;
+
+                // Rename to free up the code for future use
+                // Pattern: "ARCHIVED: R-01", then "ARCHIVED_1: R-01", "ARCHIVED_2: R-01", etc.
+                string originalCode = rack.Code;
+                string newCode = $"ARCHIVED: {originalCode}";
+                int counter = 1;
+
+                // We must use IgnoreQueryFilters to check against other archived items too
+                while (await _context.Racks.IgnoreQueryFilters().AnyAsync(r => r.Code == newCode))
+                {
+                    newCode = $"ARCHIVED_{counter}: {originalCode}";
+                    counter++;
+                }
+
+                rack.Code = newCode;
+                
+                // Add a comment about deletion date for clarity
+                rack.Comment = $"{rack.Comment} - [Deleted at {DateTime.UtcNow}]".Trim();
+
                 await _context.SaveChangesAsync();
+                _logger.LogInformation($"Rack {id} soft-deleted and renamed to '{newCode}'.");
             }
         }
 
         public async Task<(int successCount, int errorCount, List<string> errors)> ImportRacksFromCsvAsync(Stream fileStream)
         {
             var errors = new List<string>();
+            var validDtos = new List<RackCreateDto>();
             int successCount = 0;
             int errorCount = 0;
 
             using var reader = new StreamReader(fileStream);
-            int lineNumber = 0;
-            string? line;
+            
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = ";",
+                Comment = '#',
+                AllowComments = true,
+                HasHeaderRecord = false, // # serves as a header, so we skip this
+                MissingFieldFound = null,
+                BadDataFound = null
+            };
 
-            while ((line = await reader.ReadLineAsync()) != null)
+            using var csv = new CsvReader(reader, config);
+            
+            csv.Context.RegisterClassMap<RackImportMap>();
+
+            int lineNumber = 0;
+            
+            // Read all valid records into memory
+            while (await csv.ReadAsync())
             {
                 lineNumber++;
-
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                
-                // Ignore "#"
-                if (line.TrimStart().StartsWith("#")) continue;
-
-                var parts = line.Split(';');
-                
-                if (parts.Length < 10)
-                {
-                    errors.Add($"Line {lineNumber}: Invalid format. Expected at least 10 columns.");
-                    errorCount++;
-                    continue;
-                }
-
                 try
                 {
-                    var dto = new RackCreateDto
-                    {
-                        Code = parts[0].Trim(),
-                        Rows = int.Parse(parts[1], CultureInfo.InvariantCulture),
-                        Columns = int.Parse(parts[2], CultureInfo.InvariantCulture),
-                        MinTemperature = decimal.Parse(parts[3], CultureInfo.InvariantCulture),
-                        MaxTemperature = decimal.Parse(parts[4], CultureInfo.InvariantCulture),
-                        MaxWeightKg = decimal.Parse(parts[5], CultureInfo.InvariantCulture),
-                        MaxItemWidthMm = decimal.Parse(parts[6], CultureInfo.InvariantCulture),
-                        MaxItemHeightMm = decimal.Parse(parts[7], CultureInfo.InvariantCulture),
-                        MaxItemDepthMm = decimal.Parse(parts[8], CultureInfo.InvariantCulture),
-                        Comment = parts[9].Trim()
-                    };
-
-                    await CreateRackAsync(dto);
-                    successCount++;
+                    var dto = csv.GetRecord<RackCreateDto>();
+                    validDtos.Add(dto);
                 }
                 catch (Exception ex)
                 {
-                    errors.Add($"Line {lineNumber}: {ex.Message}");
+                    errors.Add($"Row {lineNumber}: {ex.Message}");
                     errorCount++;
                 }
             }
 
+            if (!validDtos.Any())
+            {
+                return (0, errorCount, errors);
+            }
+
+            // Duplicate validation
+            
+            // Remove duplicates within the file based on Code
+            var distinctDtos = validDtos.DistinctBy(d => d.Code).ToList();
+            if (distinctDtos.Count < validDtos.Count)
+            {
+                var removedCount = validDtos.Count - distinctDtos.Count;
+                errors.Add($"Skipped {removedCount} duplicate rack(s) found within the CSV file.");
+                errorCount += removedCount;
+            }
+
+            // Check against database
+            var newRackCodes = distinctDtos.Select(d => d.Code).ToList();
+            var existingRackCodes = await _context.Racks
+                .Where(r => newRackCodes.Contains(r.Code))
+                .Select(r => r.Code)
+                .ToListAsync();
+
+            var racksToAdd = new List<Rack>();
+
+            foreach (var dto in distinctDtos)
+            {
+                if (existingRackCodes.Contains(dto.Code))
+                {
+                    errors.Add($"Rack with Code '{dto.Code}' already exists in the database. Skipped.");
+                    errorCount++;
+                    continue;
+                }
+
+                // Map DTO to Entity
+                var rack = new Rack
+                {
+                    Code = dto.Code,
+                    Rows = dto.Rows,
+                    Columns = dto.Columns,
+                    MinTemperature = dto.MinTemperature,
+                    MaxTemperature = dto.MaxTemperature,
+                    MaxWeightKg = dto.MaxWeightKg,
+                    MaxItemWidthMm = dto.MaxItemWidthMm,
+                    MaxItemHeightMm = dto.MaxItemHeightMm,
+                    MaxItemDepthMm = dto.MaxItemDepthMm,
+                    Comment = dto.Comment,
+                    IsActive = true
+                };
+
+                // Generate slots in memory
+                for (int x = 1; x <= dto.Columns; x++)
+                {
+                    for (int y = 1; y <= dto.Rows; y++)
+                    {
+                        rack.Slots.Add(new RackSlot
+                        {
+                            X = x,
+                            Y = y,
+                            Status = RackSlotStatus.Available
+                        });
+                    }
+                }
+
+                racksToAdd.Add(rack);
+            }
+
+            // Insert Racks
+            if (racksToAdd.Any())
+            {
+                await _context.Racks.AddRangeAsync(racksToAdd);
+                await _context.SaveChangesAsync();
+
+                successCount += racksToAdd.Count;
+                _logger.LogInformation($"Bulk imported {racksToAdd.Count} racks from CSV.");
+            }
+
             return (successCount, errorCount, errors);
         }
+        
+        private sealed class RackImportMap : ClassMap<RackCreateDto>
+        {
+            public RackImportMap()
+            {
+                Map(m => m.Code).Index(0);
+                Map(m => m.Rows).Index(1);
+                Map(m => m.Columns).Index(2);
+                Map(m => m.MinTemperature).Index(3);
+                Map(m => m.MaxTemperature).Index(4);
+                Map(m => m.MaxWeightKg).Index(5);
+                Map(m => m.MaxItemWidthMm).Index(6);
+                Map(m => m.MaxItemHeightMm).Index(7);
+                Map(m => m.MaxItemDepthMm).Index(8);
+                Map(m => m.Comment).Index(9);
+            }
+        }
+        
     }
 }

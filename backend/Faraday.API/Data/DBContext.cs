@@ -69,6 +69,7 @@ namespace Faraday.API.Data
                 .WithOne(s => s.CurrentItem)
                 .HasForeignKey<InventoryItem>(i => i.RackSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
         }
     }
 }
