@@ -29,7 +29,7 @@ namespace Faraday.API.Services
             try
             {
                 // Identify product
-                var product = await _context.Products.FirstOrDefaultAsync(p => p.Barcode == request.Barcode);
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == request.Barcode);
                 if (product == null)
                     throw new KeyNotFoundException($"Product with barcode {request.Barcode} not found.");
 
@@ -104,7 +104,7 @@ namespace Faraday.API.Services
                     .Include(i => i.Slot)
                     .ThenInclude(s => s.Rack)
                     .Include(i => i.Product)
-                    .Where(i => i.Product.Barcode == request.Barcode && i.Status == ItemStatus.InStock)
+                    .Where(i => i.Product.ScanCode == request.Barcode && i.Status == ItemStatus.InStock)
                     .OrderBy(i => i.EntryDate) 
                     .FirstOrDefaultAsync();
 
@@ -179,9 +179,9 @@ namespace Faraday.API.Services
                     throw new KeyNotFoundException($"No item found at source location {request.SourceRackCode} [{request.SourceSlotX},{request.SourceSlotY}].");
 
                 // We check if the item matches the barcode provided - if it doesn't throw error at the user.
-                if (itemToMove.Product.Barcode != request.Barcode)
+                if (itemToMove.Product.ScanCode != request.Barcode)
                 {
-                    throw new InvalidOperationException($"Mismatch. Slot contains '{itemToMove.Product.Name}' ({itemToMove.Product.Barcode}), but you scanned '{request.Barcode}'.");
+                    throw new InvalidOperationException($"Mismatch. Slot contains '{itemToMove.Product.Name}' ({itemToMove.Product.ScanCode}), but you scanned '{request.Barcode}'.");
                 }
 
                 // Find target slot
@@ -256,7 +256,7 @@ namespace Faraday.API.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation($"Moved item {product.Barcode} from {request.SourceRackCode} to {request.TargetRackCode}");
+                _logger.LogInformation($"Moved item {product.ScanCode} from {request.SourceRackCode} to {request.TargetRackCode}");
 
                 return new OperationResultDto
                 {

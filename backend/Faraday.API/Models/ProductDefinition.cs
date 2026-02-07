@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Faraday.API.Models
 {
-    [Index(nameof(Barcode), IsUnique = true)]
+    [Index(nameof(ScanCode), IsUnique = true)]
     public class ProductDefinition : BaseEntity
     {
         [Key]
@@ -11,7 +11,7 @@ namespace Faraday.API.Models
 
         [Required]
         [MaxLength(100)]
-        public required string Barcode { get; set; }
+        public required string ScanCode { get; set; }
 
         [Required]
         [MaxLength(200)]

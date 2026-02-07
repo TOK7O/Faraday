@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
+using Faraday.API.Workers;
 
 
 
@@ -81,10 +82,16 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Registration of WMS services.
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRackService, RackService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IWarehouseAlgorithmService, WarehouseAlgorithmService>();
 builder.Services.AddScoped<IOperationService, OperationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IBackupService, BackupService>();
+
+// Registration of WMS workers.
+builder.Services.AddHostedService<BackupBackgroundWorker>();
 
 var app = builder.Build();
 

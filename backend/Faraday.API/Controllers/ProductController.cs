@@ -35,13 +35,13 @@ namespace Faraday.API.Controllers
             return Ok(product);
         }
 
-        [HttpGet("barcode/{barcode}")]
-        public async Task<ActionResult<ProductDto>> GetByBarcode(string barcode)
+        [HttpGet("scanCode/{scanCode}")]
+        public async Task<ActionResult<ProductDto>> GetScanCode(string scanCode)
         {
-            var product = await _productService.GetProductByBarcodeAsync(barcode);
+            var product = await _productService.GetProductByScanCodeAsync(scanCode);
             if (product == null)
             {
-                return NotFound($"Product with barcode {barcode} not found.");
+                return NotFound($"Product with scanCode {scanCode} not found.");
             }
             return Ok(product);
         }

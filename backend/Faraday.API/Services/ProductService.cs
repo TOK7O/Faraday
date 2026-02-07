@@ -23,7 +23,7 @@ namespace Faraday.API.Services
             return new ProductDto
             {
                 Id = p.Id,
-                Barcode = p.Barcode,
+                ScanCode = p.ScanCode,
                 Name = p.Name,
                 PhotoUrl = p.PhotoUrl,
                 RequiredMinTemp = p.RequiredMinTemp,
@@ -54,22 +54,22 @@ namespace Faraday.API.Services
             return product == null ? null : MapToDto(product);
         }
 
-        public async Task<ProductDto?> GetProductByBarcodeAsync(string barcode)
+        public async Task<ProductDto?> GetProductByScanCodeAsync(string scanCode)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Barcode == barcode);
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == scanCode);
             return product == null ? null : MapToDto(product);
         }
 
         public async Task<ProductDto> CreateProductAsync(ProductCreateDto dto)
         {
-            if (await _context.Products.AnyAsync(p => p.Barcode == dto.Barcode))
+            if (await _context.Products.AnyAsync(p => p.ScanCode == dto.ScanCode))
             {
-                throw new InvalidOperationException($"Product with barcode {dto.Barcode} already exists.");
+                throw new InvalidOperationException($"Product with scanCode {dto.ScanCode} already exists.");
             }
 
             var product = new ProductDefinition
             {
-                Barcode = dto.Barcode,
+                ScanCode = dto.ScanCode,
                 Name = dto.Name,
                 PhotoUrl = dto.PhotoUrl,
                 RequiredMinTemp = dto.RequiredMinTemp,
@@ -94,7 +94,7 @@ namespace Faraday.API.Services
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Created product definition: {product.Name} ({product.Barcode})");
+            _logger.LogInformation($"Created product definition: {product.Name} ({product.ScanCode})");
             return MapToDto(product);
         }
 
@@ -145,7 +145,7 @@ namespace Faraday.API.Services
                     var dto = new ProductCreateDto
                     {
                         Name = parts[0].Trim(),
-                        Barcode = parts[1].Trim(),
+                        ScanCode = parts[1].Trim(),
                         PhotoUrl = parts[2].Trim(),
                         RequiredMinTemp = decimal.Parse(parts[3], CultureInfo.InvariantCulture),
                         RequiredMaxTemp = decimal.Parse(parts[4], CultureInfo.InvariantCulture),

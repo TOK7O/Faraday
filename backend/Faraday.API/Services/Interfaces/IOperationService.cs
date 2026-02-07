@@ -15,8 +15,8 @@ namespace Faraday.API.Services.Interfaces
         Task<OperationResultDto> ProcessOutboundAsync(OperationOutboundDto request, int userId);
 
         /// <summary>
-        /// Moves item from current slot to a specific target slot (this is intended for manual overdrive of system allocation
-        /// in case such movement inside the warehouse is needed)
+        /// Moves item from current slot to a specific target slot (this is intended for manual overdrive of system 
+        /// allocation in case such movement inside the warehouse is needed)
         /// Validates constraints (Size, Weight, Temp) before moving.
         /// </summary>
         Task<OperationResultDto> ProcessMovementAsync(OperationMovementDto request, int userId);

@@ -8,7 +8,7 @@ namespace Faraday.API.DTOs
     {
         [Required]
         [MaxLength(100)]
-        public string Barcode { get; set; } = string.Empty;
+        public string ScanCode { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(200)]

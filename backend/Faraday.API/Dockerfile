@@ -7,5 +7,6 @@ RUN dotnet publish "Faraday.API.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
+RUN apt-get update && apt-get install -y postgresql-client
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Faraday.API.dll"]

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace Faraday.API.Models
 {
@@ -24,12 +25,17 @@ namespace Faraday.API.Models
         public required string PasswordHash { get; set; }
 
         public UserRole Role { get; set; }
+        
+        public bool IsTwoFactorEnabled { get; set; } = false;
 
         [MaxLength(100)]
+        [JsonIgnore]
         public string? TwoFactorSecretKey { get; set; }
 
         public DateTime? LastLoginDate { get; set; }
 
         public bool IsActive { get; set; } = true;
+        
+        
     }
 }
