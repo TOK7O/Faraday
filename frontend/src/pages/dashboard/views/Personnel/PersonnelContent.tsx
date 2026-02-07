@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { PersonnelHeader } from "@/components/layouts/dashboard/personnel/PersonnelHeader";
-import { PersonnelStats } from "@/components/layouts/dashboard/personnel/PersonnelStats";
+// import { PersonnelStats } from "@/components/layouts/dashboard/personnel/PersonnelStats";
 import { PersonnelActionBar } from "@/components/layouts/dashboard/personnel/PersonnelActionBar";
 import { StaffTable } from "@/components/layouts/dashboard/personnel/StaffTable";
 import type {StaffMember} from "@/components/layouts/dashboard/personnel/types";
