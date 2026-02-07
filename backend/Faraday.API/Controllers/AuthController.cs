@@ -1,13 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Faraday.API.Data;
-using Faraday.API.Models;
 using Faraday.API.DTOs;
-using BCrypt.Net;
+using Faraday.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Faraday.API.Controllers
@@ -16,79 +9,103 @@ namespace Faraday.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly FaradayDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
 
-        public AuthController(FaradayDbContext context, IConfiguration configuration)
+        public AuthController(IAuthService authService)
         {
-            _context = context;
-            _configuration = configuration;
+            _authService = authService;
         }
+
         [Authorize(Roles = "Administrator")]
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto request)
         {
-            if (await _context.Users.AnyAsync(u => u.Username == request.Username))
+            try
             {
-                return BadRequest("User already exists.");
+                await _authService.RegisterAsync(request);
+                return Ok("Registered successfully");
             }
-
-            var user = new User
+            catch (Exception ex)
             {
-                Username = request.Username,
-                Email = request.Email,
-                Role = request.Role,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                IsActive = true
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok("Registered successfully");
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponseDto>> Login(LoginDto request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            try
             {
-                return BadRequest("Incorrect login or password");
+                var response = await _authService.LoginAsync(request);
+                return Ok(response);
             }
-
-            string token = CreateToken(user);
-
-            return Ok(new LoginResponseDto
+            // We use 428 Precondition Required to signal the frontend that 2FA code is missing.
+            // This tells the UI to show the "Enter 2FA Code" input.
+            catch (InvalidOperationException ex) when (ex.Message == "2FA_REQUIRED")
             {
-                Token = token,
-                Username = user.Username,
-                Role = user.Role.ToString()
-            });
+                return StatusCode(428, new { Message = "Two-Factor Authentication required", Code = "2FA_REQUIRED" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        private string CreateToken(User user)
+        [Authorize]
+        [HttpPost("2fa/setup")]
+        public async Task<ActionResult<TwoFactorSetupDto>> SetupTwoFactor()
         {
-            var claims = new List<Claim>
+            try
             {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("id", user.Id.ToString())
-            };
+                var userId = int.Parse(User.FindFirst("id")!.Value);
+                var result = await _authService.InitiateTwoFactorSetupAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto request)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("id")!.Value);
+                await _authService.ChangePasswordAsync(userId, request);
+                return Ok(new { Message = "Password changed successfully." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+        [Authorize]
+        [HttpPost("2fa/enable")]
+        public async Task<IActionResult> EnableTwoFactor([FromBody] TwoFactorVerifyDto dto)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("id")!.Value);
+                await _authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
+                return Ok(new { Message = "2FA has been enabled." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+        [Authorize]
+        [HttpPost("2fa/disable")]
+        public async Task<IActionResult> DisableTwoFactor()
+        {
+            var userId = int.Parse(User.FindFirst("id")!.Value);
+            await _authService.DisableTwoFactorAsync(userId);
+            return Ok(new { Message = "2FA disabled." });
         }
     }
 }
