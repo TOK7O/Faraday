@@ -1,26 +1,172 @@
-.inventory-view {
-  .rack-grid-container {
-    background: rgba(var(--bg-input), 0.3);
-    border: 1px solid var(--border-input);
-    border-radius: 24px;
-    padding: 2.5rem;
+.inventory-container {
+  padding: 2rem;
 
-    .slots-grid {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 10px;
-      .slot-pixel {
-        height: 35px;
-        background: rgba(var(--text-main), 0.1);
-        border-radius: 6px;
-        transition: all 0.2s;
-        cursor: pointer;
-        &:hover {
-          background: var(--accent-primary);
-          transform: scale(1.1);
-          box-shadow: 0 0 15px var(--accent-primary);
-        }
+  .inventory-tabs {
+    margin-top: 2rem;
+
+    .tabs-list {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-input);
+      margin-bottom: 2rem;
+    }
+
+    .tab-trigger {
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+
+      &[data-state='active'] {
+        color: var(--accent-primary);
+        border-bottom-color: var(--accent-primary);
+      }
+    }
+  }
+
+  .rack-visual-grid {
+    display: grid;
+    gap: 4px;
+    background: var(--bg-input);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 1rem 0;
+
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--text-main), transparent 90%);
+      position: relative;
+
+      &.occupied {
+        background: var(--accent-primary);
+        opacity: 0.6;
+      }
+
+      .fifo-tag {
+        position: absolute;
+        font-size: 8px;
+        background: var(--success-color);
+        color: white;
+        padding: 1px 3px;
+        border-radius: 2px;
+        top: -5px;
+        left: -5px;
       }
     }
   }
 }
+
+.tooltip-content {
+
+  background: color-mix(in srgb, var(--bg-form), transparent 5%);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--accent-primary);
+  padding: 12px 16px;
+  border-radius: 12px;
+  pointer-events: none;
+
+  font-family: "Space Grotesk", sans-serif;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
+  0 0 20px color-mix(in srgb, var(--accent-primary), transparent 80%);
+
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &[data-state='delayed-open'] {
+    animation: tooltipFadeIn 0.2s ease-out;
+  }
+}
+
+.glass-card, .rack-grid-container {
+  isolation: auto;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.ht-tabs-list {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.ht-tabs-trigger {
+  all: unset;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  padding-bottom: 8px;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.3s;
+
+  &[data-state="active"] {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+}
+
+.product-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.2rem;
+  position: relative;
+
+  .product-visual {
+    width: 60px;
+    height: 60px;
+    background: var(--bg-input);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    .alert-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      color: #ef4444;
+      background: var(--bg-form);
+      border-radius: 50%;
+    }
+  }
+
+  .product-data {
+    flex: 1;
+    .p-id { font-size: 0.7rem; color: var(--accent-primary); font-family: monospace; }
+    h3 { margin: 4px 0; font-size: 1.1rem; }
+    .p-specs, .p-dims {
+      display: flex;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      align-items: center;
+      margin-top: 4px;
+    }
+  }
+
+  .p-abs { position: absolute; top: 12px; right: 12px; }
+}
+
+.text-danger { color: #ef4444; }
+.text-primary { color: var(--accent-primary); }

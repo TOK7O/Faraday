@@ -13,3 +13,9 @@ $gray-dark: #333333;
 
 $black-deep: #1a1a1a;
 $black-soft: #242424;
+
+$accent-glow: rgba(var(--accent-primary-rgb), 0.3);
+$transition-base: all 0.2s ease-in-out;
+$radius-input: 10px;
+$radius-card: 16px;
+$radius-modal: 24px;
