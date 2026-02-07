@@ -5,6 +5,7 @@ import {
     Fingerprint, ChevronDown, Check
 } from "lucide-react";
 import "./PersonnelActionBar.scss";
+import { useTranslation } from "@/context/LanguageContext";
 
 interface ActionBarProps {
     searchQuery: string;
@@ -19,6 +20,9 @@ export const PersonnelActionBar = ({
                                        isModalOpen,
                                        setIsModalOpen
                                    }: ActionBarProps) => {
+    const { t } = useTranslation();
+    const persT = t.dashboardPage.content.personnel;
+
     return (
         <div className="action-bar">
             {/* WYSZUKIWARKA */}
@@ -26,7 +30,7 @@ export const PersonnelActionBar = ({
                 <Search size={18} className="search-icon" />
                 <input
                     type="text"
-                    placeholder="Filtruj po ID lub nazwisku..."
+                    placeholder={persT.searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -37,7 +41,7 @@ export const PersonnelActionBar = ({
                 <Dialog.Trigger asChild>
                     <button className="btn-primary-ht">
                         <Plus size={18} />
-                        <span>Zarejestruj Operatora</span>
+                        <span>{persT.registerOperator}</span>
                     </button>
                 </Dialog.Trigger>
 
@@ -48,7 +52,7 @@ export const PersonnelActionBar = ({
 
                         <div className="modal-header">
                             <Dialog.Title asChild>
-                                <h2>Autoryzacja Operatora</h2>
+                                <h2>{persT.authOperator}</h2>
                             </Dialog.Title>
                             <Dialog.Close asChild>
                                 <button className="btn-close"><X size={20} /></button>
@@ -57,18 +61,18 @@ export const PersonnelActionBar = ({
 
                         <form className="ht-form" onSubmit={(e) => e.preventDefault()}>
                             <div className="input-group">
-                                <label><User size={14} /> Pełne Imię i Nazwisko</label>
-                                <input type="text" placeholder="np. Jan Kowalski" required />
+                                <label><User size={14} /> {persT.fullName}</label>
+                                <input type="text" placeholder={persT.fullNamePlaceholder} required />
                             </div>
 
                             <div className="input-group">
-                                <label><Mail size={14} /> Email Systemowy</label>
-                                <input type="email" placeholder="j.kowalski@magazyn.pl" required />
+                                <label><Mail size={14} /> {persT.systemEmail}</label>
+                                <input type="email" placeholder={persT.emailPlaceholder} required />
                             </div>
 
                             <div className="input-row">
                                 <div className="input-group">
-                                    <label><Briefcase size={14} /> Rola w Sektorze</label>
+                                    <label><Briefcase size={14} /> {persT.sectorRole}</label>
                                     <Select.Root defaultValue="operator">
                                         <Select.Trigger className="ht-select-trigger">
                                             <Select.Value />
@@ -81,15 +85,15 @@ export const PersonnelActionBar = ({
                                             <Select.Content className="ht-select-content" position="popper" sideOffset={5}>
                                                 <Select.Viewport className="ht-select-viewport">
                                                     <Select.Item className="ht-select-item" value="operator">
-                                                        <Select.ItemText>Operator Magazynu</Select.ItemText>
+                                                        <Select.ItemText>{persT.roles.operator}</Select.ItemText>
                                                         <Select.ItemIndicator><Check size={14}/></Select.ItemIndicator>
                                                     </Select.Item>
                                                     <Select.Item className="ht-select-item" value="manager">
-                                                        <Select.ItemText>Kierownik Zmiany</Select.ItemText>
+                                                        <Select.ItemText>{persT.roles.manager}</Select.ItemText>
                                                         <Select.ItemIndicator><Check size={14}/></Select.ItemIndicator>
                                                     </Select.Item>
                                                     <Select.Item className="ht-select-item" value="admin">
-                                                        <Select.ItemText>Administrator Systemu</Select.ItemText>
+                                                        <Select.ItemText>{persT.roles.admin}</Select.ItemText>
                                                         <Select.ItemIndicator><Check size={14}/></Select.ItemIndicator>
                                                     </Select.Item>
                                                 </Select.Viewport>
@@ -99,13 +103,13 @@ export const PersonnelActionBar = ({
                                 </div>
 
                                 <div className="input-group">
-                                    <label><Fingerprint size={14} /> ID Bezpieczeństwa</label>
-                                    <input type="text" placeholder="FS-XXXX" required />
+                                    <label><Fingerprint size={14} /> {persT.securityId}</label>
+                                    <input type="text" placeholder={persT.securityIdPlaceholder} required />
                                 </div>
                             </div>
 
                             <button type="submit" className="btn-submit-ht">
-                                Potwierdź i Autoryzuj
+                                {persT.confirmAuth}
                             </button>
                         </form>
                     </Dialog.Content>

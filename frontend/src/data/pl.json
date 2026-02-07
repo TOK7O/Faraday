@@ -153,6 +153,8 @@
         "personnel": "Personel",
         "operations": "Operacje",
         "reports": "Raporty",
+        "backups": "Kopie zapasowe",
+        "settings": "Preferencje",
         "theme": "Motyw",
         "language": "Język"
       },
@@ -174,16 +176,84 @@
         "subtitle": "Zarządzanie regałami zgodnie z zasadą FIFO",
         "rack": "Regał",
         "dimensions": "Wymiary",
-        "temp": "Temp"
+        "temp": "Temp",
+        "managementCenter": "Centrum Zarządzania Magazynem",
+        "inventoryHub": "Inventory Hub",
+        "racksStructure": "Struktura Regałów",
+        "productCatalog": "Katalog Produktów",
+        "importCSV": "Importuj CSV",
+        "addRack": "Dodaj Regał",
+        "editRack": "Edytuj Regał",
+        "newRack": "Nowy Regał",
+        "idLabel": "ID / Oznaczenie",
+        "idPlaceholder": "np. R-01",
+        "sectionDescription": "Opis sekcji",
+        "sectionPlaceholder": "np. Sektor A",
+        "rowsM": "Rzędy (M)",
+        "colsN": "Kolumny (N)",
+        "maxWeightKg": "Max waga (kg)",
+        "tempMinMax": "Temp. Min/Max",
+        "slotDimensionsMm": "Wymiary slotu (mm)",
+        "confirmChanges": "Zatwierdź zmiany",
+        "searchProduct": "Szukaj produktu...",
+        "defineProduct": "Zdefiniuj Produkt",
+        "deleteConfirm": "Czy na pewno chcesz usunąć regał {id}?",
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "tempRange": "Zakres temp.",
+        "capacity": "Nośność"
       },
       "personnel": {
         "title": "Zarządzanie Personelem",
-        "placeholder": "Lista operatorów z aktywnym modułem 2FA"
+        "placeholder": "Lista operatorów z aktywnym modułem 2FA",
+        "managementSystem": "Centrum Zarządzania Personelem",
+        "database": "Baza Danych",
+        "monitorDescription": "Monitoruj dostępność operatorów i zarządzaj poświadczeniami bezpieczeństwa biometrycznego.",
+        "sync": "Sync",
+        "searchPlaceholder": "Filtruj po ID lub nazwisku...",
+        "registerOperator": "Zarejestruj Operatora",
+        "authOperator": "Autoryzacja Operatora",
+        "fullName": "Pełne Imię i Nazwisko",
+        "fullNamePlaceholder": "np. Jan Kowalski",
+        "systemEmail": "Email Systemowy",
+        "emailPlaceholder": "j.kowalski@magazyn.pl",
+        "sectorRole": "Rola w Sektorze",
+        "securityId": "ID Bezpieczeństwa",
+        "securityIdPlaceholder": "FS-XXXX",
+        "confirmAuth": "Potwierdź i Autoryzuj",
+        "roles": {
+          "operator": "Operator Magazynu",
+          "manager": "Kierownik Zmiany",
+          "admin": "Administrator Systemu"
+        },
+        "table": {
+          "employeeId": "ID Pracownika",
+          "identity": "Tożsamość",
+          "assignedRole": "Przypisana Rola",
+          "status": "Status",
+          "management": "Zarządzanie",
+          "configureAccess": "Konfiguruj Dostęp",
+          "revokePermissions": "Cofnij Uprawnienia"
+        },
+        "stats": {
+          "totalPersonnel": "Cały Personel",
+          "activeNow": "Obecnie Aktywni",
+          "onBreak": "Na Przerwie"
+        }
       },
       "reports": {
         "title": "Logi i Operacje",
         "placeholder": "Historia operacji magazynowych (CSV Export)",
         "generator": "Generator raportów PDF/CSV"
+      },
+      "backups": {
+        "title": "Kopie Zapasowe Systemu",
+        "description": "Twórz i zarządzaj ręcznymi kopiami zapasowymi bazy danych.",
+        "createButton": "Utwórz Nową Kopię",
+        "history": "Historia Kopii",
+        "noBackups": "Brak kopii zapasowych.",
+        "success": "Kopia zapasowa utworzona pomyślnie!",
+        "error": "Nie udało się utworzyć kopii zapasowej."
       },
       "pageNotFound": "404 - Nie znaleziono strony"
     }
@@ -227,6 +297,22 @@
           "red": "Czerwony: Przekroczono próg alarmowy. Wymagana natychmiastowa interwencja."
         }
       }
+    }
+  },
+  "preferences": {
+    "title": "Preferencje",
+    "description": "Dostosuj wygląd interfejsu i lokalizację.",
+    "theme": {
+      "title": "Motyw Interfejsu",
+      "darkMode": "Tryb Ciemny",
+      "darkModeDesc": "Wysoki kontrast",
+      "lightMode": "Tryb Jasny",
+      "lightModeDesc": "Standardowy jasny"
+    },
+    "language": {
+      "title": "Język Systemu",
+      "english": "Angielski (US)",
+      "polish": "Polski (PL)"
     }
   }
 }

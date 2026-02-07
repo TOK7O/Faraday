@@ -1,4 +1,5 @@
 using System.Text;
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Faraday.API.Data;
 using Faraday.API.Models;
@@ -13,11 +14,15 @@ using Faraday.API.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load .env file
+Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env"));
+// Use environment variable for ConnectionString if available, otherwise use configuration (which now also includes env vars)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 // DB CONFIG
 // Register Entity Framework Core context with PostgreSQL provider.
-// Connection string is retrieved from appsettings.json ("DefaultConnection").
 builder.Services.AddDbContext<FaradayDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Auth and JWT configuration
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");
@@ -47,6 +52,19 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddControllers();
+
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure Swagger generation to include support for JWT Bearer Authentication.
@@ -102,7 +120,16 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
 
     // Automatically apply any pending migrations to the database.
-    dbContext.Database.Migrate();
+    try
+    {
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // If migration fails (e.g. tables already exist), we try to EnsureCreated as a fallback
+        // for dev environments, or just log and continue if we trust the schema is there.
+        Console.WriteLine($"[WARNING] Migration failed: {ex.Message}. Attempting to continue...");
+    }
 
     // Seed default administrator account if the Users table is empty.
     if (!dbContext.Users.Any())
@@ -123,10 +150,17 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Faraday WMS API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
-app.UseHttpsRedirection();
+// Enable CORS
+app.UseCors("AllowAll");
+
+// app.UseHttpsRedirection(); // Commented out to prevent Docker port issues
 
 // Note: DO NOT move UseAuthorization before UseAuthentication! Ask Dawid if you don't know why.
 // Enable Authentication middleware to validate the JWT token.

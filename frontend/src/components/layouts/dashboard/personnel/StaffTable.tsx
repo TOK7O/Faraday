@@ -2,8 +2,11 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ShieldCheck, MoreVertical, Settings, Trash2 } from "lucide-react";
 import type {StaffMember} from "./types";
 import "./StaffTable.scss";
+import { useTranslation } from "@/context/LanguageContext";
 
 export const StaffTable = ({ staff }: { staff: StaffMember[] }) => {
+    const { t } = useTranslation();
+    const tableT = t.dashboardPage.content.personnel.table;
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
 
     return (
@@ -11,11 +14,11 @@ export const StaffTable = ({ staff }: { staff: StaffMember[] }) => {
             <table className="ht-table">
                 <thead>
                 <tr>
-                    <th>Employee ID</th>
-                    <th>Identity</th>
-                    <th>Assigned Role</th>
-                    <th>Status</th>
-                    <th className="text-right">Management</th>
+                    <th>{tableT.employeeId}</th>
+                    <th>{tableT.identity}</th>
+                    <th>{tableT.assignedRole}</th>
+                    <th>{tableT.status}</th>
+                    <th className="text-right">{tableT.management}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -38,9 +41,9 @@ export const StaffTable = ({ staff }: { staff: StaffMember[] }) => {
                                 <DropdownMenu.Trigger asChild><button className="btn-action-ht"><MoreVertical size={18} /></button></DropdownMenu.Trigger>
                                 <DropdownMenu.Portal>
                                     <DropdownMenu.Content className="dropdown-ht" align="end" sideOffset={10}>
-                                        <DropdownMenu.Item className="dd-item"><Settings size={14} /> Configure Access</DropdownMenu.Item>
+                                        <DropdownMenu.Item className="dd-item"><Settings size={14} /> {tableT.configureAccess}</DropdownMenu.Item>
                                         <DropdownMenu.Separator className="dd-divider" />
-                                        <DropdownMenu.Item className="dd-item danger"><Trash2 size={14} /> Revoke Permissions</DropdownMenu.Item>
+                                        <DropdownMenu.Item className="dd-item danger"><Trash2 size={14} /> {tableT.revokePermissions}</DropdownMenu.Item>
                                     </DropdownMenu.Content>
                                 </DropdownMenu.Portal>
                             </DropdownMenu.Root>

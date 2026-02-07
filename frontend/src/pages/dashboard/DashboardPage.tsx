@@ -8,6 +8,7 @@ import OverviewContent from "./views/OverviewContent";
 import InventoryContent from "./views/Inventory/InventoryContent";
 import PersonnelContent from "./views/Personnel/PersonnelContent";
 import ReportsContent from "./views/ReportsContent";
+import BackupsContent from "./views/BackupsContent";
 import PreferencesContent from "./views/Preferences/PreferencesContent";
 
 // Components
@@ -61,6 +62,9 @@ const DashboardPage = () => {
                             <div className="placeholder-card">
                                 {t.dashboardPage.content.reports.generator}
                             </div>
+                        </Tabs.Content>
+                        <Tabs.Content value="backups">
+                            <BackupsContent />
                         </Tabs.Content>
                         <Tabs.Content value="settings">
                             <PreferencesContent />

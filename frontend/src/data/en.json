@@ -153,6 +153,8 @@
         "personnel": "Personnel",
         "operations": "Operations",
         "reports": "Reports",
+        "backups": "Backups",
+        "settings": "Preferences",
         "theme": "Theme",
         "language": "Language"
       },
@@ -174,16 +176,84 @@
         "subtitle": "Manage racks according to FIFO principle",
         "rack": "Rack",
         "dimensions": "Dimensions",
-        "temp": "Temp"
+        "temp": "Temp",
+        "managementCenter": "Warehouse Management Center",
+        "inventoryHub": "Inventory Hub",
+        "racksStructure": "Racks Structure",
+        "productCatalog": "Product Catalog",
+        "importCSV": "Import CSV",
+        "addRack": "Add Rack",
+        "editRack": "Edit Rack",
+        "newRack": "New Rack",
+        "idLabel": "ID / Designation",
+        "idPlaceholder": "e.g. R-01",
+        "sectionDescription": "Section description",
+        "sectionPlaceholder": "e.g. Sector A",
+        "rowsM": "Rows (M)",
+        "colsN": "Columns (N)",
+        "maxWeightKg": "Max weight (kg)",
+        "tempMinMax": "Temp. Min/Max",
+        "slotDimensionsMm": "Slot dimensions (mm)",
+        "confirmChanges": "Confirm changes",
+        "searchProduct": "Search product...",
+        "defineProduct": "Define Product",
+        "deleteConfirm": "Are you sure you want to delete rack {id}?",
+        "edit": "Edit",
+        "delete": "Delete",
+        "tempRange": "Temp range",
+        "capacity": "Capacity"
       },
       "personnel": {
         "title": "Personnel Management",
-        "placeholder": "List of operators with active 2FA module"
+        "placeholder": "List of operators with active 2FA module",
+        "managementSystem": "Personnel Management System",
+        "database": "Database",
+        "monitorDescription": "Monitor operator availability and manage biometric security credentials.",
+        "sync": "Sync",
+        "searchPlaceholder": "Filter by ID or name...",
+        "registerOperator": "Register Operator",
+        "authOperator": "Operator Authorization",
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "e.g. John Doe",
+        "systemEmail": "System Email",
+        "emailPlaceholder": "j.doe@warehouse.com",
+        "sectorRole": "Sector Role",
+        "securityId": "Security ID",
+        "securityIdPlaceholder": "FS-XXXX",
+        "confirmAuth": "Confirm & Authorize",
+        "roles": {
+          "operator": "Warehouse Operator",
+          "manager": "Shift Manager",
+          "admin": "System Administrator"
+        },
+        "table": {
+          "employeeId": "Employee ID",
+          "identity": "Identity",
+          "assignedRole": "Assigned Role",
+          "status": "Status",
+          "management": "Management",
+          "configureAccess": "Configure Access",
+          "revokePermissions": "Revoke Permissions"
+        },
+        "stats": {
+          "totalPersonnel": "Total Personnel",
+          "activeNow": "Active Now",
+          "onBreak": "On Break"
+        }
       },
       "reports": {
         "title": "Logs & Operations",
         "placeholder": "Warehouse operations history (CSV Export)",
         "generator": "PDF/CSV Report Generator"
+      },
+      "backups": {
+        "title": "System Backups",
+        "description": "Create and manage manual database backups.",
+        "createButton": "Create New Backup",
+        "history": "Backup History",
+        "noBackups": "No backups found.",
+        "success": "Backup created successfully!",
+        "error": "Failed to create backup."
       },
       "pageNotFound": "404 - Page not found"
     }
@@ -227,6 +297,22 @@
           "red": "Red: Threshold exceeded. Immediate intervention required."
         }
       }
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "description": "Customize your interface appearance and localization.",
+    "theme": {
+      "title": "Interface Theme",
+      "darkMode": "Dark Mode",
+      "darkModeDesc": "High contrast",
+      "lightMode": "Light Mode",
+      "lightModeDesc": "Standard bright"
+    },
+    "language": {
+      "title": "System Language",
+      "english": "English (US)",
+      "polish": "Polish (PL)"
     }
   }
 }

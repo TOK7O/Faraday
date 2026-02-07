@@ -1,12 +1,15 @@
 import { User, Activity, RefreshCcw } from "lucide-react";
 import type {StaffMember} from "./types";
 import "./PersonnelStats.scss";
+import { useTranslation } from "@/context/LanguageContext";
 
 export const PersonnelStats = ({ staff }: { staff: StaffMember[] }) => {
+    const { t } = useTranslation();
+    const statsT = t.dashboardPage.content.personnel.stats;
     const stats = [
-        { label: "Total Personnel", value: staff.length, icon: <User size={22} />, active: false },
-        { label: "Active Now", value: staff.filter(s => s.status === 'active').length, icon: <Activity size={22} />, active: true },
-        { label: "On Break", value: staff.filter(s => s.status === 'break').length, icon: <RefreshCcw size={22} />, active: false }
+        { label: statsT.totalPersonnel, value: staff.length, icon: <User size={22} />, active: false },
+        { label: statsT.activeNow, value: staff.filter(s => s.status === 'active').length, icon: <Activity size={22} />, active: true },
+        { label: statsT.onBreak, value: staff.filter(s => s.status === 'break').length, icon: <RefreshCcw size={22} />, active: false }
     ];
 
     return (

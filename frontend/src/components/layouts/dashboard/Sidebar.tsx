@@ -7,6 +7,7 @@ import {
   History,
   FileText,
   Settings,
+  Database,
   LogOut,
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext.tsx";
@@ -42,6 +43,9 @@ const Sidebar = () => {
           <Tabs.Trigger className="nav-item" value="reports">
             <FileText size={18} /> {t.dashboardPage.sidebar.nav.reports}
           </Tabs.Trigger>
+          <Tabs.Trigger className="nav-item" value="backups">
+            <Database size={18} /> {t.dashboardPage.sidebar.nav.backups}
+          </Tabs.Trigger>
         </div>
 
         <div className="nav-group">
@@ -50,7 +54,7 @@ const Sidebar = () => {
           </span>
 
           <Tabs.Trigger className="nav-item" value="settings">
-            <Settings size={18} /> Preferences
+            <Settings size={18} /> {t.dashboardPage.sidebar.nav.settings}
           </Tabs.Trigger>
         </div>
       </Tabs.List>
