@@ -111,9 +111,9 @@
   flex: 1;
   overflow-y: auto;
 
-  [data-state="active"] {
-    animation: contentFadeIn 0.4s ease-out;
-  }
+  //[data-state="active"] {
+  //  animation: contentFadeIn 0.4s ease-out;
+  //}
 
   .bento-dashboard {
     display: grid;

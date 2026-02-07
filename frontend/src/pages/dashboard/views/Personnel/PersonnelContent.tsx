@@ -27,7 +27,7 @@ const PersonnelContent = () => {
     return (
         <div className="personnel-view-container">
             <PersonnelHeader />
-            <PersonnelStats staff={staff} />
+            {/*<PersonnelStats staff={staff} />*/}
             <PersonnelActionBar
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}

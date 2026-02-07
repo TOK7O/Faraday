@@ -48,12 +48,12 @@ export const RackCard = ({ rack, onEdit, onDelete }: RackCardProps) => {
                     <span className="value" style={{ fontSize: '1.1rem' }}>{rack.maxWeight} kg</span>
                 </div>
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-input)', display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <Maximize size={12} style={{color: 'var(--accent-primary)'}} /> {rack.maxWidth}×{rack.maxHeight}×{rack.maxDepth} mm
+            <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-input)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.8 }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)',display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Maximize size={12} style={{color: 'var(--accent-primary)', marginRight: '5px'}} /> {rack.maxWidth}×{rack.maxHeight}×{rack.maxDepth} mm
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <Grid3X3 size={12} style={{color: 'var(--accent-primary)'}} /> {rack.m}R × {rack.n}C
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Grid3X3 size={12} style={{color: 'var(--accent-primary)', marginRight: '5px'}} /> {rack.m}R × {rack.n}C
                 </div>
             </div>
         </div>

@@ -8,7 +8,8 @@ import { useTranslation } from "@/context/LanguageContext";
 import type { Rack, Product } from "@components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@components/layouts/dashboard/inventory/RackCard";
 import { ProductCatalog } from "@components/layouts/dashboard/inventory/ProductCatalog";
-import "../Personnel/PersonnelContent.scss";
+
+import "./InventoryContent.scss";
 
 const InventoryContent = () => {
     const { t } = useTranslation();
@@ -36,7 +37,6 @@ const InventoryContent = () => {
         setEditingRack(null);
     };
 
-    // --- LOGIKA: IMPORT CSV ---
     const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -66,23 +66,34 @@ const InventoryContent = () => {
             setRacks(prev => [...prev, ...newRacks]);
         };
         reader.readAsText(file);
-        event.target.value = ""; // Reset inputa
+        event.target.value = "";
     };
 
-    // --- LOGIKA: USUWANIE ---
+    // USUWANIE
     const handleDeleteRack = (id: string) => {
         if (window.confirm(invT.deleteConfirm.replace("{id}", id))) {
             setRacks(prev => prev.filter(r => r.id !== id));
         }
     };
 
-    // --- LOGIKA: ZAPIS (DODAJ/EDYTUJ) ---
+    // DODAJ/EDYTUJ
     const handleSaveRack = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
+        const newId = formData.get("id") as string;
+
+        const isIdDuplicate = racks.some(r =>
+            r.id.toLowerCase() === newId.toLowerCase() &&
+            r.id !== editingRack?.id
+        );
+
+        if (isIdDuplicate) {
+            alert(`Błąd: Regał o identyfikatorze "${newId}" już istnieje w systemie.`);
+            return;
+        }
 
         const rackData: Rack = {
-            id: formData.get("id") as string,
+            id: newId,
             m: Number(formData.get("m")),
             n: Number(formData.get("n")),
             tempMin: Number(formData.get("tempMin")),
@@ -99,9 +110,9 @@ const InventoryContent = () => {
         } else {
             setRacks(prev => [...prev, rackData]);
         }
+
         closeModal();
     };
-
     return (
         <Tooltip.Provider delayDuration={100} skipDelayDuration={0}>
             <div className="personnel-view-container">
@@ -121,7 +132,7 @@ const InventoryContent = () => {
                     </header>
 
                     <Tabs.Content value="racks">
-                        <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
+                        <div className="action-bar">
                             <input
                                 type="file"
                                 accept=".csv"
@@ -131,13 +142,18 @@ const InventoryContent = () => {
                             />
                             <button
                                 className="btn-primary-ht"
-                                style={{ background: 'var(--bg-input)', border: '1px solid var(--border-input)' }}
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 <FileUp size={18} /><span>{invT.importCSV}</span>
                             </button>
 
-                            <Dialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
+                            <Dialog.Root
+                                open={isModalOpen}
+                                onOpenChange={(open) => {
+                                    if (!open) closeModal();
+                                    else setIsModalOpen(true);
+                                }}
+                            >
                                 <Dialog.Trigger asChild>
                                     <button className="btn-primary-ht" onClick={() => setIsModalOpen(true)}>
                                         <Plus size={18} /><span>{invT.addRack}</span>
@@ -156,7 +172,11 @@ const InventoryContent = () => {
                                             </Dialog.Close>
                                         </div>
 
-                                        <form className="ht-form" onSubmit={handleSaveRack}>
+                                        <form
+                                            key={editingRack ? editingRack.id : "new-rack"}
+                                            className="ht-form"
+                                            onSubmit={handleSaveRack}
+                                        >
                                             <div className="input-row">
                                                 <div className="input-group">
                                                     <label>{invT.idLabel}</label>
@@ -207,7 +227,7 @@ const InventoryContent = () => {
                             </Dialog.Root>
                         </div>
 
-                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))' }}>
+                        <div className="stats-grid">
                             {racks.map((rack) => (
                                 <RackCard
                                     key={rack.id}
@@ -221,14 +241,24 @@ const InventoryContent = () => {
 
                     <Tabs.Content value="products">
                         <div className="action-bar">
-                            <div className="search-container" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div className="search-container">
                                 <div style={{ position: 'relative', flex: 1 }}>
                                     <Search size={18} className="search-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
                                     <input type="text" placeholder={invT.searchProduct} style={{ paddingLeft: '40px', width: '100%', maxWidth: '300px' }} />
                                 </div>
-                                <div className="view-mode-toggle" style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: '8px', padding: '4px' }}>
-                                    <button className={`toggle-btn ${productViewMode === 'grid' ? 'active' : ''}`} onClick={() => setProductViewMode('grid')}><LayoutGrid size={18} /></button>
-                                    <button className={`toggle-btn ${productViewMode === 'list' ? 'active' : ''}`} onClick={() => setProductViewMode('list')}><List size={18} /></button>
+                                <div className="view-mode-toggle">
+                                    <button
+                                        className={`toggle-btn ${productViewMode === 'grid' ? 'active' : ''}`}
+                                        onClick={() => setProductViewMode('grid')}
+                                    >
+                                        <LayoutGrid size={18} />
+                                    </button>
+                                    <button
+                                        className={`toggle-btn ${productViewMode === 'list' ? 'active' : ''}`}
+                                        onClick={() => setProductViewMode('list')}
+                                    >
+                                        <List size={18} />
+                                    </button>
                                 </div>
                             </div>
                             <button className="btn-primary-ht" onClick={() => setIsProductModalOpen(true)}>
