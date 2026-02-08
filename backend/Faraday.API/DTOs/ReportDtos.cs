@@ -44,4 +44,43 @@
         public decimal CurrentWeightKg { get; set; }
         public double WeightUtilizationPercentage { get; set; }
     }
+    
+    public class TemperatureHistoryDto
+    {
+        public int Id { get; set; }
+        public string RackCode { get; set; } = string.Empty;
+        public decimal RecordedTemperature { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class WeightHistoryDto
+    {
+        public int Id { get; set; }
+        public string RackCode { get; set; } = string.Empty;
+        public decimal MeasuredWeightKg { get; set; }
+        public decimal ExpectedWeightKg { get; set; }
+        public decimal DiscrepancyKg { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class AlertHistoryDto
+    {
+        public int Id { get; set; }
+        public string? RackCode { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool IsResolved { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+    }
+
+    public class ActiveAlertDto
+    {
+        public int Id { get; set; }
+        public string? RackCode { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int DurationMinutes { get; set; }
+    }
 }

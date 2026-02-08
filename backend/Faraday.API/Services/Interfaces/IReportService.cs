@@ -27,5 +27,38 @@ namespace Faraday.API.Services.Interfaces
         /// utilization to identify bottlenecks or free space.
         /// </summary>
         Task<List<RackUtilizationDto>> GetRackUtilizationAsync();
+        
+        /// <summary>
+        /// Retrieves temperature readings history with optional filtering by rack and date range.
+        /// Returns most recent readings first, limited to specified count.
+        /// </summary>
+        Task<List<TemperatureHistoryDto>> GetTemperatureHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null, 
+            int limit = 100);
+
+        /// <summary>
+        /// Retrieves weight readings history with optional filtering by rack and date range.
+        /// Returns most recent readings first, limited to specified count.
+        /// </summary>
+        Task<List<WeightHistoryDto>> GetWeightHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null, 
+            int limit = 100);
+
+        /// <summary>
+        /// Retrieves complete alert history (both resolved and unresolved) with optional filtering.
+        /// </summary>
+        Task<List<AlertHistoryDto>> GetAlertHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null);
+
+        /// <summary>
+        /// Retrieves only currently active (unresolved) alerts across all racks.
+        /// </summary>
+        Task<List<ActiveAlertDto>> GetActiveAlertsAsync();
     }
 }

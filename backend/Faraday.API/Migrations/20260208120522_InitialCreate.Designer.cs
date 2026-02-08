@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Faraday.API.Migrations
 {
     [DbContext(typeof(FaradayDbContext))]
-    [Migration("20260208112409_InitialCreate")]
+    [Migration("20260208120522_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

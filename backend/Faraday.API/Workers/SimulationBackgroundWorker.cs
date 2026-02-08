@@ -12,7 +12,7 @@ namespace Faraday.API.Workers
         private readonly Random _random = new Random();
 
         // Settings for simulation frequency
-        private const int CycleDelaySeconds = 10;
+        private const int CycleDelaySeconds = 30;
         
         // Configuration: How many anomalies (theft/temperature failure) should happen statistically per hour?
         private const int ExpectedFaultsPerHour = 1; 

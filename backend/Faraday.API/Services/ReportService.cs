@@ -133,5 +133,152 @@ namespace Faraday.API.Services
                     : 0
             }).OrderByDescending(r => r.WeightUtilizationPercentage).ToList();
         }
+        public async Task<List<TemperatureHistoryDto>> GetTemperatureHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null, 
+            int limit = 100)
+        {
+            // Start with base query
+            var query = _context.TemperatureReadings
+                .Include(t => t.Rack)
+                .AsQueryable();
+
+            // Apply rack filter if specified
+            if (rackId.HasValue)
+            {
+                query = query.Where(t => t.RackId == rackId.Value);
+            }
+
+            // Apply date range filters
+            if (fromDate.HasValue)
+            {
+                query = query.Where(t => t.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(t => t.Timestamp <= toDate.Value);
+            }
+
+            // Sort by most recent first and apply limit
+            var readings = await query
+                .OrderByDescending(t => t.Timestamp)
+                .Take(limit)
+                .Select(t => new TemperatureHistoryDto
+                {
+                    Id = t.Id,
+                    RackCode = t.Rack.Code,
+                    RecordedTemperature = t.RecordedTemperature,
+                    Timestamp = t.Timestamp
+                })
+                .ToListAsync();
+
+            return readings;
+        }
+
+        public async Task<List<WeightHistoryDto>> GetWeightHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null, 
+            int limit = 100)
+        {
+            var query = _context.WeightReadings
+                .Include(w => w.Rack)
+                .AsQueryable();
+
+            if (rackId.HasValue)
+            {
+                query = query.Where(w => w.RackId == rackId.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(w => w.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(w => w.Timestamp <= toDate.Value);
+            }
+
+            var readings = await query
+                .OrderByDescending(w => w.Timestamp)
+                .Take(limit)
+                .Select(w => new WeightHistoryDto
+                {
+                    Id = w.Id,
+                    RackCode = w.Rack.Code,
+                    MeasuredWeightKg = w.MeasuredWeightKg,
+                    ExpectedWeightKg = w.ExpectedWeightKg,
+                    DiscrepancyKg = w.MeasuredWeightKg - w.ExpectedWeightKg,
+                    Timestamp = w.Timestamp
+                })
+                .ToListAsync();
+
+            return readings;
+        }
+
+        public async Task<List<AlertHistoryDto>> GetAlertHistoryAsync(
+            int? rackId = null, 
+            DateTime? fromDate = null, 
+            DateTime? toDate = null)
+        {
+            var query = _context.Alerts
+                .Include(a => a.Rack)
+                .AsQueryable();
+
+            if (rackId.HasValue)
+            {
+                query = query.Where(a => a.RackId == rackId.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt <= toDate.Value);
+            }
+
+            var alerts = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new AlertHistoryDto
+                {
+                    Id = a.Id,
+                    RackCode = a.Rack != null ? a.Rack.Code : null,
+                    Message = a.Message,
+                    Type = a.Type.ToString(),
+                    IsResolved = a.IsResolved,
+                    CreatedAt = a.CreatedAt,
+                    ResolvedAt = a.ResolvedAt
+                })
+                .ToListAsync();
+
+            return alerts;
+        }
+
+        public async Task<List<ActiveAlertDto>> GetActiveAlertsAsync()
+        {
+            var activeAlerts = await _context.Alerts
+                .Include(a => a.Rack)
+                .Where(a => !a.IsResolved)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new ActiveAlertDto
+                {
+                    Id = a.Id,
+                    RackCode = a.Rack != null ? a.Rack.Code : null,
+                    Message = a.Message,
+                    Type = a.Type.ToString(),
+                    CreatedAt = a.CreatedAt,
+                    // Calculate duration in minutes from creation to now
+                    DurationMinutes = (int)(DateTime.UtcNow - a.CreatedAt).TotalMinutes
+                })
+                .ToListAsync();
+
+            return activeAlerts;
+        }
     }
 }
