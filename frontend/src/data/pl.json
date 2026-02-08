@@ -251,7 +251,11 @@
         "description": "Twórz i zarządzaj ręcznymi kopiami zapasowymi bazy danych.",
         "createButton": "Utwórz Nową Kopię",
         "history": "Historia Kopii",
-        "noBackups": "Brak kopii zapasowych.",
+        "noBackups": "Nie znaleziono wcześniejszych kopii zapasowych.",
+        "fileName": "Nazwa pliku",
+        "size": "Rozmiar",
+        "date": "Data utworzenia",
+        "download": "Pobierz",
         "success": "Kopia zapasowa utworzona pomyślnie!",
         "error": "Nie udało się utworzyć kopii zapasowej."
       },
