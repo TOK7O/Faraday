@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
-import { Plus, Grid3X3, FileUp, X, Search, LayoutGrid, List, AlertTriangle, ImagePlusIcon } from "lucide-react";
+import { Plus, Grid3X3, FileUp, X, Search, LayoutGrid, List, AlertTriangle, ImagePlusIcon, History } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 
 import type { Rack, Product } from "@components/layouts/dashboard/inventory/InventoryContent.types";
@@ -163,6 +163,25 @@ const InventoryContent = () => {
                                 <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
                                 <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
                             </Tabs.List>
+                        </div>
+                        <div className="header-actions">
+                            <Tabs.Root defaultValue="none">
+                                <Tabs.List className="ht-tabs-list">
+                                    <Tabs.Trigger value="history" className="ht-tabs-trigger" asChild>
+                                        <button 
+                                            className="btn-primary-ht" 
+                                            style={{ background: 'transparent', border: '1px solid var(--border-input)' }}
+                                            onClick={() => {
+                                                const opsTab = document.querySelector('[value="operations"]') as HTMLElement;
+                                                opsTab?.click();
+                                            }}
+                                        >
+                                            <History size={18} />
+                                            <span>{invT.viewHistory || "View History"}</span>
+                                        </button>
+                                    </Tabs.Trigger>
+                                </Tabs.List>
+                            </Tabs.Root>
                         </div>
                     </header>
 

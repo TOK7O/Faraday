@@ -275,5 +275,32 @@ namespace Faraday.API.Services
                 throw;
             }
         }
+
+        public async Task<IEnumerable<OperationLogDto>> GetOperationHistoryAsync(int? limit = null)
+        {
+            var query = _context.OperationLogs
+                .Include(l => l.User)
+                .OrderByDescending(l => l.Timestamp)
+                .AsQueryable();
+
+            if (limit.HasValue)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            var logs = await query.ToListAsync();
+            return logs.Select(l => new OperationLogDto
+            {
+                Id = l.Id,
+                Timestamp = l.Timestamp,
+                Type = l.Type.ToString(),
+                UserName = l.User?.Username ?? "System",
+                ProductDefinitionId = l.ProductDefinitionId,
+                ProductName = l.ProductName,
+                RackId = l.RackId,
+                RackCode = l.RackCode,
+                Description = l.Description
+            });
+        }
     }
 }

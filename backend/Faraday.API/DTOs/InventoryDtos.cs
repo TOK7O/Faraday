@@ -47,4 +47,17 @@ namespace Faraday.API.DTOs
         [Range(1, 1000)]
         public int TargetSlotY { get; set; }
     }
+
+    public class OperationLogDto
+    {
+        public long Id { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public int? ProductDefinitionId { get; set; }
+        public string? ProductName { get; set; }
+        public int? RackId { get; set; }
+        public string? RackCode { get; set; }
+        public string Description { get; set; } = string.Empty;
+    }
 }

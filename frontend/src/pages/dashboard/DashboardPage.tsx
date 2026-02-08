@@ -7,6 +7,7 @@ import {Link} from "react-router-dom";
 import OverviewContent from "./views/OverviewContent";
 import InventoryContent from "./views/Inventory/InventoryContent";
 import PersonnelContent from "./views/Personnel/PersonnelContent";
+import OperationsHistory from "./views/OperationsHistory/OperationsHistory";
 import ReportsContent from "./views/ReportsContent";
 import BackupsContent from "./views/BackupsContent";
 import PreferencesContent from "./views/Preferences/PreferencesContent";
@@ -56,12 +57,10 @@ const DashboardPage = () => {
                             <PersonnelContent />
                         </Tabs.Content>
                         <Tabs.Content value="operations">
-                            <ReportsContent />
+                            <OperationsHistory />
                         </Tabs.Content>
                         <Tabs.Content value="reports">
-                            <div className="placeholder-card">
-                                {t.dashboardPage.content.reports.generator}
-                            </div>
+                            <ReportsContent />
                         </Tabs.Content>
                         <Tabs.Content value="backups">
                             <BackupsContent />

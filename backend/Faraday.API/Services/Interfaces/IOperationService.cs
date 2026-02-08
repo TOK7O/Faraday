@@ -20,5 +20,10 @@ namespace Faraday.API.Services.Interfaces
         /// Validates constraints (Size, Weight, Temp) before moving.
         /// </summary>
         Task<OperationResultDto> ProcessMovementAsync(OperationMovementDto request, int userId);
+
+        /// <summary>
+        /// Gets operation history with optional filtering.
+        /// </summary>
+        Task<IEnumerable<OperationLogDto>> GetOperationHistoryAsync(int? limit = null);
     }
 }

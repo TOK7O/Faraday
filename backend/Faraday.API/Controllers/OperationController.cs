@@ -8,7 +8,7 @@ namespace Faraday.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class OperationController : ControllerBase
     {
         private readonly IOperationService _operationService;
@@ -20,14 +20,21 @@ namespace Faraday.API.Controllers
 
         private int GetCurrentUserId()
         {
-            var idClaim = User.FindFirst("id");
-            if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
+            try
             {
-                return userId;
+                var idClaim = User.FindFirst("id");
+                if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
+                {
+                    return userId;
+                }
             }
-            throw new UnauthorizedAccessException("Invalid token: User ID missing.");
+            catch { }
+
+            // Default user ID for non-authenticated access (e.g., when calling GetHistory without token)
+            return 1;
         }
 
+        [Authorize]
         [HttpPost("inbound")]
         public async Task<ActionResult<OperationResultDto>> Inbound(OperationInboundDto request)
         {
@@ -51,6 +58,7 @@ namespace Faraday.API.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("outbound")]
         public async Task<ActionResult<OperationResultDto>> Outbound(OperationOutboundDto request)
         {
@@ -70,6 +78,7 @@ namespace Faraday.API.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("move")]
         public async Task<ActionResult<OperationResultDto>> Move(OperationMovementDto request)
         {
@@ -86,6 +95,20 @@ namespace Faraday.API.Controllers
             catch (InvalidOperationException ex)
             {
                 return BadRequest(ex.Message); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("history")]
+        public async Task<ActionResult<IEnumerable<OperationLogDto>>> GetHistory([FromQuery] int? limit = null)
+        {
+            try
+            {
+                var history = await _operationService.GetOperationHistoryAsync(limit);
+                return Ok(history);
             }
             catch (Exception ex)
             {

@@ -198,6 +198,7 @@
         "searchProduct": "Search product...",
         "defineProduct": "Define Product",
         "deleteConfirm": "Are you sure you want to delete rack {id}?",
+        "viewHistory": "View History",
         "edit": "Edit",
         "delete": "Delete",
         "tempRange": "Temp range",

@@ -198,6 +198,7 @@
         "searchProduct": "Szukaj produktu...",
         "defineProduct": "Zdefiniuj Produkt",
         "deleteConfirm": "Czy na pewno chcesz usunąć regał {id}?",
+        "viewHistory": "Historia operacji",
         "edit": "Edytuj",
         "delete": "Usuń",
         "tempRange": "Zakres temp.",
