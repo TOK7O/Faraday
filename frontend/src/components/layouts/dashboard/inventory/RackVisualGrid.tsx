@@ -45,7 +45,7 @@ export const RackVisualGrid = memo(({ rack }: { rack: Rack }) => {
                 const isOccupied = i < visualOccupiedLimit;
 
                 return (
-                    <Tooltip.Root key={`${rack.id}-slot-${i}`}>
+                    <Tooltip.Root key={`${rack.code}-slot-${i}`}>
                         <Tooltip.Trigger asChild>
                             <div
                                 data-occupied={isOccupied}

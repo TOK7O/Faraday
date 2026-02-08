@@ -1,5 +1,6 @@
+import React, { useState, useEffect, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 import type { Rack } from "./InventoryContent.types";
 
 interface RackModalProps {
@@ -8,83 +9,259 @@ interface RackModalProps {
     editingRack: Rack | null;
     onSave: (e: React.FormEvent<HTMLFormElement>) => void;
     invT: any;
+    existingRacks: Rack[];
 }
 
-export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT }: RackModalProps) => (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-        <Dialog.Portal>
-            <Dialog.Overlay className="dialog-overlay-ht" />
-            <Dialog.Content className="dialog-content-ht">
-                <div className="modal-accent-line" />
-                <div className="modal-header">
-                    <Dialog.Title><h2>{editingRack ? invT.editRack : invT.newRack}</h2></Dialog.Title>
-                    <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
-                </div>
-                <form
-                    key={editingRack ? `edit-${editingRack.id}` : "new-rack"}
-                    className="ht-form"
-                    onSubmit={onSave}
-                >
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label>Kod regału (code)</label>
-                            <input
-                                name="code"
-                                defaultValue={editingRack?.id}
-                                required
-                                disabled={!!editingRack}
-                                placeholder="np. R-01"
-                            />
-                        </div>
-                        <div className="input-group">
-                            <label>Komentarz (comment)</label>
-                            <input name="comment" defaultValue={editingRack?.comment} />
-                        </div>
+interface FormErrors {
+    code?: string;
+    rows?: string;
+    columns?: string;
+    maxWeightKg?: string;
+    maxItemWidthMm?: string;
+    maxItemHeightMm?: string;
+    maxItemDepthMm?: string;
+    tempRange?: string;
+}
+
+export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, existingRacks }: RackModalProps) => {
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [codeValue, setCodeValue] = useState("");
+    const formRef = useRef<HTMLFormElement>(null);
+
+    useEffect(() => {
+        if (open) {
+            setErrors({});
+            if (editingRack) {
+                setCodeValue(editingRack.code);
+            } else {
+                setCodeValue(getNextAvailableCode(existingRacks));
+            }
+        }
+    }, [open, editingRack, existingRacks]);
+
+    const getNextAvailableCode = (racks: Rack[]) => {
+        const existingNumbers = racks
+            .map(r => {
+                const match = r.code.match(/\d+/);
+                return match ? parseInt(match[0], 10) : null;
+            })
+            .filter((n): n is number => n !== null)
+            .sort((a, b) => a - b);
+
+        let nextNum = 1;
+        for (const num of existingNumbers) {
+            if (num === nextNum) nextNum++;
+            else if (num > nextNum) break;
+        }
+        return `R-${nextNum.toString().padStart(2, '0')}`;
+    };
+
+    const runValidation = () => {
+        if (!formRef.current) return;
+        const formData = new FormData(formRef.current);
+        const newErrors: FormErrors = {};
+
+        const code = (formData.get("code")?.toString() || codeValue).toUpperCase();
+
+        if (!code) {
+            newErrors.code = "Pole wymagane";
+        } else if (!editingRack && existingRacks.some(r => r.code.toUpperCase() === code)) {
+            newErrors.code = `Kod ${code} jest już w użyciu!`;
+        }
+
+        const validatePositive = (name: string, label: string, key: keyof FormErrors) => {
+            const val = parseFloat(formData.get(name)?.toString() || "");
+            if (formData.has(name)) {
+                if (isNaN(val)) newErrors[key] = "Wpisz liczbę";
+                else if (val <= 0) newErrors[key] = `${label} musi być > 0`;
+            }
+        };
+
+        validatePositive("rows", "Liczba rzędów", "rows");
+        validatePositive("columns", "Liczba kolumn", "columns");
+        validatePositive("maxWeightKg", "Nośność", "maxWeightKg");
+        validatePositive("maxItemWidthMm", "Szerokość", "maxItemWidthMm");
+        validatePositive("maxItemHeightMm", "Wysokość", "maxItemHeightMm");
+        validatePositive("maxItemDepthMm", "Głębokość", "maxItemDepthMm");
+
+        const minT = formData.get("minTemperature");
+        const maxT = formData.get("maxTemperature");
+        if (minT && maxT) {
+            const minNum = parseFloat(minT.toString());
+            const maxNum = parseFloat(maxT.toString());
+            if (minNum > maxNum) {
+                newErrors.tempRange = `Błąd: ${minNum}°C > ${maxNum}°C`;
+            }
+        }
+
+        setErrors(newErrors);
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        if (name === "code") setCodeValue(value.toUpperCase());
+
+        setTimeout(runValidation, 0);
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        runValidation();
+        if (Object.keys(errors).length === 0) {
+            onSave(e);
+        }
+    };
+
+    const ErrorLabel = ({ field }: { field: keyof FormErrors }) => (
+        errors[field] ? (
+            <span className="error-message" style={{
+                color: '#ff4d4d',
+                fontSize: '0.65rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                marginTop: '2px',
+                fontWeight: 600
+            }}>
+                <AlertCircle size={10} /> {errors[field]}
+            </span>
+        ) : null
+    );
+
+    const hasErrors = Object.keys(errors).length > 0;
+
+    return (
+        <Dialog.Root open={open} onOpenChange={onOpenChange}>
+            <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay-ht" />
+                <Dialog.Content className="dialog-content-ht">
+                    <div className="modal-accent-line" />
+                    <div className="modal-header">
+                        <Dialog.Title><h2>{editingRack ? "Konfiguracja Regału" : "Nowa Jednostka Regałowa"}</h2></Dialog.Title>
+                        <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
                     </div>
 
-                    {!editingRack && (
+                    <form className="ht-form" ref={formRef} onSubmit={handleSubmit}>
                         <div className="input-row">
                             <div className="input-group">
-                                <label>Liczba rzędów (rows)</label>
-                                <input type="number" name="rows" min="1" max="1000" required />
+                                <label>Oznaczenie (ID)</label>
+                                <input
+                                    name="code"
+                                    value={codeValue}
+                                    onChange={handleInputChange}
+                                    required
+                                    readOnly={!!editingRack}
+                                    style={{
+                                        cursor: editingRack ? 'not-allowed' : 'text',
+                                        opacity: editingRack ? 0.7 : 1
+                                    }}
+                                    placeholder="R-00"
+                                />
+                                <ErrorLabel field="code" />
                             </div>
                             <div className="input-group">
-                                <label>Liczba kolumn (columns)</label>
-                                <input type="number" name="columns" min="1" max="1000" required />
+                                <label>Notatka/Opis</label>
+                                <input
+                                    name="comment"
+                                    defaultValue={editingRack?.comment}
+                                    onChange={handleInputChange}
+                                    placeholder="Lokalizacja lub przeznaczenie..."
+                                />
                             </div>
                         </div>
-                    )}
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label>Max Waga [kg] (maxWeightKg)</label>
-                            <input type="number" step="0.1" name="maxWeightKg" defaultValue={editingRack?.maxWeight} required />
+                        {!editingRack && (
+                            <div className="input-row">
+                                <div className="input-group">
+                                    <label>Siatka: Rzędy (M)</label>
+                                    <input type="number" name="rows" onChange={handleInputChange} required />
+                                    <ErrorLabel field="rows" />
+                                </div>
+                                <div className="input-group">
+                                    <label>Siatka: Kolumny (N)</label>
+                                    <input type="number" name="columns" onChange={handleInputChange} required />
+                                    <ErrorLabel field="columns" />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="input-row">
+                            <div className="input-group">
+                                <label>Nośność całkowita [kg]</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    name="maxWeightKg"
+                                    onChange={handleInputChange}
+                                    defaultValue={editingRack?.maxWeight || ""}
+                                    required
+                                />
+                                <ErrorLabel field="maxWeightKg" />
+                            </div>
+                            <div className="input-group">
+                                <label>Środowisko: Temp [°C] <ErrorLabel field="tempRange" /></label>
+                                <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
+                                    <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin || ""} placeholder="Min" required />
+                                    <input type="number" step="0.1" name="maxTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMax || ""} placeholder="Max" required />
+                                </div>
+                            </div>
                         </div>
+
                         <div className="input-group">
-                            <label>Temp Min/Max</label>
+                            <label>Maksymalne gabaryty towaru [mm]</label>
                             <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                <input type="number" step="0.1" name="minTemperature" defaultValue={editingRack?.tempMin} placeholder="Min" required />
-                                <input type="number" step="0.1" name="maxTemperature" defaultValue={editingRack?.tempMax} placeholder="Max" required />
+                                <div style={{ flex: 1 }}>
+                                    <input
+                                        type="number"
+                                        name="maxItemWidthMm"
+                                        onChange={handleInputChange}
+                                        defaultValue={editingRack?.maxWidth || ""}
+                                        placeholder="Szerokość"
+                                        required
+                                    />
+                                    <ErrorLabel field="maxItemWidthMm" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <input
+                                        type="number"
+                                        name="maxItemHeightMm"
+                                        onChange={handleInputChange}
+                                        defaultValue={editingRack?.maxHeight || ""}
+                                        placeholder="Wysokość"
+                                        required
+                                    />
+                                    <ErrorLabel field="maxItemHeightMm" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <input
+                                        type="number"
+                                        name="maxItemDepthMm"
+                                        onChange={handleInputChange}
+                                        defaultValue={editingRack?.maxDepth || ""}
+                                        placeholder="Głębokość"
+                                        required
+                                    />
+                                    <ErrorLabel field="maxItemDepthMm" />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <label>Wymiary max przedmiotu [mm]</label>
-                            <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                <input type="number" name="maxItemWidthMm" defaultValue={editingRack?.maxWidth} placeholder="Szer (W)" required />
-                                <input type="number" name="maxItemHeightMm" defaultValue={editingRack?.maxHeight} placeholder="Wys (H)" required />
-                                <input type="number" name="maxItemDepthMm" defaultValue={editingRack?.maxDepth} placeholder="Głęb (D)" required />
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" className="btn-submit-ht">
-                        {editingRack ? invT.confirmChanges : invT.addRack}
-                    </button>
-                </form>
-            </Dialog.Content>
-        </Dialog.Portal>
-    </Dialog.Root>
-);
+                        <button
+                            type="submit"
+                            className="btn-submit-ht"
+                            disabled={hasErrors}
+                            style={{
+                                marginTop: '1.5rem',
+                                transition: 'all 0.3s ease',
+                                filter: hasErrors ? 'grayscale(1) opacity(0.5)' : 'none',
+                                cursor: hasErrors ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {editingRack ? "Zaktualizuj parametry" : "Zatwierdź i utwórz regał"}
+                        </button>
+                    </form>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+    );
+};

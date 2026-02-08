@@ -7,7 +7,7 @@ import { useTranslation } from "@/context/LanguageContext";
 interface RackCardProps {
     rack: Rack;
     onEdit: (rack: Rack) => void;
-    onDelete: (id: string) => void;
+    onDelete: (id: number) => void;
 }
 
 export const RackCard = ({ rack, onEdit, onDelete }: RackCardProps) => {
@@ -19,7 +19,7 @@ export const RackCard = ({ rack, onEdit, onDelete }: RackCardProps) => {
             <RackVisualGrid rack={rack} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div>
-                    <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-main)' }}>{rack.id}</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-main)' }}>{rack.code}</h3>
                     <span style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', textTransform: 'uppercase' }}>{rack.comment}</span>
                 </div>
                 <DropdownMenu.Root>

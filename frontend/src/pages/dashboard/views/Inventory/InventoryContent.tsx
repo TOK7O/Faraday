@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
-import { Plus, Grid3X3, FileUp, Search, LayoutGrid, List, RefreshCw } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, X, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 import type { Rack, Product } from "@components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@components/layouts/dashboard/inventory/RackCard";
@@ -29,6 +31,15 @@ const InventoryContent = () => {
     const [editingRack, setEditingRack] = useState<Rack | null>(null);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+    // stany dla obslugi csv
+    const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+    const [csvBuffer, setCsvBuffer] = useState<any[]>([]);
+    const [conflictingCodes, setConflictingCodes] = useState<string[]>([]);
+
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [inboundBarcode, setInboundBarcode] = useState("");
+    const [inboundResult, setInboundResult] = useState<any>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchData = async () => {
@@ -43,32 +54,16 @@ const InventoryContent = () => {
             if (rR.ok) {
                 const data = await rR.json();
                 setRacks(data.map((r: any) => ({
-                    id: r.id,
-                    code: r.code,
-                    m: r.rows,
-                    n: r.columns,
-                    tempMin: r.minTemperature,
-                    tempMax: r.maxTemperature,
-                    maxWeight: r.maxWeightKg,
-                    maxWidth: r.maxItemWidthMm,
-                    maxHeight: r.maxItemHeightMm,
-                    maxDepth: r.maxItemDepthMm,
-                    comment: r.comment
+                    id: r.id, code: r.code, m: r.rows, n: r.columns, tempMin: r.minTemperature, tempMax: r.maxTemperature,
+                    maxWeight: r.maxWeightKg, maxWidth: r.maxItemWidthMm, maxHeight: r.maxItemHeightMm, maxDepth: r.maxItemDepthMm, comment: r.comment
                 })));
             }
             if (pR.ok) {
                 const data = await pR.json();
                 setProducts(data.map((p: any) => ({
-                    id: p.id,
-                    scanCode: p.scanCode,
-                    name: p.name,
-                    category: p.isHazardous ? "ADR" : "Standard",
-                    weight: p.weightKg,
-                    width: p.widthMm,
-                    height: p.heightMm,
-                    depth: p.depthMm,
-                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2,
-                    isHazardous: p.isHazardous
+                    id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
+                    weight: p.weightKg, width: p.widthMm, height: p.heightMm, depth: p.depthMm,
+                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2, isHazardous: p.isHazardous
                 })));
             }
         } catch (e) { console.error(e); } finally { setIsLoading(false); }
@@ -76,61 +71,155 @@ const InventoryContent = () => {
 
     useEffect(() => { fetchData(); }, []);
 
-    // --- FUNKCJE USUWANIA ---
+    // csv import
+
+    const getSmallestAvailableCode = (currentRacks: Rack[], basePrefix: string = "R-") => {
+        const codes = currentRacks.map(r => r.code);
+        let i = 1;
+        while (true) {
+            const candidate = `${basePrefix}${i.toString().padStart(2, '0')}`;
+            if (!codes.includes(candidate)) return candidate;
+            i++;
+        }
+    };
+
+    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const text = event.target?.result as string;
+            const lines = text.split("\n");
+            const buffer: any[] = [];
+            const conflicts: string[] = [];
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith("#")) return;
+                const [code, rows, cols, tMin, tMax, w, wi, h, d, c] = trimmed.split(";");
+                const rackDto = { code: code?.trim(), rows: Number(rows), columns: Number(cols), minTemperature: Number(tMin), maxTemperature: Number(tMax), maxWeightKg: Number(w), maxItemWidthMm: Number(wi), maxItemHeightMm: Number(h), maxItemDepthMm: Number(d), comment: c?.trim() || "" };
+
+                buffer.push(rackDto);
+                if (racks.some(r => r.code === rackDto.code)) {
+                    conflicts.push(rackDto.code);
+                }
+            });
+
+            if (conflicts.length > 0) {
+                setCsvBuffer(buffer);
+                setConflictingCodes(conflicts);
+                setIsConflictModalOpen(true);
+            } else {
+                await processImport(buffer, 'NONE');
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+    };
+
+    const processImport = async (data: any[], strategy: 'OVERWRITE' | 'RENAME' | 'NONE') => {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        const currentRacks = [...racks];
+
+        for (const item of data) {
+            const existing = currentRacks.find(r => r.code === item.code);
+            let method = "POST";
+            let url = `${API_BASE_URL}/api/Rack`;
+            let body = { ...item };
+
+            if (existing) {
+                if (strategy === 'OVERWRITE') {
+                    method = "PUT";
+                    url = `${API_BASE_URL}/api/Rack/${existing.id}`;
+                } else if (strategy === 'RENAME') {
+                    body.code = getSmallestAvailableCode(currentRacks);
+                    // Dodajemy do listy, żeby kolejny element z CSV nie dostał tego samego kodu
+                    currentRacks.push({ ...existing, code: body.code });
+                } else {
+                    continue; // Pomiń jeśli wystąpił konflikt a strategia to NONE (anulowanie)
+                }
+            }
+
+            try {
+                await fetch(url, {
+                    method,
+                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+            } catch (err) { console.error(err); }
+        }
+        setIsConflictModalOpen(false);
+        fetchData();
+    };
+
+    // scanner
+    useEffect(() => {
+        let scanner: Html5QrcodeScanner | null = null;
+        if (isScannerOpen) {
+            scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
+            scanner.render((decodedText) => {
+                setInboundBarcode(decodedText);
+                setIsScannerOpen(false);
+                scanner?.clear();
+            }, (error) => { /* ignoruj błędy skanowania */ });
+        }
+        return () => { scanner?.clear(); };
+    }, [isScannerOpen]);
+
+    const handleInbound = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ barcode: inboundBarcode })
+            });
+            const data = await res.json();
+            setInboundResult({
+                ...data,
+                time: new Date().toLocaleTimeString(),
+                user: localStorage.getItem("username") || "Operator"
+            });
+            if (data.success) {
+                setInboundBarcode("");
+                fetchData();
+            }
+        } catch (e) { console.error(e); }
+    };
 
     const handleDeleteRack = async (id: number | string) => {
         if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
-
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_BASE_URL}/api/Rack/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (res.ok) {
-                fetchData();
-            } else {
-                alert("Nie można usunąć regału. Może zawierać produkty.");
-            }
+            if (res.ok) fetchData();
         } catch (e) { console.error(e); }
     };
 
     const handleDeleteProduct = async (id: number | string) => {
         if (!window.confirm("Czy na pewno chcesz usunąć ten produkt z katalogu?")) return;
-
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_BASE_URL}/api/Product/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (res.ok) {
-                fetchData();
-            } else {
-                alert("Błąd podczas usuwania produktu.");
-            }
+            if (res.ok) fetchData();
         } catch (e) { console.error(e); }
     };
 
-    // --- RESZTA LOGIKI ---
-
-    const handleOpenAddRackModal = () => {
-        setEditingRack(null);
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setIsProductModalOpen(false);
-        setEditingRack(null);
-        setEditingProduct(null);
-    };
+    const handleOpenAddRackModal = () => { setEditingRack(null); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
 
     const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         const token = localStorage.getItem("token");
-
         const dto = {
             scanCode: f.get("scanCode"),
             name: f.get("name"),
@@ -146,18 +235,9 @@ const InventoryContent = () => {
             validityDays: f.get("validityDays") ? Number(f.get("validityDays")) : null,
             comment: f.get("comment")
         };
-
         const method = editingProduct ? "PUT" : "POST";
-        const url = editingProduct
-            ? `${API_BASE_URL}/api/Product/${editingProduct.id}`
-            : `${API_BASE_URL}/api/Product`;
-
-        const res = await fetch(url, {
-            method,
-            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify(dto)
-        });
-
+        const url = editingProduct ? `${API_BASE_URL}/api/Product/${editingProduct.id}` : `${API_BASE_URL}/api/Product`;
+        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
         if (res.ok) { fetchData(); closeModal(); }
     };
 
@@ -165,9 +245,9 @@ const InventoryContent = () => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         const token = localStorage.getItem("token");
-
+        const code = f.get("code")?.toString();
         const dto = {
-            code: f.get("code"),
+            code: code,
             rows: editingRack ? undefined : Number(f.get("rows")),
             columns: editingRack ? undefined : Number(f.get("columns")),
             minTemperature: Number(f.get("minTemperature")),
@@ -178,62 +258,10 @@ const InventoryContent = () => {
             maxItemDepthMm: Number(f.get("maxItemDepthMm")),
             comment: f.get("comment")
         };
-
         const method = editingRack ? "PUT" : "POST";
-        const url = editingRack
-            ? `${API_BASE_URL}/api/Rack/${editingRack.id}`
-            : `${API_BASE_URL}/api/Rack`;
-
-        const res = await fetch(url, {
-            method,
-            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify(dto)
-        });
-
+        const url = editingRack ? `${API_BASE_URL}/api/Rack/${editingRack.id}` : `${API_BASE_URL}/api/Rack`;
+        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
         if (res.ok) { fetchData(); closeModal(); }
-    };
-
-    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            const lines = text.split("\n");
-            const token = localStorage.getItem("token");
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine || trimmedLine.startsWith("#")) continue;
-
-                const [code, rows, columns, tMin, tMax, weight, width, height, depth, comment] = trimmedLine.split(";");
-                const dto = {
-                    code: code?.trim(),
-                    rows: Number(rows),
-                    columns: Number(columns),
-                    minTemperature: Number(tMin),
-                    maxTemperature: Number(tMax),
-                    maxWeightKg: Number(weight),
-                    maxItemWidthMm: Number(width),
-                    maxItemHeightMm: Number(height),
-                    maxItemDepthMm: Number(depth),
-                    comment: comment?.trim() || ""
-                };
-
-                try {
-                    await fetch(`${API_BASE_URL}/api/Rack`, {
-                        method: "POST",
-                        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                        body: JSON.stringify(dto)
-                    });
-                } catch (err) { console.error(err); }
-            }
-            fetchData();
-            alert("Import zakończony.");
-        };
-        reader.readAsText(file);
-        e.target.value = "";
     };
 
     return (
@@ -248,8 +276,9 @@ const InventoryContent = () => {
                                 <Tabs.List className="ht-tabs-list" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
                                     <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
                                     <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
+                                    <Tabs.Trigger value="inbounds" className="ht-tabs-trigger">Przyjęcia</Tabs.Trigger>
                                 </Tabs.List>
-                                <button onClick={fetchData} className="btn-action-ht" style={{ marginTop: '1rem' }}>
+                                <button onClick={fetchData} className="btn-action-ht">
                                     <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                                 </button>
                             </div>
@@ -264,18 +293,11 @@ const InventoryContent = () => {
                                 <Plus size={18} /><span>{invT.addRack}</span>
                             </button>
                         </div>
-                        {isLoading ? <div className="loading-state">Syncing...</div> : racks.length > 0 ? (
+                        {isLoading ? <div className="loading-state">Syncing...</div> : (
                             <div className="stats-grid">
-                                {racks.map(r => (
-                                    <RackCard
-                                        key={r.id}
-                                        rack={r}
-                                        onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
-                                        onDelete={() => handleDeleteRack(r.id)} // Przekazujemy funkcję usuwania
-                                    />
-                                ))}
+                                {racks.map(r => <RackCard key={r.id} rack={r} onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }} onDelete={() => handleDeleteRack(r.id)} />)}
                             </div>
-                        ) : <div className="empty-state-ht">Brak regałów.</div>}
+                        )}
                     </Tabs.Content>
 
                     <Tabs.Content value="products">
@@ -293,28 +315,68 @@ const InventoryContent = () => {
                             </button>
                         </div>
                         {!isLoading && products.length > 0 ? (
-                            <ProductCatalog
-                                products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))}
-                                viewMode={productViewMode}
-                                onDeleteProduct={handleDeleteProduct} // Przekazujemy funkcję usuwania do katalogu
-                            />
+                            <ProductCatalog products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))} viewMode={productViewMode} onDeleteProduct={handleDeleteProduct} />
                         ) : <div className="empty-state-ht">Brak produktów.</div>}
+                    </Tabs.Content>
+
+                    <Tabs.Content value="inbounds">
+                        <div className="glass-card" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem' }}>
+                            <h2><PackagePlus size={24} /> Przyjmowanie asortymentu</h2>
+                            <form onSubmit={handleInbound} className="ht-form" style={{ marginTop: '1.5rem' }}>
+                                <div className="input-group">
+                                    <label>Zeskanuj lub wpisz kod produktu</label>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <input value={inboundBarcode} onChange={(e) => setInboundBarcode(e.target.value)} placeholder="Kod kreskowy..." style={{ flex: 1 }} />
+                                        <button type="button" onClick={() => setIsScannerOpen(true)} className="btn-action-ht"><Camera size={20} /></button>
+                                    </div>
+                                </div>
+                                <button type="submit" className="btn-primary-ht" style={{ marginTop: '1rem', width: '100%' }}>Przyjmij do magazynu</button>
+                            </form>
+                            {isScannerOpen && (
+                                <div className="scanner-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div id="reader" style={{ width: '100%', maxWidth: '500px' }}></div>
+                                    <button onClick={() => setIsScannerOpen(false)} className="btn-close" style={{ marginTop: '2rem', color: '#fff' }}><X size={32} /></button>
+                                </div>
+                            )}
+                        </div>
                     </Tabs.Content>
                 </Tabs.Root>
             </div>
 
-            <RackModal
-                open={isModalOpen}
-                onOpenChange={setIsModalOpen}
-                editingRack={editingRack}
-                onSave={handleSaveRack}
-                invT={invT}
-            />
-            <ProductModal
-                open={isProductModalOpen}
-                onOpenChange={setIsProductModalOpen}
-                onSave={handleSaveProduct}
-            />
+            <Dialog.Root open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="dialog-overlay-ht" />
+                    <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <Dialog.Title><h2>Konflikt oznaczeń</h2></Dialog.Title>
+                        </div>
+                        <div style={{ margin: '1.5rem 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff4d4d', marginBottom: '1rem' }}>
+                                <AlertTriangle size={24} />
+                                <strong>Wykryto powtarzające się kody regałów!</strong>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                Następujące kody już istnieją w bazie: <br />
+                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{conflictingCodes.join(', ')}</span>
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'OVERWRITE')}>
+                                <Trash2 size={16} /> Nadpisz istniejące regały
+                            </button>
+                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'RENAME')}>
+                                <Copy size={16} /> Zmień nazwy na wolne (np. {getSmallestAvailableCode(racks)})
+                            </button>
+                            <button className="btn-action-ht" onClick={() => setIsConflictModalOpen(false)} style={{ color: '#ff4d4d' }}>
+                                <Ban size={16} /> Anuluj operację
+                            </button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <RackModal open={isModalOpen} onOpenChange={setIsModalOpen} editingRack={editingRack} onSave={handleSaveRack} invT={invT} existingRacks={racks}/>
+            <ProductModal open={isProductModalOpen} onOpenChange={setIsProductModalOpen} onSave={handleSaveProduct} />
         </Tooltip.Provider>
     );
 };
