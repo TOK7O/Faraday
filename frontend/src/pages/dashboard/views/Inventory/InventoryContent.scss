@@ -54,36 +54,36 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
     }
   }
+}
 
-  .rack-visual-grid {
-    display: grid;
-    gap: 4px;
-    background: var(--bg-input);
-    padding: 10px;
-    border-radius: 8px;
-    margin: 1rem 0;
+.rack-visual-grid {
+  display: grid;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 10px;
+  border-radius: 8px;
+  margin: 1rem 0;
 
-    .cell {
-      aspect-ratio: 1;
-      border-radius: 4px;
-      background: color-mix(in srgb, var(--text-main), transparent 90%);
-      position: relative;
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-main), transparent 90%);
+    position: relative;
 
-      &.occupied {
-        background: var(--accent-primary);
-        opacity: 0.6;
-      }
+    &.occupied {
+      background: var(--accent-primary);
+      opacity: 0.6;
+    }
 
-      .fifo-tag {
-        position: absolute;
-        font-size: 8px;
-        background: var(--success-color);
-        color: white;
-        padding: 1px 3px;
-        border-radius: 2px;
-        top: -5px;
-        left: -5px;
-      }
+    .fifo-tag {
+      position: absolute;
+      font-size: 8px;
+      background: var(--success-color);
+      color: white;
+      padding: 1px 3px;
+      border-radius: 2px;
+      top: -5px;
+      left: -5px;
     }
   }
 }
