@@ -167,7 +167,7 @@ const InventoryContent = () => {
                     </header>
 
                     <Tabs.Content value="racks">
-                        <div className="action-bar">
+                        <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
                             <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
                             <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}>
                                 <FileUp size={18} /><span>{invT.importCSV}</span>
