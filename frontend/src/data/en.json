@@ -251,7 +251,11 @@
         "description": "Create and manage manual database backups.",
         "createButton": "Create New Backup",
         "history": "Backup History",
-        "noBackups": "No backups found.",
+        "noBackups": "No previous backups found locally.",
+        "fileName": "File name",
+        "size": "Size",
+        "date": "Created at",
+        "download": "Download",
         "success": "Backup created successfully!",
         "error": "Failed to create backup."
       },

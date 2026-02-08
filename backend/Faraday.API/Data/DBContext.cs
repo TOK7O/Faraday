@@ -18,6 +18,7 @@ namespace Faraday.API.Data
         public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<OperationLog> OperationLogs { get; set; }
+        public DbSet<BackupLog> BackupLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

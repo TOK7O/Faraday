@@ -1,12 +1,17 @@
 ﻿using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Faraday.API.Data;
+using Faraday.API.DTOs;
+using Faraday.API.Models;
 using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
     public class BackupService : IBackupService
     {
+        private readonly FaradayDbContext _dbContext;
         private readonly IConfiguration _configuration;
         private readonly ILogger<BackupService> _logger;
         // Backup storage location inside the container
@@ -19,8 +24,9 @@ namespace Faraday.API.Services
         private readonly byte[] _encryptionKey = Encoding.UTF8.GetBytes("FaradayWMS_Secure_Backup_Key_256"); 
         private readonly byte[] _iv = Encoding.UTF8.GetBytes("Faraday_Init_Vec");
 
-        public BackupService(IConfiguration configuration, ILogger<BackupService> logger)
+        public BackupService(FaradayDbContext dbContext, IConfiguration configuration, ILogger<BackupService> logger)
         {
+            _dbContext = dbContext;
             _configuration = configuration;
             _logger = logger;
 
@@ -86,6 +92,20 @@ namespace Faraday.API.Services
             }
 
             _logger.LogInformation($"Backup completed successfully. Saved to: {filePath}");
+
+            // 6. Log to Database
+            var fileInfo = new FileInfo(filePath);
+            var log = new BackupLog
+            {
+                FileName = fileName,
+                SizeBytes = fileInfo.Length,
+                IsSuccessful = true,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _dbContext.BackupLogs.Add(log);
+            await _dbContext.SaveChangesAsync();
+
             return fileName;
         }
 
@@ -97,6 +117,56 @@ namespace Faraday.API.Services
                 throw new FileNotFoundException("Backup file not found.");
             }
             return new FileStream(path, FileMode.Open, FileAccess.Read);
+        }
+
+        public IEnumerable<BackupHistoryDto> GetBackupHistory()
+        {
+            try
+            {
+                // 1. Try fetching from Database
+                var logs = _dbContext.BackupLogs
+                    .Where(l => l.IsSuccessful)
+                    .OrderByDescending(l => l.Timestamp)
+                    .Select(l => new BackupHistoryDto
+                    {
+                        FileName = l.FileName,
+                        SizeBytes = l.SizeBytes,
+                        CreatedAt = l.Timestamp
+                    })
+                    .ToList();
+
+                if (logs.Any())
+                {
+                    return logs;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Failed to fetch backup history from database: {ex.Message}. Falling back to filesystem.");
+            }
+
+            // 2. Fallback to Filesystem if database is empty or failed
+            if (!Directory.Exists(_backupFolder))
+            {
+                return Enumerable.Empty<BackupHistoryDto>();
+            }
+
+            var directoryInfo = new DirectoryInfo(_backupFolder);
+            return directoryInfo.GetFiles("*.enc")
+                .Select(f => new BackupHistoryDto
+                {
+                    FileName = f.Name,
+                    SizeBytes = f.Length,
+                    CreatedAt = f.CreationTimeUtc
+                })
+                .OrderByDescending(f => f.CreatedAt);
+        }
+
+        public async Task<IEnumerable<BackupLog>> GetBackupHistoryFromDbAsync()
+        {
+            return await _dbContext.BackupLogs
+                .OrderByDescending(l => l.Timestamp)
+                .ToListAsync();
         }
         
         // Helper to extract credentials from connection string
