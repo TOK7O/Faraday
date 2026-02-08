@@ -25,6 +25,12 @@ namespace Faraday.API.Services.Interfaces
         /// Retrieves detailed information about a specific rack by its unique ID.
         /// </summary>
         Task<RackDto?> GetRackByIdAsync(int id);
+        
+        /// <summary>
+        /// Updates the physical constraints and metadata of an existing rack.
+        /// Validates that current inventory still meets new requirements.
+        /// </summary>
+        Task<RackDto> UpdateRackAsync(int id, RackUpdateDto dto);
 
         /// <summary>
         /// Permanently removes a rack definition from the system.

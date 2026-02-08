@@ -49,6 +49,25 @@ namespace Faraday.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        
+        [HttpPut("{id}")]
+        public async Task<ActionResult<RackDto>> Update(int id, RackUpdateDto dto)
+        {
+            try
+            {
+                var updatedRack = await _rackService.UpdateRackAsync(id, dto);
+                return Ok(updatedRack);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Validation failed - new constraints incompatible with current inventory
+                return Conflict(ex.Message);
+            }
+        }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator,Manager")] // Only higher roles can delete

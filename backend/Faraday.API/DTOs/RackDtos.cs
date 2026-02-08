@@ -32,4 +32,18 @@ namespace Faraday.API.DTOs
         public bool IsActive { get; set; }
         public int SlotCount { get; set; }
     }
+    
+    public class RackUpdateDto
+    {
+        public decimal MinTemperature { get; set; }
+        public decimal MaxTemperature { get; set; }
+
+        public decimal MaxWeightKg { get; set; }
+        public decimal MaxItemWidthMm { get; set; }
+        public decimal MaxItemHeightMm { get; set; }
+        public decimal MaxItemDepthMm { get; set; }
+
+        [MaxLength(500)]
+        public string? Comment { get; set; }
+    }
 }

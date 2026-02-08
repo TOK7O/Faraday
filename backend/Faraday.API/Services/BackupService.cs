@@ -38,12 +38,12 @@ namespace Faraday.API.Services
 
             _logger.LogInformation($"Starting database backup: {fileName}");
 
-            // 1. Get connection details from Config
+            // Get connection details from Config
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
             // Parse connection string to get user, pass, host, db (Basic implementation)
             var connParams = ParseConnectionString(connectionString!);
 
-            // 2. Setup pg_dump process
+            // Setup pg_dump process
             var processInfo = new ProcessStartInfo
             {
                 FileName = "pg_dump",
@@ -61,19 +61,17 @@ namespace Faraday.API.Services
             using var process = new Process();
             process.StartInfo = processInfo;
             
-            // 3. Setup Encryption Streams
+            // Setup Encryption Streams
             using var fileStream = new FileStream(filePath, FileMode.Create);
             using var aes = Aes.Create();
             aes.Key = _encryptionKey;
             aes.IV = _iv;
             
             using var cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
-
-            // 4. Start Process
+            
             process.Start();
 
-            // 5. Copy pg_dump Output -> Encryptor -> File
-            // This streams data directly, efficient for large databases
+            // Copy pg_dump Output -> Encryptor -> File
             await process.StandardOutput.BaseStream.CopyToAsync(cryptoStream);
             
             var errors = await process.StandardError.ReadToEndAsync();

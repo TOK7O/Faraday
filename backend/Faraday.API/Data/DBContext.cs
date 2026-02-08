@@ -11,10 +11,11 @@ namespace Faraday.API.Data
 
         public DbSet<Rack> Racks { get; set; }
         public DbSet<RackSlot> RackSlots { get; set; }
-        public DbSet<ProductDefinition> Products { get; set; }
-        public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<TemperatureReading> TemperatureReadings { get; set; }
         public DbSet<WeightReading> WeightReadings { get; set; }
+        public DbSet<Alert> Alerts { get; set; }
+        public DbSet<ProductDefinition> Products { get; set; }
+        public DbSet<InventoryItem> InventoryItems { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<OperationLog> OperationLogs { get; set; }
 

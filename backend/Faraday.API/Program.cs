@@ -107,9 +107,11 @@ builder.Services.AddScoped<IWarehouseAlgorithmService, WarehouseAlgorithmService
 builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
+builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
+builder.Services.AddHostedService<SimulationBackgroundWorker>();
 
 var app = builder.Build();
 

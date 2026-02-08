@@ -42,4 +42,31 @@ namespace Faraday.API.DTOs
         public int Id { get; set; }
         public bool IsActive { get; set; }
     }
+    
+    // DTO for updating existing products (Input)
+    public class ProductUpdateDto
+    {
+        [Required]
+        [MaxLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? PhotoUrl { get; set; }
+
+        public decimal RequiredMinTemp { get; set; }
+        public decimal RequiredMaxTemp { get; set; }
+
+        public decimal WeightKg { get; set; }
+        public decimal WidthMm { get; set; }
+        public decimal HeightMm { get; set; }
+        public decimal DepthMm { get; set; }
+
+        public bool IsHazardous { get; set; }
+        public HazardType HazardClassification { get; set; } = HazardType.None;
+
+        public uint? ValidityDays { get; set; }
+
+        [MaxLength(1000)]
+        public string? Comment { get; set; }
+    }
 }
