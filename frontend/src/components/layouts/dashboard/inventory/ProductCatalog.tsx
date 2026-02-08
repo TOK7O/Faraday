@@ -1,4 +1,4 @@
-import { Package, ShieldAlert, Weight, Thermometer } from "lucide-react";
+import { Package, Weight, Thermometer, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { Product } from "./InventoryContent.types";
 
 interface ProductCatalogProps {
@@ -13,8 +13,12 @@ export const ProductCatalog = ({ products, viewMode }: ProductCatalogProps) => {
                 {products.map((p) => (
                     <div className="glass-card" key={p.id} style={{ padding: '1.2rem', display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
                         <div style={{ width: '50px', height: '50px', background: 'var(--bg-input)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                            <Package size={28} style={{ color: p.isHazardous ? '#ff4d4d' : 'var(--accent-primary)' }} />
-                            {p.isHazardous && <ShieldAlert size={14} style={{ position: 'absolute', top: '-4px', right: '-4px', color: '#ff4d4d' }} />}
+                            {/* Visual Logic: Show Red Triangle if hazardous, else normal Package */}
+                            {p.isHazardous ? (
+                                <AlertTriangle size={28} style={{ color: '#ff4d4d' }} />
+                            ) : (
+                                <Package size={28} style={{ color: 'var(--accent-primary)' }} />
+                            )}
                         </div>
                         <div style={{ flex: 1 }}>
                             <span style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', fontFamily: 'monospace' }}>{p.id}</span>
@@ -24,12 +28,20 @@ export const ProductCatalog = ({ products, viewMode }: ProductCatalogProps) => {
                                 <span><Thermometer size={12}/> {p.tempRequired}°C</span>
                             </div>
                         </div>
+
+                        {/* Extra Visual Indicator for Grid */}
+                        {p.isHazardous && (
+                            <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                                <AlertTriangle size={16} color="#ff4d4d" />
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
         );
     }
 
+    // List View
     return (
         <div className="glass-table-wrapper">
             <table className="ht-table">
@@ -52,7 +64,34 @@ export const ProductCatalog = ({ products, viewMode }: ProductCatalogProps) => {
                         <td>{p.width}x{p.height}x{p.depth}</td>
                         <td>{p.tempRequired}°C</td>
                         <td className="text-right">
-                            {p.isHazardous ? <span style={{ color: '#ff4d4d', fontSize: '0.7rem', fontWeight: 800 }}>NIEBEZPIECZNY</span> : 'BEZPIECZNY'}
+                            {p.isHazardous ? (
+                                <span style={{
+                                    color: '#ff4d4d',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: 'rgba(255, 77, 77, 0.1)',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px'
+                                }}>
+                                    <AlertTriangle size={14} strokeWidth={2.5} />
+                                    NIEBEZPIECZNY
+                                </span>
+                            ) : (
+                                <span style={{
+                                    color: 'var(--text-muted)',
+                                    fontSize: '0.75rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    opacity: 0.7
+                                }}>
+                                    <CheckCircle2 size={14} />
+                                    BEZPIECZNY
+                                </span>
+                            )}
                         </td>
                     </tr>
                 ))}
