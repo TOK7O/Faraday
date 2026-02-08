@@ -8,7 +8,7 @@ namespace Faraday.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = "Administrator")] // Only the admin can handle backups
+    [Authorize(Roles = "Administrator")] // Only the admin can handle backups
     public class BackupController : ControllerBase
     {
         private readonly IBackupService _backupService;
