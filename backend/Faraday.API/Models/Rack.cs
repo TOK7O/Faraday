@@ -33,6 +33,21 @@ namespace Faraday.API.Models
 
         [Range(0, 10000)]
         public decimal MaxItemDepthMm { get; set; }
+        
+        // Simulation Fields 
+
+        // Temperature Monitoring
+        public decimal? CurrentTemperature { get; set; }
+        public DateTime? LastTemperatureCheck { get; set; }
+
+        // Weight Monitoring (Total Rack Load)
+        // Measured by sensors (simulated)
+        public decimal? CurrentTotalWeightKg { get; set; } 
+        
+        // Calculated by the system
+        public decimal? ExpectedTotalWeightKg { get; set; } 
+        
+        public DateTime? LastWeightCheck { get; set; }
 
         [MaxLength(500)]
         public string? Comment { get; set; }

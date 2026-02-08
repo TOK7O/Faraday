@@ -30,6 +30,12 @@ namespace Faraday.API.Services.Interfaces
         Task<ProductDto?> GetProductByScanCodeAsync(string scanCode);
 
         /// <summary>
+        /// Updates an existing product definition. Validates that items currently in stock
+        /// still meet rack constraints with new product specifications.
+        /// </summary>
+        Task<ProductDto> UpdateProductAsync(int id, ProductUpdateDto dto);
+        
+        /// <summary>
         /// Removes a product definition from the system (by marking it as inactive).
         /// </summary>
         Task DeleteProductAsync(int id);

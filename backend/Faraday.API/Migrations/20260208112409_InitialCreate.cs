@@ -55,6 +55,11 @@ namespace Faraday.API.Migrations
                     MaxItemWidthMm = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     MaxItemHeightMm = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
                     MaxItemDepthMm = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
+                    CurrentTemperature = table.Column<decimal>(type: "numeric", nullable: true),
+                    LastTemperatureCheck = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CurrentTotalWeightKg = table.Column<decimal>(type: "numeric", nullable: true),
+                    ExpectedTotalWeightKg = table.Column<decimal>(type: "numeric", nullable: true),
+                    LastWeightCheck = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
@@ -89,6 +94,29 @@ namespace Faraday.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Alerts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RackId = table.Column<int>(type: "integer", nullable: true),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    IsResolved = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Alerts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Alerts_Racks_RackId",
+                        column: x => x.RackId,
+                        principalTable: "Racks",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RackSlots",
                 columns: table => new
                 {
@@ -98,9 +126,6 @@ namespace Faraday.API.Migrations
                     X = table.Column<int>(type: "integer", nullable: false),
                     Y = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    ExpectedWeightKg = table.Column<decimal>(type: "numeric", nullable: true),
-                    LastMeasuredWeightKg = table.Column<decimal>(type: "numeric", nullable: true),
-                    LastWeightCheck = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
@@ -118,7 +143,7 @@ namespace Faraday.API.Migrations
                 name: "TemperatureReadings",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RackId = table.Column<int>(type: "integer", nullable: false),
                     RecordedTemperature = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
@@ -139,10 +164,11 @@ namespace Faraday.API.Migrations
                 name: "WeightReadings",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RackId = table.Column<int>(type: "integer", nullable: false),
-                    WeightKg = table.Column<decimal>(type: "numeric", nullable: false),
+                    MeasuredWeightKg = table.Column<decimal>(type: "numeric", nullable: false),
+                    ExpectedWeightKg = table.Column<decimal>(type: "numeric", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -222,6 +248,11 @@ namespace Faraday.API.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Alerts_RackId",
+                table: "Alerts",
+                column: "RackId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InventoryItems_ProductDefinitionId",
                 table: "InventoryItems",
                 column: "ProductDefinitionId");
@@ -261,9 +292,9 @@ namespace Faraday.API.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_TemperatureReadings_RackId_Timestamp",
+                name: "IX_TemperatureReadings_RackId",
                 table: "TemperatureReadings",
-                columns: new[] { "RackId", "Timestamp" });
+                column: "RackId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
@@ -278,14 +309,17 @@ namespace Faraday.API.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_WeightReadings_RackId_Timestamp",
+                name: "IX_WeightReadings_RackId",
                 table: "WeightReadings",
-                columns: new[] { "RackId", "Timestamp" });
+                column: "RackId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Alerts");
+
             migrationBuilder.DropTable(
                 name: "InventoryItems");
 

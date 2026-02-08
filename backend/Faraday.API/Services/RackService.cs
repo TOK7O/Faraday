@@ -101,6 +101,80 @@ namespace Faraday.API.Services
             _logger.LogInformation($"Created rack {rack.Code} with {rack.Slots.Count} slots.");
             return MapToDto(rack);
         }
+        
+        public async Task<RackDto> UpdateRackAsync(int id, RackUpdateDto dto)
+        {
+            var rack = await _context.Racks
+                .Include(r => r.Slots)
+                .ThenInclude(s => s.CurrentItem)
+                .ThenInclude(i => i!.Product)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (rack == null)
+            {
+                throw new KeyNotFoundException($"Rack with ID {id} not found.");
+            }
+
+            // Validate new constraints against currently stored items
+            var storedItems = rack.Slots
+                .Where(s => s.CurrentItem != null)
+                .Select(s => s.CurrentItem!.Product)
+                .ToList();
+
+            if (storedItems.Any())
+            {
+                // Temperature validation - new range must cover all products
+                foreach (var product in storedItems)
+                {
+                    if (dto.MinTemperature < product.RequiredMinTemp || 
+                        dto.MaxTemperature > product.RequiredMaxTemp)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update rack: Product '{product.Name}' requires " +
+                            $"{product.RequiredMinTemp}°C - {product.RequiredMaxTemp}°C, " +
+                            $"but new rack range is {dto.MinTemperature}°C - {dto.MaxTemperature}°C");
+                    }
+                }
+
+                // Dimension validation - new limits must fit all products
+                foreach (var product in storedItems)
+                {
+                    if (product.WidthMm > dto.MaxItemWidthMm || 
+                        product.HeightMm > dto.MaxItemHeightMm || 
+                        product.DepthMm > dto.MaxItemDepthMm)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update rack: Product '{product.Name}' dimensions " +
+                            $"{product.WidthMm}x{product.HeightMm}x{product.DepthMm}mm exceed " +
+                            $"new limits {dto.MaxItemWidthMm}x{dto.MaxItemHeightMm}x{dto.MaxItemDepthMm}mm");
+                    }
+                }
+
+                // Weight validation - new limit must handle current load
+                var currentTotalWeight = storedItems.Sum(p => p.WeightKg);
+                if (currentTotalWeight > dto.MaxWeightKg)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot update rack: Current load is {currentTotalWeight:F2}kg, " +
+                        $"but new weight limit is {dto.MaxWeightKg}kg");
+                }
+            }
+
+            // Apply updates
+            rack.MinTemperature = dto.MinTemperature;
+            rack.MaxTemperature = dto.MaxTemperature;
+            rack.MaxWeightKg = dto.MaxWeightKg;
+            rack.MaxItemWidthMm = dto.MaxItemWidthMm;
+            rack.MaxItemHeightMm = dto.MaxItemHeightMm;
+            rack.MaxItemDepthMm = dto.MaxItemDepthMm;
+            rack.Comment = dto.Comment;
+            rack.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Updated rack {rack.Code} (ID: {id})");
+            return MapToDto(rack);
+        }
 
         public async Task DeleteRackAsync(int id)
         {

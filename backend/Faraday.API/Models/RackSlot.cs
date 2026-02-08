@@ -22,10 +22,6 @@ namespace Faraday.API.Models
 
         public virtual InventoryItem? CurrentItem { get; set; }
 
-        public decimal? ExpectedWeightKg { get; set; }
-        public decimal? LastMeasuredWeightKg { get; set; }
-        public DateTime? LastWeightCheck { get; set; }
-
         [Timestamp]
         public uint Version { get; set; }
     }

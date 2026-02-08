@@ -59,6 +59,25 @@ namespace Faraday.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ProductDto>> Update(int id, ProductUpdateDto dto)
+        {
+            try
+            {
+                var updatedProduct = await _productService.UpdateProductAsync(id, dto);
+                return Ok(updatedProduct);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Validation failed - new specs incompatible with current rack placements
+                return Conflict(ex.Message);
+            }
+        }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator,Manager")]

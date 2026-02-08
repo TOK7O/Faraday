@@ -99,6 +99,92 @@ namespace Faraday.API.Services
             _logger.LogInformation($"Created product definition: {product.Name} ({product.ScanCode})");
             return MapToDto(product);
         }
+        
+        public async Task<ProductDto> UpdateProductAsync(int id, ProductUpdateDto dto)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                throw new KeyNotFoundException($"Product with ID {id} not found.");
+            }
+
+            // Retrieve all active inventory items of this product to validate against their racks
+            var itemsInStock = await _context.InventoryItems
+                .Include(i => i.Slot)
+                .ThenInclude(s => s.Rack)
+                .Where(i => i.ProductDefinitionId == id && i.Status == ItemStatus.InStock)
+                .ToListAsync();
+
+            // If there are items in stock, validate that new specifications are compatible with their racks
+            if (itemsInStock.Any())
+            {
+                foreach (var item in itemsInStock)
+                {
+                    var rack = item.Slot.Rack;
+
+                    // Temperature validation - rack must be able to maintain new product requirements
+                    if (rack.MinTemperature > dto.RequiredMinTemp || 
+                        rack.MaxTemperature < dto.RequiredMaxTemp)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update product: Item in rack '{rack.Code}' requires " +
+                            $"temperature range {dto.RequiredMinTemp}°C - {dto.RequiredMaxTemp}°C, " +
+                            $"but rack only supports {rack.MinTemperature}°C - {rack.MaxTemperature}°C");
+                    }
+
+                    // Dimension validation - new size must fit in current rack slots
+                    if (dto.WidthMm > rack.MaxItemWidthMm || 
+                        dto.HeightMm > rack.MaxItemHeightMm || 
+                        dto.DepthMm > rack.MaxItemDepthMm)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update product: New dimensions {dto.WidthMm}x{dto.HeightMm}x{dto.DepthMm}mm " +
+                            $"exceed rack '{rack.Code}' limits {rack.MaxItemWidthMm}x{rack.MaxItemHeightMm}x{rack.MaxItemDepthMm}mm");
+                    }
+
+                    // Weight validation - rack must handle new weight without exceeding total capacity
+                    var otherItemsWeight = rack.Slots
+                        .Where(s => s.CurrentItem != null && s.CurrentItem.Id != item.Id)
+                        .Sum(s => s.CurrentItem!.Product.WeightKg);
+                    
+                    var newTotalWeight = otherItemsWeight + dto.WeightKg;
+
+                    if (newTotalWeight > rack.MaxWeightKg)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot update product: New weight {dto.WeightKg}kg would cause rack '{rack.Code}' " +
+                            $"to exceed its limit (total: {newTotalWeight:F2}kg / {rack.MaxWeightKg}kg)");
+                    }
+                }
+            }
+
+            // Compliance validation - hazardous products must have classification
+            if (dto.IsHazardous && dto.HazardClassification == HazardType.None)
+            {
+                dto.HazardClassification = HazardType.Other;
+            }
+
+            // Apply updates to the product definition
+            product.Name = dto.Name;
+            product.PhotoUrl = dto.PhotoUrl;
+            product.RequiredMinTemp = dto.RequiredMinTemp;
+            product.RequiredMaxTemp = dto.RequiredMaxTemp;
+            product.WeightKg = dto.WeightKg;
+            product.WidthMm = dto.WidthMm;
+            product.HeightMm = dto.HeightMm;
+            product.DepthMm = dto.DepthMm;
+            product.IsHazardous = dto.IsHazardous;
+            product.HazardClassification = dto.HazardClassification;
+            product.ValidityDays = dto.ValidityDays;
+            product.Comment = dto.Comment;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Updated product definition: {product.Name} (ID: {id})");
+            return MapToDto(product);
+        }
+        
         public async Task DeleteProductAsync(int id)
         {
             // Check if there are any active items of this product in stock

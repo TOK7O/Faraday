@@ -57,6 +57,40 @@ namespace Faraday.API.Migrations
                     b.ToTable("BackupLogs");
                 });
 
+            modelBuilder.Entity("Faraday.API.Models.Alert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RackId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RackId");
+
+                    b.ToTable("Alerts");
+                });
+
             modelBuilder.Entity("Faraday.API.Models.InventoryItem", b =>
                 {
                     b.Property<int>("Id")
@@ -442,6 +476,15 @@ namespace Faraday.API.Migrations
                     b.HasIndex("RackId", "Timestamp");
 
                     b.ToTable("WeightReadings");
+                });
+
+            modelBuilder.Entity("Faraday.API.Models.Alert", b =>
+                {
+                    b.HasOne("Faraday.API.Models.Rack", "Rack")
+                        .WithMany()
+                        .HasForeignKey("RackId");
+
+                    b.Navigation("Rack");
                 });
 
             modelBuilder.Entity("Faraday.API.Models.BackupLog", b =>
