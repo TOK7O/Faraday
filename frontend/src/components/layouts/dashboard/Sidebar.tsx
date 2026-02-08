@@ -1,4 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import "./Sidebar.scss";
 import {
   LayoutDashboard,
@@ -14,60 +15,75 @@ import { useTranslation } from "@/context/LanguageContext.tsx";
 
 const Sidebar = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate(); // Initialize the navigation hook
+
+  // --- LOGOUT LOGIC ---
+  const handleLogout = () => {
+    // 1. Remove specific auth items
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+
+    // Optional: You could use localStorage.clear() if you don't store other settings
+    // localStorage.clear();
+
+    // 2. Redirect the user to the login screen
+    navigate("/login");
+  };
 
   return (
-    <div className="sidebar-container">
-      <Tabs.List className="sidebar-nav">
-        <div className="nav-group">
+      <div className="sidebar-container">
+        <Tabs.List className="sidebar-nav">
+          <div className="nav-group">
           <span className="group-label">
             {t.dashboardPage.sidebar.groups.terminal}
           </span>
-          <Tabs.Trigger className="nav-item" value="overview">
-            <LayoutDashboard size={18} /> {t.dashboardPage.sidebar.nav.overview}
-          </Tabs.Trigger>
-          <Tabs.Trigger className="nav-item" value="inventory">
-            <Package size={18} /> {t.dashboardPage.sidebar.nav.inventory}
-          </Tabs.Trigger>
-        </div>
+            <Tabs.Trigger className="nav-item" value="overview">
+              <LayoutDashboard size={18} /> {t.dashboardPage.sidebar.nav.overview}
+            </Tabs.Trigger>
+            <Tabs.Trigger className="nav-item" value="inventory">
+              <Package size={18} /> {t.dashboardPage.sidebar.nav.inventory}
+            </Tabs.Trigger>
+          </div>
 
-        <div className="nav-group">
+          <div className="nav-group">
           <span className="group-label">
             {t.dashboardPage.sidebar.groups.securityLogs}
           </span>
-          <Tabs.Trigger className="nav-item" value="personnel">
-            <Users size={18} /> {t.dashboardPage.sidebar.nav.personnel}
-          </Tabs.Trigger>
-          <Tabs.Trigger className="nav-item" value="operations">
-            <History size={18} /> {t.dashboardPage.sidebar.nav.operations}
-          </Tabs.Trigger>
-          <Tabs.Trigger className="nav-item" value="reports">
-            <FileText size={18} /> {t.dashboardPage.sidebar.nav.reports}
-          </Tabs.Trigger>
-          <Tabs.Trigger className="nav-item" value="backups">
-            <Database size={18} /> {t.dashboardPage.sidebar.nav.backups}
-          </Tabs.Trigger>
-        </div>
+            <Tabs.Trigger className="nav-item" value="personnel">
+              <Users size={18} /> {t.dashboardPage.sidebar.nav.personnel}
+            </Tabs.Trigger>
+            <Tabs.Trigger className="nav-item" value="operations">
+              <History size={18} /> {t.dashboardPage.sidebar.nav.operations}
+            </Tabs.Trigger>
+            <Tabs.Trigger className="nav-item" value="reports">
+              <FileText size={18} /> {t.dashboardPage.sidebar.nav.reports}
+            </Tabs.Trigger>
+            <Tabs.Trigger className="nav-item" value="backups">
+              <Database size={18} /> {t.dashboardPage.sidebar.nav.backups}
+            </Tabs.Trigger>
+          </div>
 
-        <div className="nav-group">
+          <div className="nav-group">
           <span className="group-label">
             {t.dashboardPage.sidebar.groups.settings}
           </span>
 
-          <Tabs.Trigger className="nav-item" value="settings">
-            <Settings size={18} /> {t.dashboardPage.sidebar.nav.settings}
-          </Tabs.Trigger>
-        </div>
-      </Tabs.List>
-
-      <div className="sidebar-footer">
-        <button className="logout-btn">
-          <div className="logout-icon-wrapper">
-            <LogOut size={18} />
+            <Tabs.Trigger className="nav-item" value="settings">
+              <Settings size={18} /> {t.dashboardPage.sidebar.nav.settings}
+            </Tabs.Trigger>
           </div>
-          <span>{t.dashboardPage.sidebar.logout}</span>
-        </button>
+        </Tabs.List>
+
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout}>
+            <div className="logout-icon-wrapper">
+              <LogOut size={18} />
+            </div>
+            <span>{t.dashboardPage.sidebar.logout}</span>
+          </button>
+        </div>
       </div>
-    </div>
   );
 };
 

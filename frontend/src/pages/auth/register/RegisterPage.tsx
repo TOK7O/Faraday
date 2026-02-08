@@ -1,7 +1,7 @@
 import { useTranslation } from "@/context/LanguageContext.tsx";
 import AuthForm from "@components/layouts/auth/AuthForm.tsx";
-import { EmailField } from "@components/ui/EmailField.tsx";
-import { PasswordField } from "@components/ui/PasswordField.tsx";
+import { EmailField } from "@components/ui/RegisterEmailField.tsx";
+import { PasswordField } from "@components/ui/RegisterPasswordField.tsx";
 import { useState } from "react";
 import "../login/LoginPage.scss";
 import { Link } from "react-router-dom";
