@@ -107,5 +107,89 @@ namespace Faraday.API.Controllers
             await _authService.DisableTwoFactorAsync(userId);
             return Ok(new { Message = "2FA disabled." });
         }
+
+        /// <summary>
+        /// Get list of all users in the system (including inactive).
+        /// Only accessible by Administrators.
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("users")]
+        public async Task<ActionResult<List<UserListDto>>> GetAllUsers()
+        {
+            var users = await _authService.GetAllUsersAsync();
+            return Ok(users);
+        }
+
+        /// <summary>
+        /// Update user details: email, role, or active status.
+        /// Admins cannot edit themselves. Cannot demote/deactivate the last admin.
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpPut("users/{targetUserId}")]
+        public async Task<ActionResult<UserListDto>> UpdateUser(int targetUserId, [FromBody] UserUpdateDto dto)
+        {
+            try
+            {
+                var adminId = int.Parse(User.FindFirst("id")!.Value);
+                var updatedUser = await _authService.UpdateUserAsync(targetUserId, adminId, dto);
+                return Ok(updatedUser);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Admin can reset user's password (e.g., when user forgot it).
+        /// Admin cannot reset their own password this way.
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpPost("users/{targetUserId}/reset-password")]
+        public async Task<IActionResult> ResetUserPassword(int targetUserId, [FromBody] AdminPasswordResetDto dto)
+        {
+            try
+            {
+                var adminId = int.Parse(User.FindFirst("id")!.Value);
+                await _authService.ResetUserPasswordAsync(targetUserId, adminId, dto.NewPassword);
+                return Ok(new { Message = "Password reset successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Admin can reset user's 2FA (e.g., when user lost their phone).
+        /// This disables 2FA and removes the secret key.
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpPost("users/{targetUserId}/reset-2fa")]
+        public async Task<IActionResult> ResetUser2FA(int targetUserId)
+        {
+            try
+            {
+                var adminId = int.Parse(User.FindFirst("id")!.Value);
+                await _authService.ResetUser2FAAsync(targetUserId, adminId);
+                return Ok(new { Message = "2FA has been reset for the user." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+        }
     }
 }

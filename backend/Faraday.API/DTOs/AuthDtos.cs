@@ -57,4 +57,34 @@ namespace Faraday.API.DTOs
         [Required]
         public string NewPassword { get; set; } = string.Empty;
     }
+    
+    // User Management DTOs (Admin only)
+    public class UserListDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public bool IsTwoFactorEnabled { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class UserUpdateDto
+    {
+        [EmailAddress]
+        public string? Email { get; set; }
+        
+        public UserRole? Role { get; set; }
+        
+        public bool? IsActive { get; set; }
+    }
+
+    public class AdminPasswordResetDto
+    {
+        [Required]
+        [MinLength(6)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
 }
