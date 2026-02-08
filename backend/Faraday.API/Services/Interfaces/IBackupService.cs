@@ -26,5 +26,11 @@ namespace Faraday.API.Services.Interfaces
         /// Specifically fetches backup logs from the database.
         /// </summary>
         Task<IEnumerable<BackupLog>> GetBackupHistoryFromDbAsync();
+        
+        /// <summary>
+        /// Restores database from an encrypted backup file.
+        /// Decrypts and applies the backup using pg_restore.
+        /// </summary>
+        Task RestoreFromBackupAsync(string fileName, int? restoredByUserId = null);
     }
 }
