@@ -1,151 +1,267 @@
-import React, { useState, useRef } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
-import { Plus, Grid3X3, FileUp, X, Search, LayoutGrid, List, AlertTriangle, ImagePlusIcon, History } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, X, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 import type { Rack, Product } from "@components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@components/layouts/dashboard/inventory/RackCard";
 import { ProductCatalog } from "@components/layouts/dashboard/inventory/ProductCatalog";
+import { RackModal } from "@components/layouts/dashboard/inventory/RackModal";
+import { ProductModal } from "@components/layouts/dashboard/inventory/ProductModal";
 
 import "./InventoryContent.scss";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const InventoryContent = () => {
     const { t } = useTranslation();
     const invT = t.dashboardPage.content.inventory;
 
-    const [racks, setRacks] = useState<Rack[]>([
-        { id: "R-01", m: 5, n: 10, tempMin: 0, tempMax: 5, maxWeight: 1200, maxWidth: 200, maxHeight: 300, maxDepth: 500, comment: "Regał chłodniczy" },
-        { id: "R-02", m: 4, n: 8, tempMin: 0, tempMax: 40, maxWeight: 800, maxWidth: 150, maxHeight: 250, maxDepth: 400, comment: "Regał standardowy" }
-    ]);
-
-    const [products, setProducts] = useState<Product[]>([
-        { id: "P-101", name: "Aceton Techniczny", category: "Chemikalia", weight: 5, width: 50, height: 100, depth: 50, tempRequired: 4, isHazardous: true },
-        { id: "P-102", name: "Moduł CPU X1", category: "Elektronika", weight: 0.5, width: 20, height: 10, depth: 20, tempRequired: 20, isHazardous: false }
-    ]);
-
+    const [racks, setRacks] = useState<Rack[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [productViewMode, setProductViewMode] = useState<'grid' | 'list'>('grid');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingRack, setEditingRack] = useState<Rack | null>(null);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+    // stany dla obslugi csv
+    const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+    const [csvBuffer, setCsvBuffer] = useState<any[]>([]);
+    const [conflictingCodes, setConflictingCodes] = useState<string[]>([]);
+
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [inboundBarcode, setInboundBarcode] = useState("");
+    const [inboundResult, setInboundResult] = useState<any>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setIsProductModalOpen(false);
-        setEditingRack(null);
-        setEditingProduct(null);
+    const fetchData = async () => {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+        try {
+            const [rR, pR] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/Rack`, { headers }),
+                fetch(`${API_BASE_URL}/api/Product`, { headers })
+            ]);
+            if (rR.ok) {
+                const data = await rR.json();
+                setRacks(data.map((r: any) => ({
+                    id: r.id, code: r.code, m: r.rows, n: r.columns, tempMin: r.minTemperature, tempMax: r.maxTemperature,
+                    maxWeight: r.maxWeightKg, maxWidth: r.maxItemWidthMm, maxHeight: r.maxItemHeightMm, maxDepth: r.maxItemDepthMm, comment: r.comment
+                })));
+            }
+            if (pR.ok) {
+                const data = await pR.json();
+                setProducts(data.map((p: any) => ({
+                    id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
+                    weight: p.weightKg, width: p.widthMm, height: p.heightMm, depth: p.depthMm,
+                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2, isHazardous: p.isHazardous
+                })));
+            }
+        } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
 
-    const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const newId = formData.get("id") as string;
+    useEffect(() => { fetchData(); }, []);
 
-        if (products.some(p => p.id.toLowerCase() === newId.toLowerCase() && p.id !== editingProduct?.id)) {
-            alert(`Błąd: Produkt o identyfikatorze "${newId}" już istnieje.`);
-            return;
+    // csv import
+
+    const getSmallestAvailableCode = (currentRacks: Rack[], basePrefix: string = "R-") => {
+        const codes = currentRacks.map(r => r.code);
+        let i = 1;
+        while (true) {
+            const candidate = `${basePrefix}${i.toString().padStart(2, '0')}`;
+            if (!codes.includes(candidate)) return candidate;
+            i++;
         }
-
-        // Pobranie pliku obrazu
-        const imageFile = formData.get("imageFile") as File;
-
-        const productData: any = {
-            id: newId,
-            name: formData.get("name") as string,
-            category: formData.get("category") as string || "Ogólne",
-            weight: Number(formData.get("weight")),
-            width: Number(formData.get("width")),
-            height: Number(formData.get("height")),
-            depth: Number(formData.get("depth")),
-            tempMin: Number(formData.get("tempMin")),
-            tempMax: Number(formData.get("tempMax")),
-            expiryDays: Number(formData.get("expiryDays")),
-            comment: formData.get("comment") as string,
-            isHazardous: formData.get("isHazardous") === "on",
-            hazardType: formData.get("hazardType") as string,
-
-            imageFile: imageFile.size > 0 ? imageFile : null
-        };
-
-        console.log("Zapisywanie produktu z plikiem:", productData);
-
-        if (editingProduct) {
-            setProducts(prev => prev.map(p => p.id === editingProduct.id ? productData : p));
-        } else {
-            setProducts(prev => [...prev, productData]);
-        }
-        closeModal();
     };
-    const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+
+    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
+        reader.onload = async (event) => {
+            const text = event.target?.result as string;
             const lines = text.split("\n");
-            const newRacks: Rack[] = lines
-                .filter(line => line.trim() && !line.startsWith("#"))
-                .map(line => {
-                    const [id, m, n, tMin, tMax, weight, w, h, d, comment] = line.split(";");
-                    return {
-                        id: id?.trim() || `R-${Math.random().toString(36).substr(2, 4)}`,
-                        m: parseInt(m) || 1,
-                        n: parseInt(n) || 1,
-                        tempMin: parseInt(tMin) || 0,
-                        tempMax: parseInt(tMax) || 25,
-                        maxWeight: parseInt(weight) || 1000,
-                        maxWidth: parseInt(w) || 100,
-                        maxHeight: parseInt(h) || 100,
-                        maxDepth: parseInt(d) || 100,
-                        comment: comment?.trim() || ""
-                    };
-                });
-            setRacks(prev => [...prev, ...newRacks]);
+            const buffer: any[] = [];
+            const conflicts: string[] = [];
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith("#")) return;
+                const [code, rows, cols, tMin, tMax, w, wi, h, d, c] = trimmed.split(";");
+                const rackDto = { code: code?.trim(), rows: Number(rows), columns: Number(cols), minTemperature: Number(tMin), maxTemperature: Number(tMax), maxWeightKg: Number(w), maxItemWidthMm: Number(wi), maxItemHeightMm: Number(h), maxItemDepthMm: Number(d), comment: c?.trim() || "" };
+
+                buffer.push(rackDto);
+                if (racks.some(r => r.code === rackDto.code)) {
+                    conflicts.push(rackDto.code);
+                }
+            });
+
+            if (conflicts.length > 0) {
+                setCsvBuffer(buffer);
+                setConflictingCodes(conflicts);
+                setIsConflictModalOpen(true);
+            } else {
+                await processImport(buffer, 'NONE');
+            }
         };
         reader.readAsText(file);
-        event.target.value = "";
+        e.target.value = "";
     };
 
-    const handleDeleteRack = (id: string) => {
-        if (window.confirm(invT.deleteConfirm.replace("{id}", id))) {
-            setRacks(prev => prev.filter(r => r.id !== id));
+    const processImport = async (data: any[], strategy: 'OVERWRITE' | 'RENAME' | 'NONE') => {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        const currentRacks = [...racks];
+
+        for (const item of data) {
+            const existing = currentRacks.find(r => r.code === item.code);
+            let method = "POST";
+            let url = `${API_BASE_URL}/api/Rack`;
+            let body = { ...item };
+
+            if (existing) {
+                if (strategy === 'OVERWRITE') {
+                    method = "PUT";
+                    url = `${API_BASE_URL}/api/Rack/${existing.id}`;
+                } else if (strategy === 'RENAME') {
+                    body.code = getSmallestAvailableCode(currentRacks);
+                    // Dodajemy do listy, żeby kolejny element z CSV nie dostał tego samego kodu
+                    currentRacks.push({ ...existing, code: body.code });
+                } else {
+                    continue; // Pomiń jeśli wystąpił konflikt a strategia to NONE (anulowanie)
+                }
+            }
+
+            try {
+                await fetch(url, {
+                    method,
+                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+            } catch (err) { console.error(err); }
         }
+        setIsConflictModalOpen(false);
+        fetchData();
     };
 
-    const handleSaveRack = (e: React.FormEvent<HTMLFormElement>) => {
+    // scanner
+    useEffect(() => {
+        let scanner: Html5QrcodeScanner | null = null;
+        if (isScannerOpen) {
+            scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
+            scanner.render((decodedText) => {
+                setInboundBarcode(decodedText);
+                setIsScannerOpen(false);
+                scanner?.clear();
+            }, (error) => { /* ignoruj błędy skanowania */ });
+        }
+        return () => { scanner?.clear(); };
+    }, [isScannerOpen]);
+
+    const handleInbound = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ barcode: inboundBarcode })
+            });
+            const data = await res.json();
+            setInboundResult({
+                ...data,
+                time: new Date().toLocaleTimeString(),
+                user: localStorage.getItem("username") || "Operator"
+            });
+            if (data.success) {
+                setInboundBarcode("");
+                fetchData();
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const handleDeleteRack = async (id: number | string) => {
+        if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Rack/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) fetchData();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleDeleteProduct = async (id: number | string) => {
+        if (!window.confirm("Czy na pewno chcesz usunąć ten produkt z katalogu?")) return;
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Product/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) fetchData();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleOpenAddRackModal = () => { setEditingRack(null); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
+
+    const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const newId = formData.get("id") as string;
-        if (racks.some(r => r.id.toLowerCase() === newId.toLowerCase() && r.id !== editingRack?.id)) {
-            alert(`Błąd: Regał "${newId}" już istnieje.`);
-            return;
-        }
-        const rackData: Rack = {
-            id: newId,
-            m: Number(formData.get("m")),
-            n: Number(formData.get("n")),
-            tempMin: Number(formData.get("tempMin")),
-            tempMax: Number(formData.get("tempMax")),
-            maxWeight: Number(formData.get("maxWeight")),
-            maxWidth: Number(formData.get("maxWidth")),
-            maxHeight: Number(formData.get("maxHeight")),
-            maxDepth: Number(formData.get("maxDepth")),
-            comment: formData.get("comment") as string,
+        const f = new FormData(e.currentTarget);
+        const token = localStorage.getItem("token");
+        const dto = {
+            scanCode: f.get("scanCode"),
+            name: f.get("name"),
+            photoUrl: f.get("photoUrl") || null,
+            weightKg: Number(f.get("weightKg")),
+            widthMm: Number(f.get("widthMm")),
+            heightMm: Number(f.get("heightMm")),
+            depthMm: Number(f.get("depthMm")),
+            requiredMinTemp: Number(f.get("requiredMinTemp")),
+            requiredMaxTemp: Number(f.get("requiredMaxTemp")),
+            isHazardous: f.get("isHazardous") === "on",
+            hazardClassification: Number(f.get("hazardClassification")),
+            validityDays: f.get("validityDays") ? Number(f.get("validityDays")) : null,
+            comment: f.get("comment")
         };
-        if (editingRack) setRacks(prev => prev.map(r => r.id === editingRack.id ? rackData : r));
-        else setRacks(prev => [...prev, rackData]);
-        closeModal();
+        const method = editingProduct ? "PUT" : "POST";
+        const url = editingProduct ? `${API_BASE_URL}/api/Product/${editingProduct.id}` : `${API_BASE_URL}/api/Product`;
+        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
+        if (res.ok) { fetchData(); closeModal(); }
+    };
+
+    const handleSaveRack = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const token = localStorage.getItem("token");
+        const code = f.get("code")?.toString();
+        const dto = {
+            code: code,
+            rows: editingRack ? undefined : Number(f.get("rows")),
+            columns: editingRack ? undefined : Number(f.get("columns")),
+            minTemperature: Number(f.get("minTemperature")),
+            maxTemperature: Number(f.get("maxTemperature")),
+            maxWeightKg: Number(f.get("maxWeightKg")),
+            maxItemWidthMm: Number(f.get("maxItemWidthMm")),
+            maxItemHeightMm: Number(f.get("maxItemHeightMm")),
+            maxItemDepthMm: Number(f.get("maxItemDepthMm")),
+            comment: f.get("comment")
+        };
+        const method = editingRack ? "PUT" : "POST";
+        const url = editingRack ? `${API_BASE_URL}/api/Rack/${editingRack.id}` : `${API_BASE_URL}/api/Rack`;
+        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
+        if (res.ok) { fetchData(); closeModal(); }
     };
 
     return (
@@ -154,236 +270,113 @@ const InventoryContent = () => {
                 <Tabs.Root defaultValue="racks" className="inventory-tabs-root">
                     <header className="content-header">
                         <div className="header-brand">
-                            <div className="system-tag">
-                                <Grid3X3 size={14} className="icon-glow" />
-                                <span>{invT.managementCenter}</span>
-                            </div>
+                            <div className="system-tag"><Grid3X3 size={14} className="icon-glow" /><span>{invT.managementCenter}</span></div>
                             <h1>Inventory <span className="outline-text">Hub</span></h1>
-                            <Tabs.List className="ht-tabs-list" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
-                                <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
-                                <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
-                            </Tabs.List>
-                        </div>
-                        <div className="header-actions">
-                            <Tabs.Root defaultValue="none">
-                                <Tabs.List className="ht-tabs-list">
-                                    <Tabs.Trigger value="history" className="ht-tabs-trigger" asChild>
-                                        <button 
-                                            className="btn-primary-ht" 
-                                            style={{ background: 'transparent', border: '1px solid var(--border-input)' }}
-                                            onClick={() => {
-                                                const opsTab = document.querySelector('[value="operations"]') as HTMLElement;
-                                                opsTab?.click();
-                                            }}
-                                        >
-                                            <History size={18} />
-                                            <span>{invT.viewHistory || "View History"}</span>
-                                        </button>
-                                    </Tabs.Trigger>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                <Tabs.List className="ht-tabs-list" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
+                                    <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
+                                    <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
+                                    <Tabs.Trigger value="inbounds" className="ht-tabs-trigger">Przyjęcia</Tabs.Trigger>
                                 </Tabs.List>
-                            </Tabs.Root>
+                                <button onClick={fetchData} className="btn-action-ht">
+                                    <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                                </button>
+                            </div>
                         </div>
                     </header>
 
                     <Tabs.Content value="racks">
                         <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
                             <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
-                            <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}>
-                                <FileUp size={18} /><span>{invT.importCSV}</span>
+                            <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
+                            <button className="btn-primary-ht" onClick={handleOpenAddRackModal}>
+                                <Plus size={18} /><span>{invT.addRack}</span>
                             </button>
-
-                            <Dialog.Root open={isModalOpen} onOpenChange={(o) => !o && closeModal()}>
-                                <Dialog.Trigger asChild>
-                                    <button className="btn-primary-ht" onClick={() => setIsModalOpen(true)}>
-                                        <Plus size={18} /><span>{invT.addRack}</span>
-                                    </button>
-                                </Dialog.Trigger>
-                                <Dialog.Portal>
-                                    <Dialog.Overlay className="dialog-overlay-ht" />
-                                    <Dialog.Content className="dialog-content-ht">
-                                        <div className="modal-accent-line" />
-                                        <div className="modal-header">
-                                            <Dialog.Title><h2>{editingRack ? invT.editRack : invT.newRack}</h2></Dialog.Title>
-                                            <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
-                                        </div>
-                                        <form key={editingRack ? editingRack.id : "new-rack"} className="ht-form" onSubmit={handleSaveRack}>
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>{invT.idLabel}</label>
-                                                    <input name="id" defaultValue={editingRack?.id} required />
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>{invT.sectionDescription}</label>
-                                                    <input name="comment" defaultValue={editingRack?.comment} />
-                                                </div>
-                                            </div>
-                                            <div className="input-row">
-                                                <div className="input-group"><label>Rzędy (M)</label><input type="number" name="m" defaultValue={editingRack?.m} required /></div>
-                                                <div className="input-group"><label>Kolumny (N)</label><input type="number" name="n" defaultValue={editingRack?.n} required /></div>
-                                                <div className="input-group"><label>Max Waga [kg]</label><input type="number" name="maxWeight" defaultValue={editingRack?.maxWeight} required /></div>
-                                            </div>
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>Temp (Min/Max)</label>
-                                                    <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                                        <input type="number" name="tempMin" defaultValue={editingRack?.tempMin} placeholder="Min" required />
-                                                        <input type="number" name="tempMax" defaultValue={editingRack?.tempMax} placeholder="Max" required />
-                                                    </div>
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>Wymiary slotu [mm]</label>
-                                                    <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                                        <input type="number" name="maxWidth" defaultValue={editingRack?.maxWidth} placeholder="X" required />
-                                                        <input type="number" name="maxHeight" defaultValue={editingRack?.maxHeight} placeholder="Y" required />
-                                                        <input type="number" name="maxDepth" defaultValue={editingRack?.maxDepth} placeholder="Z" required />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button type="submit" className="btn-submit-ht">{invT.confirmChanges}</button>
-                                        </form>
-                                    </Dialog.Content>
-                                </Dialog.Portal>
-                            </Dialog.Root>
                         </div>
-                        <div className="stats-grid">
-                            {racks.map((rack) => (
-                                <RackCard key={rack.id} rack={rack} onEdit={(r) => { setEditingRack(r); setIsModalOpen(true); }} onDelete={handleDeleteRack} />
-                            ))}
-                        </div>
+                        {isLoading ? <div className="loading-state">Syncing...</div> : (
+                            <div className="stats-grid">
+                                {racks.map(r => <RackCard key={r.id} rack={r} onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }} onDelete={() => handleDeleteRack(r.id)} />)}
+                            </div>
+                        )}
                     </Tabs.Content>
 
                     <Tabs.Content value="products">
                         <div className="action-bar">
                             <div className="search-container">
-                                <div style={{ position: 'relative', flex: 1 }}>
-                                    <Search size={18} className="search-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-                                    <input
-                                        type="text"
-                                        placeholder={invT.searchProduct}
-                                        style={{ paddingLeft: '40px', width: '100%', maxWidth: '300px' }}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
+                                <Search size={18} className="search-icon" />
+                                <input type="text" placeholder={invT.searchProduct} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                                 <div className="view-mode-toggle">
                                     <button className={`toggle-btn ${productViewMode === 'grid' ? 'active' : ''}`} onClick={() => setProductViewMode('grid')}><LayoutGrid size={18} /></button>
                                     <button className={`toggle-btn ${productViewMode === 'list' ? 'active' : ''}`} onClick={() => setProductViewMode('list')}><List size={18} /></button>
                                 </div>
                             </div>
-
-                            <Dialog.Root open={isProductModalOpen} onOpenChange={(o) => !o && closeModal()}>
-                                <Dialog.Trigger asChild>
-                                    <button className="btn-primary-ht" onClick={() => setIsProductModalOpen(true)}>
-                                        <Plus size={18} /><span>{invT.defineProduct}</span>
-                                    </button>
-                                </Dialog.Trigger>
-                                <Dialog.Portal>
-                                    <Dialog.Overlay className="dialog-overlay-ht" />
-                                    <Dialog.Content className="dialog-content-ht product-modal">
-                                        <div className="modal-accent-line" style={{ background: 'var(--accent-secondary)' }} />
-                                        <div className="modal-header">
-                                            <Dialog.Title><h2>Definiowanie asortymentu</h2></Dialog.Title>
-                                            <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
-                                        </div>
-
-                                        <form className="ht-form" onSubmit={handleSaveProduct} encType="multipart/form-data">
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>Nazwa asortymentu</label>
-                                                    <input name="name" placeholder="np. Aceton Techniczny" required />
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>Identyfikator (Kod kreskowy/QR)</label>
-                                                    <input name="id" placeholder="Skanuj lub wpisz kod" required />
-                                                </div>
-                                            </div>
-
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>Zdjęcie produktu (Plik)</label>
-                                                    <div className="file-input-wrapper" style={{ position: 'relative' }}>
-                                                        <ImagePlusIcon size={18} style={{ position: 'absolute', left: '12px', top: '12px', opacity: 0.5 }} />
-                                                        <input
-                                                            type="file"
-                                                            name="imageFile"
-                                                            accept="image/*"
-                                                            style={{ paddingLeft: '40px' }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>Kategoria</label>
-                                                    <input name="category" placeholder="np. Chemikalia" />
-                                                </div>
-                                            </div>
-
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>Zakres temperatury [°C]</label>
-                                                    <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                                        <input type="number" name="tempMin" placeholder="Min" required />
-                                                        <input type="number" name="tempMax" placeholder="Max" required />
-                                                    </div>
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>Waga [kg]</label>
-                                                    <input type="number" step="0.01" name="weight" required />
-                                                </div>
-                                            </div>
-
-                                            <div className="input-row">
-                                                <div className="input-group">
-                                                    <label>Wymiary [XxYxZ mm]</label>
-                                                    <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                                        <input type="number" name="width" placeholder="X" required />
-                                                        <input type="number" name="height" placeholder="Y" required />
-                                                        <input type="number" name="depth" placeholder="Z" required />
-                                                    </div>
-                                                </div>
-                                                <div className="input-group">
-                                                    <label>Termin ważności [dni]</label>
-                                                    <input type="number" name="expiryDays" placeholder="Dni od przyjęcia" required />
-                                                </div>
-                                            </div>
-
-                                            <div className="input-row">
-                                                <div className="input-group" style={{ flex: 2 }}>
-                                                    <label>Komentarz</label>
-                                                    <input name="comment" placeholder="Dodatkowe informacje..." />
-                                                </div>
-                                                <div className="input-group" style={{ flex: 1 }}>
-                                                    <label>Typ zagrożenia</label>
-                                                    <select name="hazardType" className="ht-select" style={{ height: '42px', background: 'var(--bg-input)', border: '1px solid var(--border-input)', color: 'white', borderRadius: '8px', padding: '0 10px' }}>
-                                                        <option value="none">Brak</option>
-                                                        <option value="explosive">Wybuchowy</option>
-                                                        <option value="flammable">Łatwopalny</option>
-                                                        <option value="toxic">Toksyczny</option>
-                                                        <option value="corrosive">Żrący</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div className="checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0' }}>
-                                                <input type="checkbox" id="hazardous" name="isHazardous" className="ht-checkbox" />
-                                                <label htmlFor="hazardous" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                                                    <AlertTriangle size={16} color="#ffa500" />
-                                                    Potwierdzam asortyment ADR
-                                                </label>
-                                            </div>
-
-                                            <button type="submit" className="btn-submit-ht" style={{ background: 'var(--accent-secondary)' }}>
-                                                Zapisz w systemie
-                                            </button>
-                                        </form>
-                                    </Dialog.Content>
-                                </Dialog.Portal>
-                            </Dialog.Root>
+                            <button className="btn-primary-ht" onClick={() => setIsProductModalOpen(true)}>
+                                <Plus size={18} /><span>{invT.defineProduct}</span>
+                            </button>
                         </div>
+                        {!isLoading && products.length > 0 ? (
+                            <ProductCatalog products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))} viewMode={productViewMode} onDeleteProduct={handleDeleteProduct} />
+                        ) : <div className="empty-state-ht">Brak produktów.</div>}
+                    </Tabs.Content>
 
-                        <ProductCatalog products={filteredProducts} viewMode={productViewMode} />
+                    <Tabs.Content value="inbounds">
+                        <div className="glass-card" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem' }}>
+                            <h2><PackagePlus size={24} /> Przyjmowanie asortymentu</h2>
+                            <form onSubmit={handleInbound} className="ht-form" style={{ marginTop: '1.5rem' }}>
+                                <div className="input-group">
+                                    <label>Zeskanuj lub wpisz kod produktu</label>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <input value={inboundBarcode} onChange={(e) => setInboundBarcode(e.target.value)} placeholder="Kod kreskowy..." style={{ flex: 1 }} />
+                                        <button type="button" onClick={() => setIsScannerOpen(true)} className="btn-action-ht"><Camera size={20} /></button>
+                                    </div>
+                                </div>
+                                <button type="submit" className="btn-primary-ht" style={{ marginTop: '1rem', width: '100%' }}>Przyjmij do magazynu</button>
+                            </form>
+                            {isScannerOpen && (
+                                <div className="scanner-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div id="reader" style={{ width: '100%', maxWidth: '500px' }}></div>
+                                    <button onClick={() => setIsScannerOpen(false)} className="btn-close" style={{ marginTop: '2rem', color: '#fff' }}><X size={32} /></button>
+                                </div>
+                            )}
+                        </div>
                     </Tabs.Content>
                 </Tabs.Root>
             </div>
+
+            <Dialog.Root open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="dialog-overlay-ht" />
+                    <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <Dialog.Title><h2>Konflikt oznaczeń</h2></Dialog.Title>
+                        </div>
+                        <div style={{ margin: '1.5rem 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff4d4d', marginBottom: '1rem' }}>
+                                <AlertTriangle size={24} />
+                                <strong>Wykryto powtarzające się kody regałów!</strong>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                Następujące kody już istnieją w bazie: <br />
+                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{conflictingCodes.join(', ')}</span>
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'OVERWRITE')}>
+                                <Trash2 size={16} /> Nadpisz istniejące regały
+                            </button>
+                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'RENAME')}>
+                                <Copy size={16} /> Zmień nazwy na wolne (np. {getSmallestAvailableCode(racks)})
+                            </button>
+                            <button className="btn-action-ht" onClick={() => setIsConflictModalOpen(false)} style={{ color: '#ff4d4d' }}>
+                                <Ban size={16} /> Anuluj operację
+                            </button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <RackModal open={isModalOpen} onOpenChange={setIsModalOpen} editingRack={editingRack} onSave={handleSaveRack} invT={invT} existingRacks={racks}/>
+            <ProductModal open={isProductModalOpen} onOpenChange={setIsProductModalOpen} onSave={handleSaveProduct} />
         </Tooltip.Provider>
     );
 };
