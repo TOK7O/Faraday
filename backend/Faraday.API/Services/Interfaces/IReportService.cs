@@ -60,5 +60,29 @@ namespace Faraday.API.Services.Interfaces
         /// Retrieves only currently active (unresolved) alerts across all racks.
         /// </summary>
         Task<List<ActiveAlertDto>> GetActiveAlertsAsync();
+        
+        /// <summary>
+        /// Retrieves temperature readings where rack temperature exceeded its allowed range.
+        /// Shows violations with timestamp for audit purposes.
+        /// </summary>
+        Task<List<RackTemperatureViolationDto>> GetRackTemperatureViolationsAsync(
+            int? rackId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int limit = 200);
+
+        /// <summary>
+        /// Retrieves inventory items that were exposed to temperature violations.
+        /// Cross-references temperature readings with stored items to identify affected products.
+        /// </summary>
+        Task<List<ItemTemperatureViolationDto>> GetItemTemperatureViolationsAsync(
+            DateTime? fromDate = null,
+            DateTime? toDate = null);
+
+        /// <summary>
+        /// Generates complete warehouse inventory report with full details of every item in stock.
+        /// Includes location, status, expiration dates, temperatures, and hazard information.
+        /// </summary>
+        Task<List<FullInventoryDto>> GetFullInventoryReportAsync();
     }
 }

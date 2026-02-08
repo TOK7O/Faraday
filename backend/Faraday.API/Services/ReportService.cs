@@ -280,5 +280,176 @@ namespace Faraday.API.Services
 
             return activeAlerts;
         }
+        public async Task<List<RackTemperatureViolationDto>> GetRackTemperatureViolationsAsync(
+            int? rackId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int limit = 200)
+        {
+            var query = _context.TemperatureReadings
+                .Include(t => t.Rack)
+                .Where(t => t.RecordedTemperature < t.Rack.MinTemperature || 
+                           t.RecordedTemperature > t.Rack.MaxTemperature)
+                .AsQueryable();
+
+            if (rackId.HasValue)
+            {
+                query = query.Where(t => t.RackId == rackId.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(t => t.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(t => t.Timestamp <= toDate.Value);
+            }
+
+            var violations = await query
+                .OrderByDescending(t => t.Timestamp)
+                .Take(limit)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Rack.Code,
+                    t.RecordedTemperature,
+                    t.Rack.MinTemperature,
+                    t.Rack.MaxTemperature,
+                    t.Timestamp
+                })
+                .ToListAsync();
+
+            // Calculate violation details in memory
+            return violations.Select(v => new RackTemperatureViolationDto
+            {
+                ReadingId = v.Id,
+                RackCode = v.Code,
+                RecordedTemperature = v.RecordedTemperature,
+                AllowedMinTemperature = v.MinTemperature,
+                AllowedMaxTemperature = v.MaxTemperature,
+                ViolationType = v.RecordedTemperature > v.MaxTemperature ? "TooHot" : "TooCold",
+                ViolationDegrees = v.RecordedTemperature > v.MaxTemperature 
+                    ? v.RecordedTemperature - v.MaxTemperature 
+                    : v.MinTemperature - v.RecordedTemperature,
+                Timestamp = v.Timestamp
+            }).ToList();
+        }
+
+        public async Task<List<ItemTemperatureViolationDto>> GetItemTemperatureViolationsAsync(
+            DateTime? fromDate = null,
+            DateTime? toDate = null)
+        {
+            // Build query for temperature readings that violate product requirements
+            // This is a complex query - we need to join readings with items stored at that time
+            var query = from reading in _context.TemperatureReadings
+                        join rack in _context.Racks on reading.RackId equals rack.Id
+                        join slot in _context.RackSlots on rack.Id equals slot.RackId
+                        join item in _context.InventoryItems on slot.Id equals item.RackSlotId
+                        join product in _context.Products on item.ProductDefinitionId equals product.Id
+                        where reading.RecordedTemperature < product.RequiredMinTemp ||
+                              reading.RecordedTemperature > product.RequiredMaxTemp
+                        select new
+                        {
+                            item.Id,
+                            product.Name,
+                            product.ScanCode,
+                            rack.Code,
+                            slot.X,
+                            slot.Y,
+                            reading.RecordedTemperature,
+                            product.RequiredMinTemp,
+                            product.RequiredMaxTemp,
+                            reading.Timestamp
+                        };
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(x => x.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(x => x.Timestamp <= toDate.Value);
+            }
+
+            var violations = await query
+                .OrderByDescending(x => x.Timestamp)
+                .ToListAsync();
+
+            // Calculate violation details
+            return violations.Select(v => new ItemTemperatureViolationDto
+            {
+                ItemId = v.Id,
+                ProductName = v.Name,
+                Barcode = v.ScanCode,
+                RackCode = v.Code,
+                SlotX = v.X,
+                SlotY = v.Y,
+                RecordedTemperature = v.RecordedTemperature,
+                RequiredMinTemperature = v.RequiredMinTemp,
+                RequiredMaxTemperature = v.RequiredMaxTemp,
+                ViolationType = v.RecordedTemperature > v.RequiredMaxTemp ? "TooHot" : "TooCold",
+                ViolationDegrees = v.RecordedTemperature > v.RequiredMaxTemp
+                    ? v.RecordedTemperature - v.RequiredMaxTemp
+                    : v.RequiredMinTemp - v.RecordedTemperature,
+                ViolationTimestamp = v.Timestamp
+            }).ToList();
+        }
+
+        public async Task<List<FullInventoryDto>> GetFullInventoryReportAsync()
+        {
+            var inventory = await _context.InventoryItems
+                .Include(i => i.Product)
+                .Include(i => i.Slot)
+                    .ThenInclude(s => s.Rack)
+                .Include(i => i.ReceivedByUser)
+                .OrderBy(i => i.Slot.Rack.Code)
+                    .ThenBy(i => i.Slot.Y)
+                    .ThenBy(i => i.Slot.X)
+                .Select(i => new FullInventoryDto
+                {
+                    ItemId = i.Id,
+                    
+                    // Product details
+                    ProductId = i.Product.Id,
+                    ProductName = i.Product.Name,
+                    Barcode = i.Product.ScanCode,
+                    ProductPhotoUrl = i.Product.PhotoUrl,
+                    ProductWeightKg = i.Product.WeightKg,
+                    
+                    // Location details
+                    RackCode = i.Slot.Rack.Code,
+                    SlotX = i.Slot.X,
+                    SlotY = i.Slot.Y,
+                    LocationCode = $"{i.Slot.Rack.Code} [{i.Slot.X},{i.Slot.Y}]",
+                    
+                    // Status and dates
+                    Status = i.Status.ToString(),
+                    EntryDate = i.EntryDate,
+                    ExpirationDate = i.ExpirationDate,
+                    DaysUntilExpiration = i.ExpirationDate != null 
+                        ? (int)(i.ExpirationDate.Value - DateTime.UtcNow).TotalDays 
+                        : null,
+                    
+                    // Temperature conditions
+                    CurrentRackTemperature = i.Slot.Rack.CurrentTemperature ?? 0,
+                    RequiredMinTemp = i.Product.RequiredMinTemp,
+                    RequiredMaxTemp = i.Product.RequiredMaxTemp,
+                    
+                    // User info
+                    ReceivedByUsername = i.ReceivedByUser.Username,
+                    
+                    // Hazard info
+                    IsHazardous = i.Product.IsHazardous,
+                    HazardClassification = i.Product.IsHazardous 
+                        ? i.Product.HazardClassification.ToString() 
+                        : null
+                })
+                .ToListAsync();
+
+            return inventory;
+        }
     }
 }

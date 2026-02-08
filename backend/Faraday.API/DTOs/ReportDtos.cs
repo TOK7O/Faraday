@@ -83,4 +83,68 @@
         public DateTime CreatedAt { get; set; }
         public int DurationMinutes { get; set; }
     }
+    
+    public class RackTemperatureViolationDto
+    {
+        public int ReadingId { get; set; }
+        public string RackCode { get; set; } = string.Empty;
+        public decimal RecordedTemperature { get; set; }
+        public decimal AllowedMinTemperature { get; set; }
+        public decimal AllowedMaxTemperature { get; set; }
+        public decimal ViolationDegrees { get; set; } // How much out of range
+        public string ViolationType { get; set; } = string.Empty; // "TooHot" or "TooCold"
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class ItemTemperatureViolationDto
+    {
+        public int ItemId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
+        public string RackCode { get; set; } = string.Empty;
+        public int SlotX { get; set; }
+        public int SlotY { get; set; }
+        public decimal RecordedTemperature { get; set; }
+        public decimal RequiredMinTemperature { get; set; }
+        public decimal RequiredMaxTemperature { get; set; }
+        public decimal ViolationDegrees { get; set; }
+        public string ViolationType { get; set; } = string.Empty;
+        public DateTime ViolationTimestamp { get; set; }
+    }
+
+    public class FullInventoryDto
+    {
+        public int ItemId { get; set; }
+        
+        // Product information
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
+        public string? ProductPhotoUrl { get; set; }
+        public decimal ProductWeightKg { get; set; }
+        
+        // Location information
+        public string RackCode { get; set; } = string.Empty;
+        public int SlotX { get; set; }
+        public int SlotY { get; set; }
+        public string LocationCode { get; set; } = string.Empty; // Format: "R-01 [1,2]"
+        
+        // Item status and dates
+        public string Status { get; set; } = string.Empty;
+        public DateTime EntryDate { get; set; }
+        public DateTime? ExpirationDate { get; set; }
+        public int? DaysUntilExpiration { get; set; }
+        
+        // Storage conditions
+        public decimal CurrentRackTemperature { get; set; }
+        public decimal RequiredMinTemp { get; set; }
+        public decimal RequiredMaxTemp { get; set; }
+        
+        // User who received the item
+        public string ReceivedByUsername { get; set; } = string.Empty;
+        
+        // Hazard information
+        public bool IsHazardous { get; set; }
+        public string? HazardClassification { get; set; }
+    }
 }

@@ -30,6 +30,18 @@ namespace Faraday.API.Controllers
             var summary = await _reportService.GetInventorySummaryAsync();
             return Ok(summary);
         }
+        
+        /// <summary>
+        /// Generates complete warehouse inventory report with full details of every item currently in stock.
+        /// Includes location, status, expiration dates, temperature conditions, and hazard information.
+        /// Sorted by rack code and slot position for easy physical verification.
+        /// </summary>
+        [HttpGet("full-inventory")]
+        public async Task<ActionResult<IEnumerable<FullInventoryDto>>> GetFullInventory()
+        {
+            var inventory = await _reportService.GetFullInventoryReportAsync();
+            return Ok(inventory);
+        }
 
         [HttpGet("expiring-items")]
         public async Task<ActionResult<IEnumerable<ExpiringItemDto>>> GetExpiringItems([FromQuery] int days = 7)
@@ -104,6 +116,38 @@ namespace Faraday.API.Controllers
         {
             var alerts = await _reportService.GetActiveAlertsAsync();
             return Ok(alerts);
+        }
+        
+        /// <summary>
+        /// Retrieves temperature violations for racks (where recorded temp was outside rack's allowed range).
+        /// Query params: rackId, fromDate (ISO 8601), toDate (ISO 8601), limit (default 200, max 1000)
+        /// </summary>
+        [HttpGet("rack-temperature-violations")]
+        public async Task<ActionResult<IEnumerable<RackTemperatureViolationDto>>> GetRackTemperatureViolations(
+            [FromQuery] int? rackId = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
+            [FromQuery] int limit = 200)
+        {
+            if (limit > 1000) limit = 1000;
+            if (limit < 1) limit = 1;
+
+            var violations = await _reportService.GetRackTemperatureViolationsAsync(rackId, fromDate, toDate, limit);
+            return Ok(violations);
+        }
+
+        /// <summary>
+        /// Retrieves temperature violations for stored items (where recorded temp was outside product's required range).
+        /// Shows which products were exposed to improper temperatures.
+        /// Query params: fromDate (ISO 8601), toDate (ISO 8601)
+        /// </summary>
+        [HttpGet("item-temperature-violations")]
+        public async Task<ActionResult<IEnumerable<ItemTemperatureViolationDto>>> GetItemTemperatureViolations(
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null)
+        {
+            var violations = await _reportService.GetItemTemperatureViolationsAsync(fromDate, toDate);
+            return Ok(violations);
         }
     }
 }
