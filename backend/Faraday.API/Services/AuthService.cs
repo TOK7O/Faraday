@@ -177,6 +177,144 @@ namespace Faraday.API.Services
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             await _context.SaveChangesAsync();
         }
+        
+        public async Task<List<UserListDto>> GetAllUsersAsync()
+        {
+            // IgnoreQueryFilters to include inactive users in admin panel
+            var users = await _context.Users
+                .IgnoreQueryFilters()
+                .OrderBy(u => u.Username)
+                .Select(u => new UserListDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    Role = u.Role.ToString(),
+                    IsActive = u.IsActive,
+                    IsTwoFactorEnabled = u.IsTwoFactorEnabled,
+                    LastLoginDate = u.LastLoginDate,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return users;
+        }
+
+        public async Task<UserListDto> UpdateUserAsync(int targetUserId, int adminId, UserUpdateDto dto)
+        {
+            // Fetch target user (including inactive ones for admin panel)
+            var user = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == targetUserId);
+
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            // Prevent admin from editing themselves
+            if (targetUserId == adminId)
+                throw new InvalidOperationException("You cannot edit your own account. Ask another administrator.");
+
+            // Prevent removing the last active administrator
+            if (dto.Role.HasValue || dto.IsActive.HasValue)
+            {
+                // Check if this is the last active admin
+                bool isLastAdmin = await _context.Users
+                    .CountAsync(u => u.Role == UserRole.Administrator && u.IsActive && u.Id != targetUserId) == 0;
+
+                if (isLastAdmin)
+                {
+                    // Check if we're trying to demote or deactivate
+                    bool tryingToDemote = dto.Role.HasValue && dto.Role.Value != UserRole.Administrator;
+                    bool tryingToDeactivate = dto.IsActive.HasValue && dto.IsActive.Value == false;
+
+                    if (tryingToDemote || tryingToDeactivate)
+                    {
+                        throw new InvalidOperationException(
+                            "Cannot demote or deactivate the last active Administrator. " +
+                            "System must have at least one active admin.");
+                    }
+                }
+            }
+
+            // Email uniqueness validation
+            if (!string.IsNullOrEmpty(dto.Email) && dto.Email != user.Email)
+            {
+                bool emailExists = await _context.Users
+                    .IgnoreQueryFilters()
+                    .AnyAsync(u => u.Email == dto.Email && u.Id != targetUserId);
+
+                if (emailExists)
+                    throw new InvalidOperationException($"Email '{dto.Email}' is already in use by another user.");
+            }
+
+            // Apply changes
+            if (!string.IsNullOrEmpty(dto.Email))
+                user.Email = dto.Email;
+
+            if (dto.Role.HasValue)
+                user.Role = dto.Role.Value;
+
+            if (dto.IsActive.HasValue)
+                user.IsActive = dto.IsActive.Value;
+
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Return updated user data
+            return new UserListDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                IsActive = user.IsActive,
+                IsTwoFactorEnabled = user.IsTwoFactorEnabled,
+                LastLoginDate = user.LastLoginDate,
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task ResetUserPasswordAsync(int targetUserId, int adminId, string newPassword)
+        {
+            var user = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == targetUserId);
+
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            // Prevent admin from resetting their own password this way (they should use ChangePassword)
+            if (targetUserId == adminId)
+                throw new InvalidOperationException("You cannot reset your own password. Use the 'Change Password' feature instead.");
+
+            // Hash and update password
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ResetUser2FAAsync(int targetUserId, int adminId)
+        {
+            var user = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == targetUserId);
+
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            // Prevent admin from resetting their own 2FA this way (they should use Disable2FA)
+            if (targetUserId == adminId)
+                throw new InvalidOperationException("You cannot reset your own 2FA. Use the 'Disable 2FA' feature instead.");
+
+            // VALIDATION 4: Reset 2FA completely
+            user.IsTwoFactorEnabled = false;
+            user.TwoFactorSecretKey = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
 
         private string GenerateJwtToken(User user)
         {

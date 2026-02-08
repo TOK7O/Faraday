@@ -21,5 +21,11 @@ namespace Faraday.API.Services.Interfaces
         
         // Allows authenticated users to change their password.
         Task ChangePasswordAsync(int userId, ChangePasswordDto dto);
+        
+        // Admin User Management
+        Task<List<UserListDto>> GetAllUsersAsync();
+        Task<UserListDto> UpdateUserAsync(int targetUserId, int adminId, UserUpdateDto dto);
+        Task ResetUserPasswordAsync(int targetUserId, int adminId, string newPassword);
+        Task ResetUser2FAAsync(int targetUserId, int adminId);
     }
 }

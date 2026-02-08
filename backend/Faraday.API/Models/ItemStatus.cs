@@ -2,9 +2,6 @@
 {
     public enum ItemStatus
     {
-        InStock,
-        Quarantined,
-        Reserved,
-        Damaged
+        InStock
     }
 }
