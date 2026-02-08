@@ -12,11 +12,11 @@
       },
       "fields": {
         "email": {
-          "label": "Email Address",
-          "placeholder": "e.g. name@domain.com",
+          "label": "Login",
+          "placeholder": "",
           "validation": {
-            "required": "Email is required",
-            "invalid": "The provided email address is invalid"
+            "required": "Login is required",
+            "invalid": "The provided login is invalid"
           }
         },
         "password": {

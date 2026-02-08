@@ -12,11 +12,11 @@
       },
       "fields": {
         "email": {
-          "label": "Adres e-mail",
-          "placeholder": "np. nazwa@domena.pl",
+          "label": "Login",
+          "placeholder": "",
           "validation": {
-            "required": "E-mail jest wymagany",
-            "invalid": "Podany adres e-mail jest nieprawidłowy"
+            "required": "Login jest wymagany",
+            "invalid": "Podany login jest nieprawidłowy"
           }
         },
         "password": {
