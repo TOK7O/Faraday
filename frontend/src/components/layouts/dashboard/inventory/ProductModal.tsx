@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, AlertTriangle, AlertCircle } from "lucide-react";
+import { X, AlertTriangle, AlertCircle, FileImage } from "lucide-react";
 
 interface ProductModalProps {
     open: boolean;
@@ -22,10 +22,21 @@ interface ProductFormErrors {
 
 export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: ProductModalProps) => {
     const [errors, setErrors] = useState<ProductFormErrors>({});
+    const [fileName, setFileName] = useState<string>(editingProduct?.photoUrl || "");
 
     useEffect(() => {
-        if (open) setErrors({});
-    }, [open]);
+        if (open) {
+            setErrors({});
+            setFileName(editingProduct?.photoUrl || "");
+        }
+    }, [open, editingProduct]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setFileName(file.name);
+        }
+    };
 
     const validateField = (name: string, value: string, formData: FormData) => {
         let error = "";
@@ -112,8 +123,38 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
 
                         <div className="input-row">
                             <div className="input-group">
-                                <label>URL Zdjęcia</label>
-                                <input name="photoUrl" defaultValue={editingProduct?.photoUrl} placeholder="http://..." onChange={handleChange} />
+                                <label>Zdjęcie produktu (tylko nazwa pliku)</label>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <input
+                                        type="hidden"
+                                        name="photoUrl"
+                                        value={fileName}
+                                    />
+                                    <label className="file-upload-label" style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <FileImage size={18} />
+                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {fileName || "Wybierz plik..."}
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={handleFileChange}
+                                        />
+                                    </label>
+                                </div>
                             </div>
                             <div className="input-group">
                                 <label>Waga [kg]</label>
@@ -189,7 +230,8 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
                             style={{
                                 background: 'var(--accent-secondary)',
                                 opacity: Object.values(errors).some(err => err !== "" && err !== undefined) ? 0.5 : 1,
-                                cursor: Object.values(errors).some(err => err !== "" && err !== undefined) ? 'not-allowed' : 'pointer'
+                                cursor: Object.values(errors).some(err => err !== "" && err !== undefined) ? 'not-allowed' : 'pointer',
+                                marginTop: '10px'
                             }}
                         >
                             {editingProduct ? "Zaktualizuj produkt" : "Zapisz w systemie"}

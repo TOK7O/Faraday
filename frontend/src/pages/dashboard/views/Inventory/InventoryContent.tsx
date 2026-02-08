@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, X, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera,CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
@@ -170,25 +170,41 @@ const InventoryContent = () => {
     const handleInbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         const token = localStorage.getItem("token");
+        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
         try {
             const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ barcode: inboundBarcode })
             });
-            const data = await res.json();
-            setInboundResult({
-                ...data,
-                time: new Date().toLocaleTimeString(),
-                user: localStorage.getItem("username") || "Operator"
-            });
-            if (data.success) {
-                setInboundBarcode("");
+
+            const errorText = await res.text();
+
+            if (res.status === 409) {
+                setInboundResult({
+                    success: false,
+                    message: errorText || "Brak regałów spełniających wymagania produktu.",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                return;
+            }
+
+            if (res.ok) {
+                const data = JSON.parse(errorText);
+                setInboundResult({
+                    ...data,
+                    success: true,
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
                 fetchData();
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            setInboundResult({ success: false, message: "Błąd połączenia z serwerem." });
+        }
     };
-
     const handleDeleteRack = async (id: number | string) => {
         if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
         const token = localStorage.getItem("token");
@@ -321,21 +337,85 @@ const InventoryContent = () => {
 
                     <Tabs.Content value="inbounds">
                         <div className="glass-card" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem' }}>
-                            <h2><PackagePlus size={24} /> Przyjmowanie asortymentu</h2>
-                            <form onSubmit={handleInbound} className="ht-form" style={{ marginTop: '1.5rem' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <PackagePlus size={24} color="var(--accent-primary)" />
+                                    Przyjmowanie asortymentu
+                                </h2>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                    Wprowadź kod produktu, aby system automatycznie wskazał regał spełniający wymagania (wymóg b).
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleInbound} className="ht-form">
                                 <div className="input-group">
                                     <label>Zeskanuj lub wpisz kod produktu</label>
                                     <div style={{ display: 'flex', gap: '10px' }}>
-                                        <input value={inboundBarcode} onChange={(e) => setInboundBarcode(e.target.value)} placeholder="Kod kreskowy..." style={{ flex: 1 }} />
-                                        <button type="button" onClick={() => setIsScannerOpen(true)} className="btn-action-ht"><Camera size={20} /></button>
+                                        <input
+                                            value={inboundBarcode}
+                                            onChange={(e) => setInboundBarcode(e.target.value)}
+                                            placeholder="Zeskanuj towar..."
+                                            style={{ flex: 1 }}
+                                            autoFocus
+                                        />
+                                        <button type="button" onClick={() => setIsScannerOpen(true)} className="btn-action-ht">
+                                            <Camera size={20} />
+                                        </button>
                                     </div>
                                 </div>
-                                <button type="submit" className="btn-primary-ht" style={{ marginTop: '1rem', width: '100%' }}>Przyjmij do magazynu</button>
+                                <button type="submit" className="btn-primary-ht" style={{ marginTop: '1rem', width: '100%' }}>
+                                    Zatwierdź i przydziel miejsce
+                                </button>
                             </form>
-                            {isScannerOpen && (
-                                <div className="scanner-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                    <div id="reader" style={{ width: '100%', maxWidth: '500px' }}></div>
-                                    <button onClick={() => setIsScannerOpen(false)} className="btn-close" style={{ marginTop: '2rem', color: '#fff' }}><X size={32} /></button>
+
+                            {inboundResult && (
+                                <div className={`inbound-result-card ${inboundResult.success ? 'success' : 'error'}`} style={{
+                                    marginTop: '2rem',
+                                    padding: '1.5rem',
+                                    borderRadius: '12px',
+                                    border: `1px solid ${inboundResult.success ? 'var(--accent-primary)' : '#ff4d4d'}`,
+                                    background: 'rgba(255, 255, 255, 0.02)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                                        {inboundResult.success ? (
+                                            <CheckCircle2 size={28} color="var(--accent-primary)" />
+                                        ) : (
+                                            <AlertTriangle size={28} color="#ff4d4d" />
+                                        )}
+                                        <h3 style={{ margin: 0 }}>
+                                            {inboundResult.success ? "Przyjęcie zatwierdzone" : "Błąd przyjęcia"}
+                                        </h3>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gap: '12px', fontSize: '0.9rem' }}>
+                                        <div style={{ display: 'flex', gap: '15px', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Clock size={14} /> {inboundResult.timestamp}
+                    </span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <UserIcon size={14} /> {inboundResult.operator}
+                    </span>
+                                        </div>
+
+                                        {inboundResult.success ? (
+                                            <div style={{ marginTop: '5px' }}>
+                                                <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <MapPin size={18} /> LOKALIZACJA: {inboundResult.rackCode}
+                                                </div>
+                                                <p style={{ marginLeft: '26px', opacity: 0.8 }}>
+                                                    Poziom (M): <strong>{inboundResult.slotX}</strong> | Miejsce (N): <strong>{inboundResult.slotY}</strong>
+                                                </p>
+                                                <div className="instruction-tip" style={{ marginTop: '10px', padding: '8px', background: 'rgba(0,255,139,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                                    <Info size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
+                                                    Miejsce dobrane automatycznie na podstawie gabarytów i temperatury.
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ color: '#ff4d4d', padding: '10px', background: 'rgba(255,77,77,0.1)', borderRadius: '6px' }}>
+                                                <strong>{inboundResult.message || "Brak wolnej przestrzeni spełniającej wymagania techniczne produktu."}</strong>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
