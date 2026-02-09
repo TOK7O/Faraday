@@ -9,6 +9,7 @@ using Microsoft.OpenApi.Models;
 using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
 using Faraday.API.Workers;
+using Faraday.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,13 +63,17 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            // SignalR requires WithOrigins and AllowCredentials instead of AllowAnyOrigin
+            policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials(); // Required for SignalR
         });
 });
 
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSignalR();
 
 // Configure Swagger generation to include support for JWT Bearer Authentication.
 builder.Services.AddSwaggerGen(c =>
@@ -121,10 +126,12 @@ builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only once here
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
+builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
 builder.Services.AddHostedService<SimulationBackgroundWorker>();
+builder.Services.AddHostedService<ExpirationMonitoringWorker>();
 
 var app = builder.Build();
 
@@ -183,6 +190,8 @@ app.UseAuthentication();
 
 // Enable Authorization middleware to check user permissions/roles.
 app.UseAuthorization();
+
+app.MapHub<AlertsHub>("/hubs/alerts");
 
 app.MapControllers();
 

@@ -6,7 +6,9 @@ namespace Faraday.API.Models
     {
         TemperatureMismatch, 
         WeightMismatch,      
-        SystemError
+        SystemError,
+        ExpirationWarning,
+        ExpirationExpired
     }
 
     public class Alert
