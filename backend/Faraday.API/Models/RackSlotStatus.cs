@@ -3,7 +3,6 @@
     public enum RackSlotStatus
     {
         Available,
-        Maintenance,
-        Damaged
+        Reserved
     }
 }
