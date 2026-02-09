@@ -138,31 +138,6 @@ namespace Faraday.API.Services
 
         public IEnumerable<BackupHistoryDto> GetBackupHistory()
         {
-            try
-            {
-                // 1. Try fetching from Database
-                var logs = _dbContext.BackupLogs
-                    .Where(l => l.IsSuccessful)
-                    .OrderByDescending(l => l.Timestamp)
-                    .Select(l => new BackupHistoryDto
-                    {
-                        FileName = l.FileName,
-                        SizeBytes = l.SizeBytes,
-                        CreatedAt = l.Timestamp
-                    })
-                    .ToList();
-
-                if (logs.Any())
-                {
-                    return logs;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Failed to fetch backup history from database: {ex.Message}. Falling back to filesystem.");
-            }
-
-            // 2. Fallback to Filesystem if database is empty or failed
             if (!Directory.Exists(_backupFolder))
             {
                 return Enumerable.Empty<BackupHistoryDto>();
@@ -179,13 +154,6 @@ namespace Faraday.API.Services
                 .OrderByDescending(f => f.CreatedAt);
         }
 
-        public async Task<IEnumerable<BackupLog>> GetBackupHistoryFromDbAsync()
-        {
-            return await _dbContext.BackupLogs
-                .OrderByDescending(l => l.Timestamp)
-                .ToListAsync();
-        }
-        
         public async Task RestoreFromBackupAsync(string fileName, int? restoredByUserId = null)
         {
             var encryptedFilePath = Path.Combine(_backupFolder, fileName);
