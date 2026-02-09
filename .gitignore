@@ -46,9 +46,10 @@ frontend/pnpm-debug.log*
 # Edytory kodu we frontendzie
 frontend/.eslintcache
 
-# db and docker
+# db, ssl and docker
 postgres_data/
 .docker/
+ssl/
 
 # sqlite (just in case)
 *.db

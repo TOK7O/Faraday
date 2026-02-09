@@ -29,7 +29,7 @@ if (string.IsNullOrEmpty(dbPass))
     throw new InvalidOperationException("No password for the database inside .env!");
 }
 
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Disable";
+var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;Trust Server Certificate=true";
 
 builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 

@@ -8,14 +8,26 @@ services:
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
+    # This is a bit hacky, but it works.
+    command: >
+      /bin/sh -c "
+      cp /etc/ssl/private/server.key.temp /etc/ssl/private/server.key &&
+      chmod 600 /etc/ssl/private/server.key &&
+      chown postgres:postgres /etc/ssl/private/server.key &&
+      docker-entrypoint.sh postgres
+      -c ssl=on
+      -c ssl_cert_file=/etc/ssl/certs/server.crt
+      -c ssl_key_file=/etc/ssl/private/server.key"
     volumes:
       - faraday_pg_data:/var/lib/postgresql/data
+      - ./ssl/server.crt:/etc/ssl/certs/server.crt:ro
+      - ./ssl/server.key:/etc/ssl/private/server.key.temp:ro
     deploy:
       resources:
         limits:
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 5s
       timeout: 5s
       retries: 5
