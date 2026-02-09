@@ -375,5 +375,11 @@ namespace Faraday.API.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<bool> GetTwoFactorEnabledStatusAsync(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            return user?.IsTwoFactorEnabled ?? false;
+        }
     }
 }

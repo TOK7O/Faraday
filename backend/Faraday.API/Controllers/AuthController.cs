@@ -108,6 +108,15 @@ namespace Faraday.API.Controllers
             return Ok(new { Message = "2FA disabled." });
         }
 
+        [Authorize]
+        [HttpGet("2fa/status")]
+        public async Task<IActionResult> GetTwoFactorStatus()
+        {
+            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var isEnabled = await _authService.GetTwoFactorEnabledStatusAsync(userId);
+            return Ok(new { IsEnabled = isEnabled });
+        }
+
         /// <summary>
         /// Get list of all users in the system (including inactive).
         /// Only accessible by Administrators.
