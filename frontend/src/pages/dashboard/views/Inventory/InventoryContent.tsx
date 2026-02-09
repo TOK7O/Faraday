@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Box, Trash2, Copy, Ban } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
@@ -17,6 +17,55 @@ import { SkeletonGrid } from "@components/layouts/dashboard/inventory/InventoryS
 import "./InventoryContent.scss";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const formatMessageNumbers = (msg: string) => {
+    if (!msg || typeof msg !== 'string') return msg;
+    return msg
+        .replace(/(\.\d*[1-9])0+(?!\d)/g, '$1')
+        .replace(/\.0+(?!\d)/g, '');
+};
+
+const prettifyBackendError = (rawMsg: string) => {
+    if (!rawMsg) return "Nieznany błąd serwera.";
+    const msg = formatMessageNumbers(rawMsg);
+
+    // No racks found meeting requirements for 'Mleko' (Dim: 20x20x20 mm, Temp: -10 to -5°C). Check rack definitions.
+    const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
+    if (noRacksMatch) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Brak pasujących regałów</strong> dla produktu <strong>{noRacksMatch[1]}</strong>.</p>
+                <div className="error-specs">
+                    <span>Wymiary: <strong>{noRacksMatch[2]} mm</strong></span>
+                    <span>Wymagana temp: <strong>{noRacksMatch[3]}°C</strong></span>
+                </div>
+                <p className="error-hint">Sprawdź czy w systemie istnieją regały o takich parametrach.</p>
+            </div>
+        );
+    }
+
+    // No available slots found in 4 compatible racks. Racks are either full or adding this item would exceed the rack's weight limit.
+    if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Brak wolnego miejsca</strong> w regałach spełniających wymagania techniczne.</p>
+                <p className="error-hint">Wszystkie pasujące regały są pełne lub dodanie towaru przekroczyłoby ich nośność.</p>
+            </div>
+        );
+    }
+
+    // Product with barcode 1 not found.
+    const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
+    if (productNotFound) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Produkt nieznany</strong> (kod: {productNotFound[1]}).</p>
+                <p className="error-hint">Dodaj produkt do katalogu asortymentu przed próbą przyjęcia.</p>
+            </div>
+        );
+    }
+
+    return <div className="pretty-error">{msg}</div>;
+};
 
 const InventoryContent = () => {
     const { t } = useTranslation();
@@ -78,7 +127,26 @@ const InventoryContent = () => {
             }
             if (iR.ok) {
                 const data = await iR.json();
-                setInventoryData(data);
+                setInventoryData(data.map((item: any) => ({
+                    itemId: item.itemId,
+                    productId: item.productId,
+                    productName: item.productName,
+                    barcode: item.barcode,
+                    productPhotoUrl: item.productPhotoUrl,
+                    productWeightKg: item.productWeightKg,
+                    rackCode: item.rackCode,
+                    slotX: item.slotX,
+                    slotY: item.slotY,
+                    locationCode: item.locationCode,
+                    status: item.status,
+                    entryDate: item.entryDate,
+                    expirationDate: item.expirationDate,
+                    daysUntilExpiration: item.daysUntilExpiration,
+                    currentRackTemperature: item.currentRackTemperature,
+                    receivedByUsername: item.receivedByUsername,
+                    isHazardous: item.isHazardous,
+                    hazardClassification: item.hazardClassification
+                })));
             }
         } catch (e) {
             console.error(e);
@@ -91,12 +159,11 @@ const InventoryContent = () => {
         fetchData();
     }, []);
 
-    const handleSlotClick = (productName: string) => {
-        setSearchQuery(productName);
-        setProductViewMode('list');
-        // Switch tab manually
-        const productsTabTrigger = document.querySelector('[data-value="products"]') as HTMLElement;
-        if (productsTabTrigger) productsTabTrigger.click();
+    const handleSlotClick = (barcode: string) => {
+        setSearchQuery(barcode);
+        // Switch to stock tab
+        const stockTabTrigger = document.querySelector('[data-value="stock"]') as HTMLElement;
+        if (stockTabTrigger) stockTabTrigger.click();
     };
 
     // ... existing csv import code ...
@@ -202,12 +269,20 @@ const InventoryContent = () => {
                         body: JSON.stringify({ barcode: decodedText })
                     });
 
-                    const errorText = await res.text();
+                    const responseText = await res.text();
+                    let responseData = null;
+                    if (responseText) {
+                        try {
+                            responseData = JSON.parse(responseText);
+                        } catch (e) {
+                            console.error("Failed to parse response as JSON:", responseText);
+                        }
+                    }
 
                     if (res.status === 409) {
                         setInboundResult({
                             success: false,
-                            message: errorText || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                            message: formatMessageNumbers(responseText) || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
                         });
@@ -225,9 +300,8 @@ const InventoryContent = () => {
                     }
 
                     if (res.ok) {
-                        const data = JSON.parse(errorText);
                         setInboundResult({
-                            ...data,
+                            ...responseData,
                             success: true,
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
@@ -236,7 +310,7 @@ const InventoryContent = () => {
                     } else {
                         setInboundResult({
                             success: false,
-                            message: errorText || "Błąd podczas przyjmowania produktu.",
+                            message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania produktu.",
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
                         });
@@ -266,12 +340,20 @@ const InventoryContent = () => {
                 body: JSON.stringify({ barcode: inboundBarcode })
             });
 
-            const errorText = await res.text();
+            const responseText = await res.text();
+            let responseData = null;
+            if (responseText) {
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Failed to parse response as JSON:", responseText);
+                }
+            }
 
             if (res.status === 409) {
                 setInboundResult({
                     success: false,
-                    message: errorText || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                    message: formatMessageNumbers(responseText) || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -289,9 +371,8 @@ const InventoryContent = () => {
             }
 
             if (res.ok) {
-                const data = JSON.parse(errorText);
                 setInboundResult({
-                    ...data,
+                    ...responseData,
                     success: true,
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
@@ -300,7 +381,7 @@ const InventoryContent = () => {
             } else {
                 setInboundResult({
                     success: false,
-                    message: errorText || "Błąd podczas przyjmowania produktu.",
+                    message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania produktu.",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -330,7 +411,7 @@ const InventoryContent = () => {
                 if (res.status === 500) {
                     alert("Nie można usunąć regału. Sprawdź, czy regał jest pusty (nie zawiera produktów).");
                 } else {
-                    alert(`Błąd usuwania: ${text || res.statusText}`);
+                    alert(`Błąd usuwania: ${formatMessageNumbers(text) || res.statusText} `);
                 }
             }
         } catch (e) {
@@ -352,13 +433,8 @@ const InventoryContent = () => {
         } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
 
-    const handleOpenAddRackModal = () => { setEditingRack(null); setIsModalOpen(true); };
     const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
 
-    const handleEditProduct = (product: Product) => {
-        setEditingProduct(product);
-        setIsProductModalOpen(true);
-    };
 
     const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -392,9 +468,9 @@ const InventoryContent = () => {
             } else {
                 const text = await res.text();
                 if (res.status === 409) {
-                    alert(`Konflikt: ${text || "Kod kreskowy jest już zajęty przez inny produkt."}`);
+                    alert(`Konflikt: ${formatMessageNumbers(text) || "Kod kreskowy jest już zajęty przez inny produkt."} `);
                 } else {
-                    alert(`Błąd zapisu: ${text || res.statusText}`);
+                    alert(`Błąd zapisu: ${formatMessageNumbers(text) || res.statusText} `);
                 }
             }
         } catch (error) {
@@ -442,9 +518,9 @@ const InventoryContent = () => {
             } else {
                 const text = await res.text();
                 if (res.status === 409) {
-                    alert(`Błąd konfiguracji: ${text || "Parametry regału nie są zgodne z przechowywanym towarem lub kod jest zajęty."}`);
+                    alert(`Błąd konfiguracji: ${formatMessageNumbers(text) || "Parametry regału nie są zgodne z przechowywanym towarem lub kod jest zajęty."} `);
                 } else {
-                    alert(`Błąd zapisu: ${text || res.statusText}`);
+                    alert(`Błąd zapisu: ${formatMessageNumbers(text) || res.statusText} `);
                 }
             }
         } catch (error) {
@@ -467,6 +543,7 @@ const InventoryContent = () => {
                                 <Tabs.List className="ht-tabs-list" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
                                     <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
                                     <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
+                                    <Tabs.Trigger value="stock" className="ht-tabs-trigger">Stan magazynowy</Tabs.Trigger>
                                     <Tabs.Trigger value="inbounds" className="ht-tabs-trigger">Przyjęcia</Tabs.Trigger>
                                 </Tabs.List>
                                 <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>
@@ -480,7 +557,7 @@ const InventoryContent = () => {
                         <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
                             <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
                             <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
-                            <button className="btn-primary-ht" onClick={handleOpenAddRackModal}>
+                            <button className="btn-primary-ht" onClick={() => { setEditingRack(null); setIsModalOpen(true); }}>
                                 <Plus size={18} /><span>{invT.addRack}</span>
                             </button>
                         </div>
@@ -489,7 +566,7 @@ const InventoryContent = () => {
                                 <RackCard
                                     key={r.id}
                                     rack={r}
-                                    inventory={inventoryData.filter(i => (i as any).RackCode === r.code || i.rackCode === r.code)} // Filter by code
+                                    inventory={inventoryData.filter(i => i.rackCode === r.code)}
                                     onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
                                     onDelete={() => handleDeleteRack(r.id)}
                                     onSlotClick={handleSlotClick}
@@ -518,10 +595,75 @@ const InventoryContent = () => {
                                 products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))}
                                 viewMode={productViewMode}
                                 onDeleteProduct={handleDeleteProduct}
-                                onEditProduct={handleEditProduct}
+                                onEditProduct={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }}
                                 isLoading={isLoading}
                             />
                         ) : <div className="empty-state-ht">Brak produktów.</div>}
+                    </Tabs.Content>
+
+                    <Tabs.Content value="stock">
+                        <div className="action-bar">
+                            <div className="search-container">
+                                <Search size={18} className="search-icon" />
+                                <input type="text" placeholder="Szukaj w magazynie (nazwa, kod, regał)..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="stock-grid">
+                            {inventoryData
+                                .filter(item =>
+                                    item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    item.barcode.includes(searchQuery) ||
+                                    item.rackCode.toLowerCase().includes(searchQuery.toLowerCase())
+                                )
+                                .map(item => (
+                                    <div key={item.itemId} className={`glass-card stock-item-card ${item.barcode === searchQuery ? 'highlight' : ''}`}>
+                                        <div className="stock-item-header">
+                                            <div className="product-info">
+                                                <div className="barcode-tag">{item.barcode}</div>
+                                                <h3>{item.productName}</h3>
+                                            </div>
+                                            <div className="location-badge">
+                                                <MapPin size={14} /> {item.locationCode}
+                                            </div>
+                                        </div>
+
+                                        <div className="stock-item-details">
+                                            <div className="detail-row">
+                                                <span className="label">Status:</span>
+                                                <span className={`status-tag ${item.status.toLowerCase()}`}>{item.status}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="label">Data przyjęcia:</span>
+                                                <span>{new Date(item.entryDate).toLocaleDateString()}</span>
+                                            </div>
+                                            {item.expirationDate && (
+                                                <div className="detail-row">
+                                                    <span className="label">Data ważności:</span>
+                                                    <span className={item.daysUntilExpiration && item.daysUntilExpiration < 5 ? 'text-danger' : ''}>
+                                                        {new Date(item.expirationDate).toLocaleDateString()}
+                                                        {item.daysUntilExpiration !== undefined && ` (${item.daysUntilExpiration} dni)`}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="stock-item-footer">
+                                            <div className="storage-info">
+                                                <div className="info-chip">
+                                                    <Box size={12} /> {item.productWeightKg}kg
+                                                </div>
+                                                <div className="info-chip">
+                                                    <RefreshCw size={12} /> {item.currentRackTemperature}°C
+                                                </div>
+                                            </div>
+                                            <div className="received-by">
+                                                Przyjął: <strong>{item.receivedByUsername}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            {inventoryData.length === 0 && !isLoading && <div className="empty-state-ht">Magazyn jest obecnie pusty.</div>}
+                        </div>
                     </Tabs.Content>
 
                     <Tabs.Content value="inbounds">
@@ -536,7 +678,7 @@ const InventoryContent = () => {
                                 </p>
                             </div>
 
-                            <form onSubmit={handleInbound} className="ht-form">
+                            <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
                                 <div className="input-group">
                                     <label>Zeskanuj lub wpisz kod produktu</label>
                                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -556,19 +698,6 @@ const InventoryContent = () => {
                                     Zatwierdź i przydziel miejsce
                                 </button>
                             </form>
-
-                            {isScannerOpen && (
-                                <div style={{ marginTop: '1.5rem' }}>
-                                    <div id="reader" style={{ width: '100%' }}></div>
-                                    <button
-                                        onClick={() => setIsScannerOpen(false)}
-                                        className="btn-secondary-ht"
-                                        style={{ marginTop: '1rem', width: '100%' }}
-                                    >
-                                        Anuluj skanowanie
-                                    </button>
-                                </div>
-                            )}
 
                             {inboundResult && (
                                 <div className={`inbound-result-card ${inboundResult.success ? 'success' : 'error'}`} style={{
@@ -614,7 +743,7 @@ const InventoryContent = () => {
                                             </div>
                                         ) : (
                                             <div style={{ color: '#ff4d4d', padding: '10px', background: 'rgba(255,77,77,0.1)', borderRadius: '6px' }}>
-                                                <strong>{inboundResult.message || "Brak wolnej przestrzeni spełniającej wymagania techniczne produktu."}</strong>
+                                                {prettifyBackendError(inboundResult.message)}
                                             </div>
                                         )}
                                     </div>
@@ -623,7 +752,7 @@ const InventoryContent = () => {
                         </div>
                     </Tabs.Content>
                 </Tabs.Root>
-            </div>
+            </div >
 
             <Dialog.Root open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
                 <Dialog.Portal>
@@ -664,16 +793,16 @@ const InventoryContent = () => {
                 onSave={handleSaveRack}
                 invT={invT}
                 existingRacks={racks}
-                hasItems={editingRack ? inventoryData.some(i => (i as any).RackCode === editingRack.code || i.rackCode === editingRack.code) : false}
+                hasItems={editingRack ? inventoryData.some(i => i.rackCode === editingRack.code) : false}
             />
             <ProductModal
                 open={isProductModalOpen}
                 onOpenChange={setIsProductModalOpen}
                 onSave={handleSaveProduct}
                 editingProduct={editingProduct}
-                hasInventoryItems={editingProduct ? inventoryData.some(i => (i as any).ProductId === editingProduct.id || i.productId === editingProduct.id) : false}
+                hasInventoryItems={editingProduct ? inventoryData.some(i => i.productId === editingProduct.id) : false}
             />
-        </Tooltip.Provider >
+        </Tooltip.Provider>
     );
 };
 

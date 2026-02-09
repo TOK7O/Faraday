@@ -215,7 +215,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                     step="0.1"
                                     name="maxWeightKg"
                                     onChange={handleInputChange}
-                                    defaultValue={editingRack?.maxWeight || ""}
+                                    defaultValue={editingRack?.maxWeight ?? ""}
                                     required
                                     readOnly={hasItems}
                                     style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
@@ -225,10 +225,10 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                             <div className="input-group">
                                 <label>Środowisko: Temp [°C] <ErrorLabel field="tempRange" /></label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin || ""} placeholder="Min" required
+                                    <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin ?? ""} placeholder="Min" required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
-                                    <input type="number" step="0.1" name="maxTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMax || ""} placeholder="Max" required
+                                    <input type="number" step="0.1" name="maxTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMax ?? ""} placeholder="Max" required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
                                 </div>
@@ -243,7 +243,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         type="number"
                                         name="maxItemWidthMm"
                                         onChange={handleInputChange}
-                                        defaultValue={editingRack?.maxWidth || ""}
+                                        defaultValue={editingRack?.maxWidth ?? ""}
                                         placeholder="Szerokość"
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
@@ -255,7 +255,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         type="number"
                                         name="maxItemHeightMm"
                                         onChange={handleInputChange}
-                                        defaultValue={editingRack?.maxHeight || ""}
+                                        defaultValue={editingRack?.maxHeight ?? ""}
                                         placeholder="Wysokość"
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
@@ -267,7 +267,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         type="number"
                                         name="maxItemDepthMm"
                                         onChange={handleInputChange}
-                                        defaultValue={editingRack?.maxDepth || ""}
+                                        defaultValue={editingRack?.maxDepth ?? ""}
                                         placeholder="Głębokość"
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
