@@ -308,7 +308,7 @@ namespace Faraday.API.Services
             if (targetUserId == adminId)
                 throw new InvalidOperationException("You cannot reset your own 2FA. Use the 'Disable 2FA' feature instead.");
 
-            // VALIDATION 4: Reset 2FA completely
+            // Reset 2FA completely
             user.IsTwoFactorEnabled = false;
             user.TwoFactorSecretKey = null;
             user.UpdatedAt = DateTime.UtcNow;
@@ -321,11 +321,11 @@ namespace Faraday.API.Services
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
-                // Security: Zawsze zwracamy sukces, żeby nie zdradzać, czy email istnieje w bazie
+                // We should always return success, as to not reveal if email actually exists in the db
                 return;
             }
 
-            // Generowanie tokena
+            // Token generation
             user.PasswordResetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
             user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
 
@@ -345,10 +345,8 @@ namespace Faraday.API.Services
             {
                 throw new Exception("Invalid or expired password reset token.");
             }
-
-            // Ustaw nowe hasło
+            
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            // Wyczyść token
             user.PasswordResetToken = null;
             user.ResetTokenExpires = null;
 

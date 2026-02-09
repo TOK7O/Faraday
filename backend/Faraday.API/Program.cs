@@ -103,6 +103,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
 // Registration of WMS services.
 // --- SERVICE REGISTRATION ---
@@ -119,6 +120,7 @@ builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only once here
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
+builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
