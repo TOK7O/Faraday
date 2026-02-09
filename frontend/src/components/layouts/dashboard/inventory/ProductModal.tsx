@@ -191,7 +191,7 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
                             </div>
                             <div className="input-group">
                                 <label>Waga [kg]</label>
-                                <input type="number" step="0.01" name="weightKg" defaultValue={editingProduct?.weight} required onChange={handleChange}
+                                <input type="number" step="0.01" name="weightKg" defaultValue={editingProduct?.weightKg} required onChange={handleChange}
                                     readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
                                 />
                                 <ErrorMsg field="weightKg" />
@@ -214,13 +214,13 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
                             <div className="input-group">
                                 <label>Wymiary [mm]</label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                    <input type="number" step="1" name="widthMm" defaultValue={editingProduct?.width} placeholder="Szer." required onChange={handleChange}
+                                    <input type="number" step="1" name="widthMm" defaultValue={editingProduct?.widthMm} placeholder="Szer." required onChange={handleChange}
                                         readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
                                     />
-                                    <input type="number" step="1" name="heightMm" defaultValue={editingProduct?.height} placeholder="Wys." required onChange={handleChange}
+                                    <input type="number" step="1" name="heightMm" defaultValue={editingProduct?.heightMm} placeholder="Wys." required onChange={handleChange}
                                         readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
                                     />
-                                    <input type="number" step="1" name="depthMm" defaultValue={editingProduct?.depth} placeholder="Głęb." required onChange={handleChange}
+                                    <input type="number" step="1" name="depthMm" defaultValue={editingProduct?.depthMm} placeholder="Głęb." required onChange={handleChange}
                                         readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
                                     />
                                 </div>

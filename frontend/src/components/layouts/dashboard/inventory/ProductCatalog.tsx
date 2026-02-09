@@ -29,7 +29,7 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
                             <span style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', fontFamily: 'monospace' }}>{p.scanCode || p.id}</span>
                             <h3 style={{ margin: '2px 0', fontSize: '1.1rem' }}>{p.name}</h3>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '10px' }}>
-                                <span><Weight size={12} /> {p.weight} kg</span>
+                                <span><Weight size={12} /> {p.weightKg} kg</span>
                                 <span><Thermometer size={12} /> {p.tempRequired}°C</span>
                             </div>
                         </div>
@@ -102,8 +102,8 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
                         <tr key={p.id} className="fade-in-up">
                             <td className="id-col">{p.scanCode || p.id}</td>
                             <td className="name-col">{p.name}</td>
-                            <td>{p.weight} kg</td>
-                            <td>{p.width}x{p.height}x{p.depth}</td>
+                            <td>{p.weightKg} kg</td>
+                            <td>{p.widthMm}x{p.heightMm}x{p.depthMm}</td>
                             <td>{p.tempRequired}°C</td>
                             <td>
                                 {p.isHazardous ? (
