@@ -21,11 +21,6 @@ namespace Faraday.API.Services.Interfaces
         /// Lists all available backup files.
         /// </summary>
         IEnumerable<BackupHistoryDto> GetBackupHistory();
-
-        /// <summary>
-        /// Specifically fetches backup logs from the database.
-        /// </summary>
-        Task<IEnumerable<BackupLog>> GetBackupHistoryFromDbAsync();
         
         /// <summary>
         /// Restores database from an encrypted backup file.

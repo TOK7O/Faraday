@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Trash2, Copy, Ban, Move, PackageMinus, X } from "lucide-react";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Move, PackageMinus, X } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
@@ -85,9 +85,15 @@ const InventoryContent = () => {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     // stany dla obslugi csv
-    const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
-    const [csvBuffer, setCsvBuffer] = useState<any[]>([]);
-    const [conflictingCodes, setConflictingCodes] = useState<string[]>([]);
+    const [importResult, setImportResult] = useState<{ successCount: number, errorCount: number, errors: string[] } | null>(null);
+    const [isImportResultModalOpen, setIsImportResultModalOpen] = useState(false);
+
+    // Nowe stany dla interaktywnego importu
+    const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
+    const [importType, setImportType] = useState<'racks' | 'products' | null>(null);
+    const [isImportPreviewModalOpen, setIsImportPreviewModalOpen] = useState(false);
+    const [selectedPreviewItem, setSelectedPreviewItem] = useState<any | null>(null);
+    const [batchProgress, setBatchProgress] = useState<{ current: number, total: number } | null>(null);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [scannerMode, setScannerMode] = useState<'inbound' | 'outbound' | 'move'>('inbound');
@@ -102,6 +108,7 @@ const InventoryContent = () => {
     const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const productFileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -124,14 +131,15 @@ const InventoryContent = () => {
                 const data = await pR.json();
                 setProducts(data.map((p: any) => ({
                     id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
-                    weight: p.weightKg, width: p.widthMm, height: p.heightMm, depth: p.depthMm,
+                    weightKg: p.weightKg, widthMm: p.widthMm, heightMm: p.heightMm, depthMm: p.depthMm,
                     tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2,
                     requiredMinTemp: p.requiredMinTemp,
                     requiredMaxTemp: p.requiredMaxTemp,
                     isHazardous: p.isHazardous,
                     hazardClassification: p.hazardClassification,
                     validityDays: p.validityDays,
-                    photoUrl: p.photoUrl
+                    photoUrl: p.photoUrl,
+                    comment: p.comment || ""
                 })));
             }
             if (iR.ok) {
@@ -177,83 +185,275 @@ const InventoryContent = () => {
 
     // ... existing csv import code ...
 
-    const getSmallestAvailableCode = (currentRacks: Rack[], basePrefix: string = "R-") => {
-        const codes = currentRacks.map(r => r.code);
-        let i = 1;
-        while (true) {
-            const candidate = `${basePrefix}${i.toString().padStart(2, '0')}`;
-            if (!codes.includes(candidate)) return candidate;
-            i++;
-        }
+
+    const parseCSV = (text: string, type: 'racks' | 'products') => {
+        const lines = text.split(/\r?\n/);
+        const results: any[] = [];
+
+        const normalize = (v: string | undefined) => {
+            if (!v) return 0;
+            const val = parseFloat(v.replace(',', '.'));
+            return isNaN(val) ? 0 : val;
+        };
+
+        lines.forEach((line, index) => {
+            try {
+                const trimmed = line.trim();
+                // Pomiń puste linie i komentarze, ale nie usuwaj linii startujących od # jeśli to nagłówek
+                if (!trimmed) return;
+
+                // Jeśli to nagłówek z deklaracji użytkownika (np. #Nazwa...)
+                const isHeaderLine = trimmed.toLowerCase().includes('nazwa;') || trimmed.toLowerCase().includes('code;');
+                if (trimmed.startsWith("#") && !isHeaderLine) return;
+
+                // Traktuj # na początku nagłówka jako część tekstu do pominięcia
+                let cleanLine = trimmed;
+                if (trimmed.startsWith("#") && isHeaderLine) {
+                    cleanLine = trimmed.substring(1);
+                }
+
+                const parts = cleanLine.split(";").map(p => p.trim());
+                if (parts.length < 5) return;
+
+                if (type === 'racks') {
+                    const [code, rows, cols, tMin, tMax, w, wi, h, d, c] = parts;
+
+                    if (code.toLowerCase() === 'code' || code.toLowerCase() === 'kod' || !code) return;
+
+                    const rackDto = {
+                        code,
+                        rows: Math.max(1, parseInt(rows) || 0),
+                        columns: Math.max(1, parseInt(cols) || 0),
+                        minTemperature: normalize(tMin),
+                        maxTemperature: normalize(tMax),
+                        maxWeightKg: normalize(w),
+                        maxItemWidthMm: normalize(wi),
+                        maxItemHeightMm: normalize(h),
+                        maxItemDepthMm: normalize(d),
+                        comment: c || ""
+                    };
+
+                    const existing = racks.find(r => r.code === rackDto.code);
+                    const validationErrors: string[] = [];
+                    let occupied = false;
+
+                    if (existing) {
+                        const rackItems = inventoryData.filter(i => i.rackCode === existing.code);
+                        occupied = rackItems.length > 0;
+
+                        rackItems.forEach(item => {
+                            const product = products.find(p => p.id === item.productId);
+                            if (product) {
+                                if (rackDto.minTemperature < product.requiredMinTemp || rackDto.maxTemperature > product.requiredMaxTemp) {
+                                    validationErrors.push(`Błąd temperatury: '${product.name}' wymaga ${product.requiredMinTemp}°C do ${product.requiredMaxTemp}°C. Nowy zakres (${rackDto.minTemperature}°C - ${rackDto.maxTemperature}°C) jest niedopuszczalny.`);
+                                }
+                                if (product.widthMm > rackDto.maxItemWidthMm || product.heightMm > rackDto.maxItemHeightMm || product.depthMm > rackDto.maxItemDepthMm) {
+                                    validationErrors.push(`Błąd wymiarów: '${product.name}' (${product.widthMm}x${product.heightMm}x${product.depthMm}mm) nie zmieści się w nowych limitach.`);
+                                }
+                            }
+                        });
+
+                        const currentTotalWeight = rackItems.reduce((acc, item) => acc + (item.productWeightKg || 0), 0);
+                        if (currentTotalWeight > rackDto.maxWeightKg) {
+                            validationErrors.push(`Błąd nośności: Obecna masa (${currentTotalWeight.toFixed(1)}kg) przekracza nowy limit (${rackDto.maxWeightKg}kg).`);
+                        }
+                    }
+
+                    results.push({
+                        status: existing ? 'conflict' : 'new',
+                        data: rackDto,
+                        hasItems: occupied,
+                        validationErrors,
+                        existingData: existing ? {
+                            code: existing.code,
+                            rows: existing.m,
+                            columns: existing.n,
+                            minTemperature: existing.tempMin,
+                            maxTemperature: existing.tempMax,
+                            maxWeightKg: existing.maxWeight,
+                            maxItemWidthMm: existing.maxWidth,
+                            maxItemHeightMm: existing.maxHeight,
+                            maxItemDepthMm: existing.maxDepth,
+                            comment: existing.comment || ""
+                        } : null,
+                        id: existing?.id,
+                        action: existing ? 'skip' : 'create'
+                    });
+                } else {
+                    const [name, id, photo, tMin, tMax, w, wi, h, d, comment, vDays, isH] = parts;
+
+                    if (name.toLowerCase() === 'nazwa' || name.toLowerCase() === 'name' || !id) return;
+
+                    const productDto = {
+                        name: name || "Bez nazwy",
+                        scanCode: id,
+                        photoUrl: photo || "",
+                        requiredMinTemp: normalize(tMin),
+                        requiredMaxTemp: normalize(tMax),
+                        weightKg: normalize(w),
+                        widthMm: normalize(wi),
+                        heightMm: normalize(h),
+                        depthMm: normalize(d),
+                        comment: comment || "",
+                        validityDays: parseInt(vDays) || 0,
+                        isHazardous: isH ? (isH.toUpperCase() === 'TRUE' || isH === '1' || isH.toLowerCase() === 'tak') : false
+                    };
+
+                    if (!productDto.scanCode) return;
+
+                    const existing = products.find(p => p.scanCode === productDto.scanCode);
+                    results.push({
+                        status: existing ? 'conflict' : 'new',
+                        data: productDto,
+                        existingData: existing ? {
+                            name: existing.name,
+                            scanCode: existing.scanCode,
+                            photoUrl: existing.photoUrl,
+                            requiredMinTemp: existing.requiredMinTemp,
+                            requiredMaxTemp: existing.requiredMaxTemp,
+                            weightKg: existing.weightKg,
+                            widthMm: existing.widthMm,
+                            heightMm: existing.heightMm,
+                            depthMm: existing.depthMm,
+                            comment: existing.comment || "",
+                            validityDays: existing.validityDays,
+                            isHazardous: existing.isHazardous
+                        } : null,
+                        id: existing?.id,
+                        action: existing ? 'skip' : 'create'
+                    });
+                }
+            } catch (err) {
+                console.error(`Error parsing CSV at line ${index}:`, err);
+            }
+        });
+        return results;
     };
 
     const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
         const reader = new FileReader();
-        reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            const lines = text.split("\n");
-            const buffer: any[] = [];
-            const conflicts: string[] = [];
-
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith("#")) return;
-                const [code, rows, cols, tMin, tMax, w, wi, h, d, c] = trimmed.split(";");
-                const rackDto = { code: code?.trim(), rows: Number(rows), columns: Number(cols), minTemperature: Number(tMin), maxTemperature: Number(tMax), maxWeightKg: Number(w), maxItemWidthMm: Number(wi), maxItemHeightMm: Number(h), maxItemDepthMm: Number(d), comment: c?.trim() || "" };
-
-                buffer.push(rackDto);
-                if (racks.some(r => r.code === rackDto.code)) {
-                    conflicts.push(rackDto.code);
+        reader.onload = (event) => {
+            try {
+                const text = event.target?.result as string;
+                const preview = parseCSV(text, 'racks');
+                if (preview.length === 0) {
+                    alert("Nie znaleziono poprawnych danych w pliku CSV. Sprawdź format (średniki, nagłówki).");
+                    return;
                 }
-            });
-
-            if (conflicts.length > 0) {
-                setCsvBuffer(buffer);
-                setConflictingCodes(conflicts);
-                setIsConflictModalOpen(true);
-            } else {
-                await processImport(buffer, 'NONE');
+                setImportType('racks');
+                setImportPreviewData(preview);
+                setIsImportPreviewModalOpen(true);
+            } catch (err) {
+                console.error("CSV Import error:", err);
+                alert("Wystąpił błąd podczas analizowania pliku CSV.");
             }
         };
+        reader.onerror = () => alert("Błąd odczytu pliku.");
         reader.readAsText(file);
         e.target.value = "";
     };
 
-    const processImport = async (data: any[], strategy: 'OVERWRITE' | 'RENAME' | 'NONE') => {
-        setIsLoading(true);
-        const token = localStorage.getItem("token");
-        const currentRacks = [...racks];
+    const handleProductCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        for (const item of data) {
-            const existing = currentRacks.find(r => r.code === item.code);
-            let method = "POST";
-            let url = `${API_BASE_URL}/api/Rack`;
-            let body = { ...item };
-
-            if (existing) {
-                if (strategy === 'OVERWRITE') {
-                    method = "PUT";
-                    url = `${API_BASE_URL}/api/Rack/${existing.id}`;
-                } else if (strategy === 'RENAME') {
-                    body.code = getSmallestAvailableCode(currentRacks);
-                    // Dodajemy do listy, żeby kolejny element z CSV nie dostał tego samego kodu
-                    currentRacks.push({ ...existing, code: body.code });
-                } else {
-                    continue; // Pomiń jeśli wystąpił konflikt a strategia to NONE (anulowanie)
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const text = event.target?.result as string;
+                const preview = parseCSV(text, 'products');
+                if (preview.length === 0) {
+                    alert("Nie znaleziono poprawnych danych produktów w pliku CSV.");
+                    return;
                 }
+                setImportType('products');
+                setImportPreviewData(preview);
+                setIsImportPreviewModalOpen(true);
+            } catch (err) {
+                console.error("Product CSV Import error:", err);
+                alert("Wystąpił błąd podczas analizowania pliku produktów.");
             }
+        };
+        reader.onerror = () => alert("Błąd odczytu pliku.");
+        reader.readAsText(file);
+        e.target.value = "";
+    };
+
+    const handleConfirmImport = async () => {
+        if (!importType) return;
+
+        const toProcess = importPreviewData.filter(item => item.action !== 'skip');
+        if (toProcess.length === 0) {
+            setIsImportPreviewModalOpen(false);
+            return;
+        }
+
+        setIsLoading(true);
+        setBatchProgress({ current: 0, total: toProcess.length });
+
+        let success = 0;
+        let errors: string[] = [];
+        const token = localStorage.getItem("token");
+
+        for (let i = 0; i < toProcess.length; i++) {
+            const item = toProcess[i];
+            setBatchProgress({ current: i + 1, total: toProcess.length });
 
             try {
-                await fetch(url, {
+                const url = importType === 'racks'
+                    ? `${API_BASE_URL}/api/Rack${item.action === 'update' ? `/${item.id}` : ''}`
+                    : `${API_BASE_URL}/api/Product${item.action === 'update' ? `/${item.id}` : ''}`;
+
+                const method = item.action === 'update' ? 'PUT' : 'POST';
+
+                // Przygotowanie danych sesuai z DTO backendu
+                let payload = { ...item.data };
+                if (item.action === 'update') {
+                    if (importType === 'racks') {
+                        // RackUpdateDto nie ma Code, Rows, Columns
+                        const { code, rows, columns, ...updateData } = payload;
+                        payload = updateData;
+                    } else {
+                        // ProductUpdateDto nie ma ScanCode
+                        const { scanCode, ...updateData } = payload;
+                        payload = updateData;
+                    }
+                }
+
+                const res = await fetch(url, {
                     method,
-                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
                 });
-            } catch (err) { console.error(err); }
+
+                if (res.ok) {
+                    success++;
+                } else {
+                    const errMsg = await res.text();
+                    const identifier = item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
+                    errors.push(`${identifier}: ${errMsg || res.statusText}`);
+                }
+            } catch (err: any) {
+                const identifier = item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
+                errors.push(`Błąd sieci dla ${identifier}: ${err.message}`);
+            }
         }
-        setIsConflictModalOpen(false);
+
+        setImportResult({
+            successCount: success,
+            errorCount: errors.length,
+            errors
+        });
+        setIsImportPreviewModalOpen(false);
+        setIsImportResultModalOpen(true);
+        setBatchProgress(null);
+        setIsLoading(false);
         fetchData();
     };
 
@@ -741,9 +941,15 @@ const InventoryContent = () => {
                                     <button className={`toggle-btn ${productViewMode === 'list' ? 'active' : ''}`} onClick={() => setProductViewMode('list')}><List size={18} /></button>
                                 </div>
                             </div>
-                            <button className="btn-primary-ht" onClick={() => setIsProductModalOpen(true)}>
-                                <Plus size={18} /><span>{invT.defineProduct}</span>
-                            </button>
+                            <input type="file" accept=".csv" ref={productFileInputRef} hidden onChange={handleProductCSVImport} />
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button className="btn-primary-ht" onClick={() => productFileInputRef.current?.click()}>
+                                    <FileUp size={18} /><span>Importuj CSV</span>
+                                </button>
+                                <button className="btn-primary-ht" onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}>
+                                    <Plus size={18} /><span>{invT.defineProduct}</span>
+                                </button>
+                            </div>
                         </div>
                         {(products.length > 0 || isLoading) ? (
                             <ProductCatalog
@@ -1050,29 +1256,258 @@ const InventoryContent = () => {
                 </Dialog.Portal>
             </Dialog.Root>
 
-            <Dialog.Root open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
+            <Dialog.Root open={isImportPreviewModalOpen} onOpenChange={setIsImportPreviewModalOpen}>
                 <Dialog.Portal>
-                    <Dialog.Overlay className="modal-overlay" />
-                    <Dialog.Content className="modal-content" style={{ maxWidth: '500px' }}>
+                    <Dialog.Overlay className="dialog-overlay-ht" />
+                    <Dialog.Content className="dialog-content-ht import-modal-ht">
                         <div className="modal-header">
-                            <AlertTriangle size={20} className="header-icon" style={{ color: '#ff4d4d' }} />
-                            <Dialog.Title>Konflikt oznaczeń regałów</Dialog.Title>
+                            <FileUp size={20} className="header-icon" style={{ color: 'var(--accent-primary)', filter: 'drop-shadow(0 0 8px var(--accent-primary))' }} />
+                            <Dialog.Title>Paczka importowa: {importType === 'racks' ? 'Regały' : 'Produkty'}</Dialog.Title>
+                            <Dialog.Close asChild>
+                                <button className="close-btn"><X size={20} /></button>
+                            </Dialog.Close>
+                        </div>
+
+                        <div className="import-preview-container">
+                            {batchProgress ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '24px' }}>
+                                    <Spinner size={40} />
+                                    <p style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>Przetwarzanie pakietu...</p>
+                                    <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>{batchProgress.current} z {batchProgress.total} operacji zakończonych</p>
+                                    <div style={{ width: '100%', maxWidth: '400px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', margin: '2rem auto 0', overflow: 'hidden' }}>
+                                        <div style={{
+                                            width: `${(batchProgress.current / batchProgress.total) * 100}%`,
+                                            height: '100%',
+                                            background: 'linear-gradient(90deg, var(--accent-primary), #4ade80)',
+                                            boxShadow: '0 0 15px var(--accent-primary)',
+                                            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                        }} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="import-summary-strip">
+                                        <div className="summary-item">
+                                            <span className="label">Łącznie</span>
+                                            <span className="value">{importPreviewData.length}</span>
+                                        </div>
+                                        <div className="summary-item">
+                                            <span className="label">Nowe</span>
+                                            <span className="value" style={{ color: '#4ade80' }}>
+                                                {importPreviewData.filter(i => i.status === 'new').length}
+                                            </span>
+                                        </div>
+                                        <div className="summary-item">
+                                            <span className="label">Konflikty</span>
+                                            <span className="value" style={{ color: '#facc15' }}>
+                                                {importPreviewData.filter(i => i.status === 'conflict').length}
+                                            </span>
+                                        </div>
+                                        <div className="summary-item" style={{ marginLeft: 'auto' }}>
+                                            <span className="label">Do zapisu</span>
+                                            <span className="value">
+                                                {importPreviewData.filter(i => i.action !== 'skip').length}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="import-table-wrapper">
+                                        <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                                            <table className="import-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Status</th>
+                                                        <th>Kod / Identyfikator</th>
+                                                        <th>Decyzja</th>
+                                                        <th>Działanie</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {importPreviewData.map((item, idx) => (
+                                                        <tr key={idx} style={{
+                                                            background: selectedPreviewItem === item ? 'rgba(var(--accent-primary-rgb), 0.08)' : 'transparent'
+                                                        }}>
+                                                            <td>
+                                                                <span className={`status-badge ${item.status === 'conflict' ? 'conflict' : 'new'}`}>
+                                                                    {item.status === 'conflict' ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
+                                                                    {item.status === 'conflict' ? 'Konflikt' : 'Nowy'}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ fontWeight: 700, fontFamily: 'Space Grotesk' }}>{item.data.code || item.data.scanCode}</td>
+                                                            <td>
+                                                                <select
+                                                                    value={item.action}
+                                                                    onChange={(e) => {
+                                                                        const newData = [...importPreviewData];
+                                                                        newData[idx].action = e.target.value;
+                                                                        setImportPreviewData(newData);
+                                                                    }}
+                                                                    style={{
+                                                                        background: 'rgba(255,255,255,0.05)',
+                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                        borderRadius: '8px',
+                                                                        padding: '4px 8px',
+                                                                        color: 'white',
+                                                                        fontSize: '0.8rem',
+                                                                        outline: 'none'
+                                                                    }}
+                                                                >
+                                                                    {item.status === 'conflict' ? (
+                                                                        <>
+                                                                            <option value="skip">Pomiń (Zachowaj obecny)</option>
+                                                                            <option value="update">Zaktualizuj (Nadpisz)</option>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <option value="create">Utwórz nowy</option>
+                                                                            <option value="skip">Anuluj ten wiersz</option>
+                                                                        </>
+                                                                    )}
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <button
+                                                                    className={`btn-action-ht ${selectedPreviewItem === item ? 'active' : ''}`}
+                                                                    onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
+                                                                    title="Pokaż różnice"
+                                                                >
+                                                                    {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {selectedPreviewItem && (
+                                        <div className="diff-view-master-detail">
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                {selectedPreviewItem.validationErrors && selectedPreviewItem.validationErrors.length > 0 && (
+                                                    <div className="validation-warning">
+                                                        <div className="warning-header">
+                                                            <AlertTriangle size={18} /> Krytyczne ostrzeżenia
+                                                        </div>
+                                                        <ul>
+                                                            {selectedPreviewItem.validationErrors.map((err: string, i: number) => (
+                                                                <li key={i}>{err}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {selectedPreviewItem.hasItems && (!selectedPreviewItem.validationErrors || selectedPreviewItem.validationErrors.length === 0) && (
+                                                    <div className="validation-warning" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)', color: '#93c5fd' }}>
+                                                        <div className="warning-header" style={{ color: '#60a5fa' }}>
+                                                            <Box size={18} /> Informacja o zawartości
+                                                        </div>
+                                                        <p style={{ fontSize: '0.85rem', margin: 0, paddingLeft: '1.5rem' }}>
+                                                            Ten regał posiada aktualnie towary. Sugerujemy ostrożność przy zmianie parametrów fizycznych.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                <div className="diff-card">
+                                                    <div className="card-title" style={{ opacity: 0.5 }}>
+                                                        <LayoutGrid size={14} /> Obecnie w systemie
+                                                    </div>
+                                                    {selectedPreviewItem.existingData ? (
+                                                        Object.entries(selectedPreviewItem.existingData).map(([key, val]: [string, any]) => (
+                                                            <div key={key} className="diff-row">
+                                                                <span className="label">{key}</span>
+                                                                <span className="value">{String(val)}</span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.3, fontStyle: 'italic' }}>
+                                                            Brak danych (Nowy element)
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="diff-card" style={{ borderLeft: '2px solid var(--accent-primary)' }}>
+                                                    <div className="card-title" style={{ color: 'var(--accent-primary)' }}>
+                                                        <FileUp size={14} /> Dane z pliku CSV
+                                                    </div>
+                                                    {Object.entries(selectedPreviewItem.data).map(([key, val]: [string, any]) => {
+                                                        const isDifferent = selectedPreviewItem.existingData && String(val) !== String(selectedPreviewItem.existingData[key]);
+                                                        return (
+                                                            <div key={key} className="diff-row">
+                                                                <span className="label">{key}</span>
+                                                                <span className={`value ${isDifferent ? 'changed' : ''}`}>
+                                                                    {String(val)}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                            <button className="btn-secondary" onClick={() => setIsImportPreviewModalOpen(false)}>Anuluj</button>
+                            <button className="btn-primary-ht" onClick={handleConfirmImport} disabled={!!batchProgress || importPreviewData.length === 0}>
+                                Zatwierdź i importuj ({importPreviewData.filter(i => i.action !== 'skip').length})
+                            </button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            <Dialog.Root open={isImportResultModalOpen} onOpenChange={setIsImportResultModalOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="dialog-overlay-ht" />
+                    <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '600px' }}>
+                        <div className="modal-header">
+                            <FileUp size={20} className="header-icon" />
+                            <Dialog.Title>Wynik importu CSV</Dialog.Title>
+                            <Dialog.Close asChild>
+                                <button className="close-btn"><X size={20} /></button>
+                            </Dialog.Close>
                         </div>
                         <div style={{ margin: '1.5rem 0' }}>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                Niektóre kody regałów z importu już istnieją w bazie danych: <br />
-                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{conflictingCodes.join(', ')}</span>
-                            </p>
+                            <div style={{ display: 'flex', gap: '20px', marginBottom: '1.5rem' }}>
+                                <div style={{ flex: 1, padding: '1rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80' }}>{importResult?.successCount}</div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Sukcesów</div>
+                                </div>
+                                <div style={{ flex: 1, padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f87171' }}>{importResult?.errorCount}</div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Błędów</div>
+                                </div>
+                            </div>
+
+                            {importResult && importResult.errors.length > 0 && (
+                                <div style={{ marginTop: '1rem' }}>
+                                    <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Szczegóły błędów:</p>
+                                    <div style={{
+                                        maxHeight: '250px',
+                                        overflowY: 'auto',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        border: '1px solid rgba(255,255,255,0.05)'
+                                    }}>
+                                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                                            {importResult.errors.map((err, i) => (
+                                                <li key={i} style={{ marginBottom: '4px', color: '#f87171' }}>{err}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <button className="btn-primary" onClick={() => processImport(csvBuffer, 'OVERWRITE')}>
-                                <Trash2 size={16} /> Nadpisz istniejące regały
-                            </button>
-                            <button className="btn-primary" onClick={() => processImport(csvBuffer, 'RENAME')}>
-                                <Copy size={16} /> Zmień nazwy na wolne
-                            </button>
-                            <button className="btn-secondary" onClick={() => setIsConflictModalOpen(false)}>
-                                <Ban size={16} /> Anuluj operację
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button className="btn-primary" onClick={() => setIsImportResultModalOpen(false)}>
+                                Zamknij
                             </button>
                         </div>
                     </Dialog.Content>
@@ -1096,7 +1531,7 @@ const InventoryContent = () => {
                 editingProduct={editingProduct}
                 hasInventoryItems={editingProduct ? inventoryData.some(i => i.productId === editingProduct.id) : false}
             />
-        </Tooltip.Provider>
+        </Tooltip.Provider >
     );
 };
 
