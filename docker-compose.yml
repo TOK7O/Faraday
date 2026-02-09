@@ -51,7 +51,7 @@ services:
       - DOTNET_USE_POLLING_FILE_WATCHER=1
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
       - BACKUP_ENCRYPTION_IV=${BACKUP_ENCRYPTION_IV}
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD};SSL Mode=Disable;
+      - DB_HOST=faraday-db
     depends_on:
       db:
         condition: service_healthy
