@@ -2,7 +2,7 @@ import { memo } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Rack, FullInventoryItem } from "./InventoryContent.types";
 
-export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Rack, inventory: FullInventoryItem[], onSlotClick: (name: string) => void }) => {
+export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Rack, inventory: FullInventoryItem[], onSlotClick: (barcode: string) => void }) => {
     // Create a map of "X,Y" -> Item
     const slotMap = new Map<string, FullInventoryItem>();
     inventory.forEach(item => {
@@ -40,7 +40,7 @@ export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Ra
                                     onClick={(e) => {
                                         if (item) {
                                             e.stopPropagation();
-                                            onSlotClick(item.productName);
+                                            onSlotClick(item.barcode);
                                         }
                                     }}
                                     style={{

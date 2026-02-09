@@ -57,8 +57,11 @@ export interface FullInventoryItem {
     slotY: number;
     locationCode: string;
     status: string;
+    entryDate: string;
     expirationDate?: string;
     daysUntilExpiration?: number;
     currentRackTemperature: number;
+    receivedByUsername: string;
     isHazardous: boolean;
+    hazardClassification?: string;
 }
