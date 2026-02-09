@@ -1,6 +1,6 @@
 import { memo } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import type { Rack, FullInventoryItem } from "./InventoryContent.types";
+import type { Rack } from "./InventoryContent.types";
 
 export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Rack, inventory: FullInventoryItem[], onSlotClick: (barcode: string) => void }) => {
     // Create a map of "X,Y" -> Item
@@ -12,25 +12,20 @@ export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Ra
     return (
         <div className="rack-grid-container" style={{
             display: 'grid',
-            // Rows are Y, Columns are X. 
-            // We want to render rows from top (Y=rows) to bottom (Y=1) or bottom-up?
-            // Usually racks are numbered 1 at bottom. Let's assume standard visual: Row 1 is bottom.
-            // CSS Grid renders top-left first. 
-            // To render "Row 4 (top)" then "Row 3"... we need to order the iteration correctly.
+            // Rows are Y, Columns are X.
             gridTemplateColumns: `repeat(${rack.n}, 1fr)`,
             gap: '2px',
             background: 'rgba(255,255,255,0.05)',
             padding: '4px',
             borderRadius: '4px',
             marginBottom: '1.5rem',
-            aspectRatio: rack.n / rack.m > 2 ? 'auto' : 'unset' // Prevent too wide look if needed
+            aspectRatio: rack.n / rack.m > 2 ? 'auto' : 'unset'
         }}>
-            {/* We render row by row, from top (Max Y) to bottom (1) */}
             {Array.from({ length: rack.m }).map((_, rIndex) => {
-                const rowNum = rack.m - rIndex; // Top row first
+                const rowNum = rack.m - rIndex;
                 return Array.from({ length: rack.n }).map((_, cIndex) => {
-                    const colNum = cIndex + 1; // Left to right
-                    const item = slotMap.get(`${colNum},${rowNum}`); // X=Col, Y=Row
+                    const colNum = cIndex + 1;
+                    const item = slotMap.get(`${colNum},${rowNum}`);
                     const isOccupied = !!item;
 
                     return (
