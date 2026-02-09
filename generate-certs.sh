@@ -6,7 +6,11 @@ chmod 600 ssl/server.key
 echo "Certs were generated in the ssl folder!"
 
 # If you don't have openssl installed, my recommended way is:
+
 # 1. Install chocolatey: https://chocolatey.org/install
+
 # 2. Install openssl by running this comand in admin mode:
 # (run this in ps): choco install openssl
-#3. Run this shell script!
+
+#3. Run this shell script (as admin), and 
+# run this in the faraday folder please!
