@@ -36,6 +36,7 @@ namespace Faraday.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RackDto>> Create(RackCreateDto dto)
         {
             try
@@ -51,6 +52,7 @@ namespace Faraday.API.Controllers
         }
         
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RackDto>> Update(int id, RackUpdateDto dto)
         {
             try
@@ -70,7 +72,7 @@ namespace Faraday.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrator,Manager")] // Only higher roles can delete
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
             await _rackService.DeleteRackAsync(id);
@@ -78,6 +80,7 @@ namespace Faraday.API.Controllers
         }
 
         [HttpPost("import")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> ImportCsv(IFormFile? file)
         {
             if (file == null || file.Length == 0)
