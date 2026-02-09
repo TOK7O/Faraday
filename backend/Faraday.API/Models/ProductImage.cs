@@ -16,6 +16,7 @@ namespace Faraday.API.Models
 
         // Feature vector extracted from the image (serialized as JSON array of floats)
         [Required]
+        [MaxLength(10000)]
         public required string FeatureVector { get; set; }
 
         public int UploadedByUserId { get; set; }

@@ -32,6 +32,7 @@ builder.Services.AddDbContext<FaradayDbContext>(options =>
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
+builder.Configuration["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
 // Configure the authentication service to use JWT Bearer tokens as the default scheme.
 builder.Services.AddAuthentication(options =>
