@@ -99,6 +99,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddHttpContextAccessor();
+
 // Registration of WMS services.
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRackService, RackService>();
@@ -108,6 +110,7 @@ builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
@@ -172,5 +175,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseStaticFiles();
 
 app.Run();

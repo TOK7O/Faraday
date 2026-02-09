@@ -13,6 +13,7 @@ desktop.ini
 # backend
 backend/**/bin/
 backend/**/obj/
+backend/**/wwwroot/
 
 TestResults/
 coverage/
