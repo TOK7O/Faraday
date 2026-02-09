@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, AlertTriangle, AlertCircle, FileImage } from "lucide-react";
+import "./ProductModal.scss";
 
 interface ProductModalProps {
     open: boolean;
@@ -35,51 +36,34 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setFileName(file.name);
-        }
+        if (file) setFileName(file.name);
     };
 
     const validateField = (name: string, value: string, formData: FormData) => {
         let error = "";
-
-        if ((name === "name" || name === "scanCode") && !value.trim()) {
-            error = "To pole jest wymagane";
-        }
+        if ((name === "name" || name === "scanCode") && !value.trim()) error = "To pole jest wymagane";
 
         if (["weightKg", "widthMm", "heightMm", "depthMm"].includes(name)) {
             const numVal = parseFloat(value);
-            if (isNaN(numVal) || numVal <= 0) {
-                error = "Wartość musi być większa od 0";
-            }
-            if (["widthMm", "heightMm", "depthMm"].includes(name)) {
-                const width = parseFloat(formData.get("widthMm") as string);
-                const height = parseFloat(formData.get("heightMm") as string);
-                const depth = parseFloat(formData.get("depthMm") as string);
+            if (isNaN(numVal) || numVal <= 0) error = "Wartość musi być większa od 0";
 
-                if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(depth) || depth <= 0) {
-                    setErrors(prev => ({ ...prev, dimensions: "Wszystkie wymiary muszą być > 0" }));
-                } else {
-                    setErrors(prev => ({ ...prev, dimensions: "" }));
-                }
-            }
+            const w = parseFloat(formData.get("widthMm") as string);
+            const h = parseFloat(formData.get("heightMm") as string);
+            const d = parseFloat(formData.get("depthMm") as string);
+            setErrors(prev => ({ ...prev, dimensions: (isNaN(w) || w <= 0 || isNaN(h) || h <= 0 || isNaN(d) || d <= 0) ? "Wszystkie wymiary muszą być > 0" : "" }));
         }
 
         if (name === "requiredMinTemp" || name === "requiredMaxTemp") {
             const min = parseFloat(formData.get("requiredMinTemp") as string);
             const max = parseFloat(formData.get("requiredMaxTemp") as string);
-
-            if (!isNaN(min) && !isNaN(max) && min > max) {
-                setErrors(prev => ({ ...prev, tempRange: "Temp. Min nie może być wyższa niż Max" }));
-            } else {
-                setErrors(prev => ({ ...prev, tempRange: "" }));
-            }
+            setErrors(prev => ({ ...prev, tempRange: (!isNaN(min) && !isNaN(max) && min > max) ? "Temp. Min > Max" : "" }));
         }
 
         if (name === "validityDays" && value) {
             const days = parseInt(value);
             if (isNaN(days) || days <= 0) error = "Musi być > 0";
         }
+
         if (!["widthMm", "heightMm", "depthMm", "requiredMinTemp", "requiredMaxTemp"].includes(name)) {
             setErrors(prev => ({ ...prev, [name]: error }));
         }
@@ -88,54 +72,41 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, form } = e.target;
         if (!form) return;
-        const formData = new FormData(form);
-        validateField(name, value, formData);
+        validateField(name, value, new FormData(form));
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const hasErrors = Object.values(errors).some(err => err !== "" && err !== undefined);
-        if (!hasErrors) {
-            onSave(e);
-        }
+        if (!Object.values(errors).some(err => err)) onSave(e);
     };
 
     const ErrorMsg = ({ field }: { field: keyof ProductFormErrors }) => (
         errors[field] ? (
-            <span className="error-text" style={{ color: '#ff4d4d', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '3px' }}>
+            <span className="error-text">
                 <AlertCircle size={10} /> {errors[field]}
             </span>
         ) : null
     );
+
+    const isInvalid = Object.values(errors).some(err => err);
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay-ht" />
                 <Dialog.Content className="dialog-content-ht product-modal">
-                    <div className="modal-accent-line" style={{ background: 'var(--accent-secondary)' }} />
+                    <div className="modal-accent-line secondary" />
                     <div className="modal-header">
                         <Dialog.Title><h2>{editingProduct ? "Edycja asortymentu" : "Definiowanie asortymentu"}</h2></Dialog.Title>
-                        <Dialog.Description className="visually-hidden">
-                            Formularz do {editingProduct ? "edycji" : "tworzenia"} produktu.
-                        </Dialog.Description>
+                        <Dialog.Description className="visually-hidden">Formularz produktu</Dialog.Description>
                         <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
                     </div>
 
                     {hasInventoryItems && editingProduct && (
-                        <div style={{
-                            padding: '12px 20px',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: '6px',
-                            margin: '0 20px 16px 20px',
-                            display: 'flex',
-                            gap: '12px',
-                            alignItems: 'flex-start'
-                        }}>
-                            <AlertCircle size={20} color="#ef4444" />
-                            <div style={{ fontSize: '0.85rem', color: '#ffaaaa' }}>
-                                <strong>Edycja ograniczona:</strong> Produkt ma asortyment w magazynie. Zmiana parametrów fizycznych (temperatura, wymiary, waga) jest zablokowana.
+                        <div className="alert-banner danger">
+                            <AlertCircle size={20} />
+                            <div className="alert-content">
+                                <strong>Edycja ograniczona:</strong> Produkt znajduje się w magazynie. Parametry fizyczne są zablokowane.
                             </div>
                         </div>
                     )}
@@ -156,43 +127,24 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
 
                         <div className="input-row">
                             <div className="input-group">
-                                <label>Zdjęcie produktu (tylko nazwa pliku)</label>
-                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                    <input
-                                        type="hidden"
-                                        name="photoUrl"
-                                        value={fileName}
-                                    />
-                                    <label className="file-upload-label" style={{
-                                        width: '100%',
-                                        padding: '8px 12px',
-                                        background: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontSize: '0.85rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '10px',
-                                        overflow: 'hidden'
-                                    }}>
+                                <label>Zdjęcie produktu</label>
+                                <div className="file-input-wrapper">
+                                    <input type="hidden" name="photoUrl" value={fileName} />
+                                    <label className="file-upload-label">
                                         <FileImage size={18} />
-                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {fileName || "Wybierz plik..."}
-                                        </span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            style={{ display: 'none' }}
-                                            onChange={handleFileChange}
-                                        />
+                                        <span className="file-name">{fileName || "Wybierz plik..."}</span>
+                                        <input type="file" accept="image/*" onChange={handleFileChange} />
                                     </label>
                                 </div>
                             </div>
                             <div className="input-group">
                                 <label>Waga [kg]</label>
-                                <input type="number" step="0.01" name="weightKg" defaultValue={editingProduct?.weightKg} required onChange={handleChange}
-                                    readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                <input
+                                    type="number" step="0.01" name="weightKg"
+                                    className={hasInventoryItems ? "readonly-field" : ""}
+                                    defaultValue={editingProduct?.weightKg}
+                                    required onChange={handleChange}
+                                    readOnly={hasInventoryItems}
                                 />
                                 <ErrorMsg field="weightKg" />
                             </div>
@@ -201,39 +153,36 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
                         <div className="input-row">
                             <div className="input-group">
                                 <label>Wymagania temp. [°C]</label>
-                                <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="number" step="0.1" name="requiredMinTemp" defaultValue={editingProduct?.requiredMinTemp} placeholder="Min" required onChange={handleChange}
-                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
-                                    />
-                                    <input type="number" step="0.1" name="requiredMaxTemp" defaultValue={editingProduct?.requiredMaxTemp} placeholder="Max" required onChange={handleChange}
-                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
-                                    />
+                                <div className="multi-input-group">
+                                    <input type="number" step="0.1" name="requiredMinTemp" placeholder="Min" required
+                                           className={hasInventoryItems ? "readonly-field" : ""}
+                                           defaultValue={editingProduct?.requiredMinTemp} readOnly={hasInventoryItems} onChange={handleChange} />
+                                    <input type="number" step="0.1" name="requiredMaxTemp" placeholder="Max" required
+                                           className={hasInventoryItems ? "readonly-field" : ""}
+                                           defaultValue={editingProduct?.requiredMaxTemp} readOnly={hasInventoryItems} onChange={handleChange} />
                                 </div>
                                 <ErrorMsg field="tempRange" />
                             </div>
                             <div className="input-group">
                                 <label>Wymiary [mm]</label>
-                                <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                    <input type="number" step="1" name="widthMm" defaultValue={editingProduct?.widthMm} placeholder="Szer." required onChange={handleChange}
-                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
-                                    />
-                                    <input type="number" step="1" name="heightMm" defaultValue={editingProduct?.heightMm} placeholder="Wys." required onChange={handleChange}
-                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
-                                    />
-                                    <input type="number" step="1" name="depthMm" defaultValue={editingProduct?.depthMm} placeholder="Głęb." required onChange={handleChange}
-                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
-                                    />
+                                <div className="multi-input-group compact">
+                                    <input type="number" name="widthMm" placeholder="Szer." required className={hasInventoryItems ? "readonly-field" : ""}
+                                           defaultValue={editingProduct?.widthMm} readOnly={hasInventoryItems} onChange={handleChange} />
+                                    <input type="number" name="heightMm" placeholder="Wys." required className={hasInventoryItems ? "readonly-field" : ""}
+                                           defaultValue={editingProduct?.heightMm} readOnly={hasInventoryItems} onChange={handleChange} />
+                                    <input type="number" name="depthMm" placeholder="Głęb." required className={hasInventoryItems ? "readonly-field" : ""}
+                                           defaultValue={editingProduct?.depthMm} readOnly={hasInventoryItems} onChange={handleChange} />
                                 </div>
                                 <ErrorMsg field="dimensions" />
                             </div>
                         </div>
 
-                        <div className="input-row">
-                            <div className="input-group" style={{ flex: 2 }}>
+                        <div className="input-row flex-layout">
+                            <div className="input-group flex-2">
                                 <label>Komentarz</label>
                                 <input name="comment" defaultValue={editingProduct?.comment} onChange={handleChange} />
                             </div>
-                            <div className="input-group" style={{ flex: 1 }}>
+                            <div className="input-group flex-1">
                                 <label>Klasyfikacja ADR</label>
                                 <select name="hazardClassification" className="ht-select" defaultValue={editingProduct?.hazardClassification || "0"} onChange={handleChange}>
                                     <option value="0">Brak</option>
@@ -246,31 +195,30 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasIn
                             </div>
                         </div>
 
-                        <div className="input-row">
+                        <div className="input-row align-end">
                             <div className="input-group">
                                 <label>Dni ważności</label>
                                 <input type="number" name="validityDays" defaultValue={editingProduct?.validityDays} placeholder="np. 30" onChange={handleChange} />
                                 <ErrorMsg field="validityDays" />
                             </div>
-                            <div className="checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '25px' }}>
-                                <input type="checkbox" id="isHazardous" name="isHazardous" defaultChecked={editingProduct?.isHazardous} className="ht-checkbox" />
-                                <label htmlFor="isHazardous" style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                                    <AlertTriangle size={16} color="#ffa500" /> ADR?
+                            <div className="adr-checkbox-container">
+                                <input
+                                    type="checkbox"
+                                    id="isHazardous"
+                                    name="isHazardous"
+                                    defaultChecked={editingProduct?.isHazardous}
+                                    className="adr-checkbox-input"
+                                />
+                                <label htmlFor="isHazardous" className="adr-checkbox-label">
+                                    <div className="custom-check">
+                                        <AlertTriangle size={12} className="check-icon" />
+                                    </div>
+                                    <span className="label-text">Klasyfikacja ADR</span>
                                 </label>
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            className="btn-submit-ht"
-                            disabled={Object.values(errors).some(err => err !== "" && err !== undefined)}
-                            style={{
-                                background: 'var(--accent-secondary)',
-                                opacity: Object.values(errors).some(err => err !== "" && err !== undefined) ? 0.5 : 1,
-                                cursor: Object.values(errors).some(err => err !== "" && err !== undefined) ? 'not-allowed' : 'pointer',
-                                marginTop: '10px'
-                            }}
-                        >
+                        <button type="submit" className="btn-submit-ht secondary" disabled={isInvalid}>
                             {editingProduct ? "Zaktualizuj produkt" : "Zapisz w systemie"}
                         </button>
                     </form>

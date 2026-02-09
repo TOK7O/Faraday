@@ -496,7 +496,7 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     transition: $transition-base;
 
     &.active {
-      background-color: var(--accent-color, #3b82f6);
+      background-color: var(--accent-color);
       color: white;
 
       svg {
