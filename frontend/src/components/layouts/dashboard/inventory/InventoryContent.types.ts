@@ -22,6 +22,8 @@ export interface Product {
     height: number;
     depth: number;
     tempRequired: number;
+    requiredMinTemp?: number;
+    requiredMaxTemp?: number;
     isHazardous: boolean;
     hazardClassification?: number;
     validityDays?: number;
@@ -40,4 +42,23 @@ export interface RackModalProps {
     editingRack: Rack | null;
     onSave: (e: React.FormEvent<HTMLFormElement>) => void;
     invT: any;
+    existingRacks: Rack[];
+}
+
+export interface FullInventoryItem {
+    itemId: number;
+    productId: number;
+    productName: string;
+    barcode: string;
+    productPhotoUrl?: string;
+    productWeightKg: number;
+    rackCode: string;
+    slotX: number;
+    slotY: number;
+    locationCode: string;
+    status: string;
+    expirationDate?: string;
+    daysUntilExpiration?: number;
+    currentRackTemperature: number;
+    isHazardous: boolean;
 }

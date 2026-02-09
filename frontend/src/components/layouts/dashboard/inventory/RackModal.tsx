@@ -10,6 +10,7 @@ interface RackModalProps {
     onSave: (e: React.FormEvent<HTMLFormElement>) => void;
     invT: any;
     existingRacks: Rack[];
+    hasItems?: boolean;
 }
 
 interface FormErrors {
@@ -23,7 +24,7 @@ interface FormErrors {
     tempRange?: string;
 }
 
-export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, existingRacks }: RackModalProps) => {
+export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRacks, hasItems }: RackModalProps) => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [codeValue, setCodeValue] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
@@ -138,8 +139,29 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, exist
                     <div className="modal-accent-line" />
                     <div className="modal-header">
                         <Dialog.Title><h2>{editingRack ? "Konfiguracja Regału" : "Nowa Jednostka Regałowa"}</h2></Dialog.Title>
+                        <Dialog.Description className="visually-hidden">
+                            Formularz do {editingRack ? "edycji" : "tworzenia"} regału.
+                        </Dialog.Description>
                         <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
                     </div>
+
+                    {hasItems && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: '6px',
+                            padding: '10px',
+                            marginBottom: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}>
+                            <AlertCircle size={20} color="#ef4444" />
+                            <div style={{ fontSize: '0.85rem', color: '#ffaaaa' }}>
+                                <strong>Edycja ograniczona:</strong> Regał zawiera towary. Zmiana parametrów fizycznych jest zablokowana, aby zapobiec konfliktom.
+                            </div>
+                        </div>
+                    )}
 
                     <form className="ht-form" ref={formRef} onSubmit={handleSubmit}>
                         <div className="input-row">
@@ -195,14 +217,20 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, exist
                                     onChange={handleInputChange}
                                     defaultValue={editingRack?.maxWeight || ""}
                                     required
+                                    readOnly={hasItems}
+                                    style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                 />
                                 <ErrorLabel field="maxWeightKg" />
                             </div>
                             <div className="input-group">
                                 <label>Środowisko: Temp [°C] <ErrorLabel field="tempRange" /></label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin || ""} placeholder="Min" required />
-                                    <input type="number" step="0.1" name="maxTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMax || ""} placeholder="Max" required />
+                                    <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin || ""} placeholder="Min" required
+                                        readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
+                                    />
+                                    <input type="number" step="0.1" name="maxTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMax || ""} placeholder="Max" required
+                                        readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -218,6 +246,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, exist
                                         defaultValue={editingRack?.maxWidth || ""}
                                         placeholder="Szerokość"
                                         required
+                                        readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
                                     <ErrorLabel field="maxItemWidthMm" />
                                 </div>
@@ -229,6 +258,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, exist
                                         defaultValue={editingRack?.maxHeight || ""}
                                         placeholder="Wysokość"
                                         required
+                                        readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
                                     <ErrorLabel field="maxItemHeightMm" />
                                 </div>
@@ -240,6 +270,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, invT, exist
                                         defaultValue={editingRack?.maxDepth || ""}
                                         placeholder="Głębokość"
                                         required
+                                        readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
                                     <ErrorLabel field="maxItemDepthMm" />
                                 </div>

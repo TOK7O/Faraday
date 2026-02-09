@@ -3,7 +3,7 @@ import { History, Search, RefreshCw, Box, User, MapPin, ArrowRight, ArrowLeft, R
 import { useTranslation } from "@/context/LanguageContext";
 import "./OperationsHistory.scss"; // Import the styles
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 interface OperationLog {
     id: number;
@@ -16,7 +16,7 @@ interface OperationLog {
 }
 
 const OperationsHistory = () => {
-    const { t } = useTranslation();
+    useTranslation();
     const [logs, setLogs] = useState<OperationLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -102,65 +102,65 @@ const OperationsHistory = () => {
             <div className="glass-table-wrapper">
                 <table className="ht-table">
                     <thead>
-                    <tr>
-                        <th style={{ width: '150px' }}>Timestamp</th>
-                        <th style={{ width: '140px' }}>Operation</th>
-                        <th>Action Detail</th>
-                        <th>Target Asset</th>
-                        <th>Operator</th>
-                    </tr>
+                        <tr>
+                            <th style={{ width: '150px' }}>Timestamp</th>
+                            <th style={{ width: '140px' }}>Operation</th>
+                            <th>Action Detail</th>
+                            <th>Target Asset</th>
+                            <th>Operator</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {loading ? (
-                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>Loading system logs...</td></tr>
-                    ) : filteredLogs.length === 0 ? (
-                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>No records found.</td></tr>
-                    ) : (
-                        filteredLogs.map(log => {
-                            const config = getOpConfig(log.type);
-                            return (
-                                <tr key={log.id}>
-                                    <td>
-                                        <div className="time-col">
-                                            <span className="date">{new Date(log.timestamp).toLocaleDateString()}</span>
-                                            <span className="time">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="op-badge" style={{ borderColor: config.color, color: config.color, background: `${config.color}10` }}>
-                                            {config.icon}
-                                            <span style={{ marginLeft: '6px' }}>{log.type}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                        {log.description}
-                                    </td>
-                                    <td>
-                                        <div className="detail-group">
-                                            {log.productName && (
-                                                <div className="detail-item highlight">
-                                                    <Box size={14} />
-                                                    <span>{log.productName}</span>
-                                                </div>
-                                            )}
-                                            {log.rackCode && (
-                                                <div className="detail-item">
-                                                    <MapPin size={14} />
-                                                    <span style={{ fontFamily: 'monospace' }}>{log.rackCode}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="detail-item">
-                                            <User size={14} />
-                                            <span>{log.userName}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })
-                    )}
+                        {loading ? (
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>Loading system logs...</td></tr>
+                        ) : filteredLogs.length === 0 ? (
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>No records found.</td></tr>
+                        ) : (
+                            filteredLogs.map(log => {
+                                const config = getOpConfig(log.type);
+                                return (
+                                    <tr key={log.id}>
+                                        <td>
+                                            <div className="time-col">
+                                                <span className="date">{new Date(log.timestamp).toLocaleDateString()}</span>
+                                                <span className="time">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="op-badge" style={{ borderColor: config.color, color: config.color, background: `${config.color}10` }}>
+                                                {config.icon}
+                                                <span style={{ marginLeft: '6px' }}>{log.type}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                            {log.description}
+                                        </td>
+                                        <td>
+                                            <div className="detail-group">
+                                                {log.productName && (
+                                                    <div className="detail-item highlight">
+                                                        <Box size={14} />
+                                                        <span>{log.productName}</span>
+                                                    </div>
+                                                )}
+                                                {log.rackCode && (
+                                                    <div className="detail-item">
+                                                        <MapPin size={14} />
+                                                        <span style={{ fontFamily: 'monospace' }}>{log.rackCode}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="detail-item">
+                                                <User size={14} />
+                                                <span>{log.userName}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>

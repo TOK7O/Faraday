@@ -7,6 +7,7 @@ interface ProductModalProps {
     onOpenChange: (open: boolean) => void;
     onSave: (e: React.FormEvent<HTMLFormElement>) => void;
     editingProduct?: any;
+    hasInventoryItems?: boolean;
 }
 
 interface ProductFormErrors {
@@ -18,9 +19,10 @@ interface ProductFormErrors {
     depthMm?: string;
     tempRange?: string;
     validityDays?: string;
+    dimensions?: string;
 }
 
-export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: ProductModalProps) => {
+export const ProductModal = ({ open, onOpenChange, onSave, editingProduct, hasInventoryItems = false }: ProductModalProps) => {
     const [errors, setErrors] = useState<ProductFormErrors>({});
     const [fileName, setFileName] = useState<string>(editingProduct?.photoUrl || "");
 
@@ -50,6 +52,17 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
             if (isNaN(numVal) || numVal <= 0) {
                 error = "Wartość musi być większa od 0";
             }
+            if (["widthMm", "heightMm", "depthMm"].includes(name)) {
+                const width = parseFloat(formData.get("widthMm") as string);
+                const height = parseFloat(formData.get("heightMm") as string);
+                const depth = parseFloat(formData.get("depthMm") as string);
+
+                if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(depth) || depth <= 0) {
+                    setErrors(prev => ({ ...prev, dimensions: "Wszystkie wymiary muszą być > 0" }));
+                } else {
+                    setErrors(prev => ({ ...prev, dimensions: "" }));
+                }
+            }
         }
 
         if (name === "requiredMinTemp" || name === "requiredMaxTemp") {
@@ -67,8 +80,7 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
             const days = parseInt(value);
             if (isNaN(days) || days <= 0) error = "Musi być > 0";
         }
-
-        if (name !== "requiredMinTemp" && name !== "requiredMaxTemp") {
+        if (!["widthMm", "heightMm", "depthMm", "requiredMinTemp", "requiredMaxTemp"].includes(name)) {
             setErrors(prev => ({ ...prev, [name]: error }));
         }
     };
@@ -104,8 +116,29 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
                     <div className="modal-accent-line" style={{ background: 'var(--accent-secondary)' }} />
                     <div className="modal-header">
                         <Dialog.Title><h2>{editingProduct ? "Edycja asortymentu" : "Definiowanie asortymentu"}</h2></Dialog.Title>
+                        <Dialog.Description className="visually-hidden">
+                            Formularz do {editingProduct ? "edycji" : "tworzenia"} produktu.
+                        </Dialog.Description>
                         <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
                     </div>
+
+                    {hasInventoryItems && editingProduct && (
+                        <div style={{
+                            padding: '12px 20px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '6px',
+                            margin: '0 20px 16px 20px',
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'flex-start'
+                        }}>
+                            <AlertCircle size={20} color="#ef4444" />
+                            <div style={{ fontSize: '0.85rem', color: '#ffaaaa' }}>
+                                <strong>Edycja ograniczona:</strong> Produkt ma asortyment w magazynie. Zmiana parametrów fizycznych (temperatura, wymiary, waga) jest zablokowana.
+                            </div>
+                        </div>
+                    )}
 
                     <form className="ht-form" onSubmit={handleSubmit}>
                         <div className="input-row">
@@ -158,7 +191,9 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
                             </div>
                             <div className="input-group">
                                 <label>Waga [kg]</label>
-                                <input type="number" step="0.01" name="weightKg" defaultValue={editingProduct?.weight} required onChange={handleChange} />
+                                <input type="number" step="0.01" name="weightKg" defaultValue={editingProduct?.weight} required onChange={handleChange}
+                                    readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                />
                                 <ErrorMsg field="weightKg" />
                             </div>
                         </div>
@@ -167,27 +202,29 @@ export const ProductModal = ({ open, onOpenChange, onSave, editingProduct }: Pro
                             <div className="input-group">
                                 <label>Wymagania temp. [°C]</label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="number" step="0.1" name="requiredMinTemp" defaultValue={editingProduct?.requiredMinTemp} placeholder="Min" required onChange={handleChange} />
-                                    <input type="number" step="0.1" name="requiredMaxTemp" defaultValue={editingProduct?.requiredMaxTemp} placeholder="Max" required onChange={handleChange} />
+                                    <input type="number" step="0.1" name="requiredMinTemp" defaultValue={editingProduct?.requiredMinTemp} placeholder="Min" required onChange={handleChange}
+                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                    />
+                                    <input type="number" step="0.1" name="requiredMaxTemp" defaultValue={editingProduct?.requiredMaxTemp} placeholder="Max" required onChange={handleChange}
+                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                    />
                                 </div>
                                 <ErrorMsg field="tempRange" />
                             </div>
                             <div className="input-group">
                                 <label>Wymiary [mm]</label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '4px' }}>
-                                    <div style={{flex:1}}>
-                                        <input type="number" name="widthMm" defaultValue={editingProduct?.width} placeholder="X" required onChange={handleChange} />
-                                        <ErrorMsg field="widthMm" />
-                                    </div>
-                                    <div style={{flex:1}}>
-                                        <input type="number" name="heightMm" defaultValue={editingProduct?.height} placeholder="Y" required onChange={handleChange} />
-                                        <ErrorMsg field="heightMm" />
-                                    </div>
-                                    <div style={{flex:1}}>
-                                        <input type="number" name="depthMm" defaultValue={editingProduct?.depth} placeholder="Z" required onChange={handleChange} />
-                                        <ErrorMsg field="depthMm" />
-                                    </div>
+                                    <input type="number" step="1" name="widthMm" defaultValue={editingProduct?.width} placeholder="Szer." required onChange={handleChange}
+                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                    />
+                                    <input type="number" step="1" name="heightMm" defaultValue={editingProduct?.height} placeholder="Wys." required onChange={handleChange}
+                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                    />
+                                    <input type="number" step="1" name="depthMm" defaultValue={editingProduct?.depth} placeholder="Głęb." required onChange={handleChange}
+                                        readOnly={hasInventoryItems} style={{ opacity: hasInventoryItems ? 0.6 : 1, cursor: hasInventoryItems ? 'not-allowed' : 'text' }}
+                                    />
                                 </div>
+                                <ErrorMsg field="dimensions" />
                             </div>
                         </div>
 

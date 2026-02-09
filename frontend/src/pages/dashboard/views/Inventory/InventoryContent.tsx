@@ -2,15 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera,CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Copy, Trash2, Ban } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
-import type { Rack, Product } from "@components/layouts/dashboard/inventory/InventoryContent.types";
+import type { Rack, Product, FullInventoryItem } from "@components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@components/layouts/dashboard/inventory/RackCard";
 import { ProductCatalog } from "@components/layouts/dashboard/inventory/ProductCatalog";
 import { RackModal } from "@components/layouts/dashboard/inventory/RackModal";
 import { ProductModal } from "@components/layouts/dashboard/inventory/ProductModal";
+import { Spinner } from "@components/ui/Spinner";
+import { SkeletonGrid } from "@components/layouts/dashboard/inventory/InventorySkeletons";
 
 import "./InventoryContent.scss";
 
@@ -22,6 +24,7 @@ const InventoryContent = () => {
 
     const [racks, setRacks] = useState<Rack[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
+    const [inventoryData, setInventoryData] = useState<FullInventoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [productViewMode, setProductViewMode] = useState<'grid' | 'list'>('grid');
@@ -47,9 +50,10 @@ const InventoryContent = () => {
         const token = localStorage.getItem("token");
         const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
         try {
-            const [rR, pR] = await Promise.all([
+            const [rR, pR, iR] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/Rack`, { headers }),
-                fetch(`${API_BASE_URL}/api/Product`, { headers })
+                fetch(`${API_BASE_URL}/api/Product`, { headers }),
+                fetch(`${API_BASE_URL}/api/Report/full-inventory`, { headers })
             ]);
             if (rR.ok) {
                 const data = await rR.json();
@@ -63,15 +67,39 @@ const InventoryContent = () => {
                 setProducts(data.map((p: any) => ({
                     id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
                     weight: p.weightKg, width: p.widthMm, height: p.heightMm, depth: p.depthMm,
-                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2, isHazardous: p.isHazardous
+                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2,
+                    requiredMinTemp: p.requiredMinTemp,
+                    requiredMaxTemp: p.requiredMaxTemp,
+                    isHazardous: p.isHazardous,
+                    hazardClassification: p.hazardClassification,
+                    validityDays: p.validityDays,
+                    photoUrl: p.photoUrl
                 })));
             }
-        } catch (e) { console.error(e); } finally { setIsLoading(false); }
+            if (iR.ok) {
+                const data = await iR.json();
+                setInventoryData(data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    // csv import
+    const handleSlotClick = (productName: string) => {
+        setSearchQuery(productName);
+        setProductViewMode('list');
+        // Switch tab manually
+        const productsTabTrigger = document.querySelector('[data-value="products"]') as HTMLElement;
+        if (productsTabTrigger) productsTabTrigger.click();
+    };
+
+    // ... existing csv import code ...
 
     const getSmallestAvailableCode = (currentRacks: Rack[], basePrefix: string = "R-") => {
         const codes = currentRacks.map(r => r.code);
@@ -158,11 +186,70 @@ const InventoryContent = () => {
         let scanner: Html5QrcodeScanner | null = null;
         if (isScannerOpen) {
             scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
-            scanner.render((decodedText) => {
+            scanner.render(async (decodedText) => {
                 setInboundBarcode(decodedText);
                 setIsScannerOpen(false);
                 scanner?.clear();
-            }, (error) => { /* ignoruj błędy skanowania */ });
+
+                // Automatically trigger inbound operation after scan
+                const token = localStorage.getItem("token");
+                const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({ barcode: decodedText })
+                    });
+
+                    const errorText = await res.text();
+
+                    if (res.status === 409) {
+                        setInboundResult({
+                            success: false,
+                            message: errorText || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                            timestamp: new Date().toLocaleString(),
+                            operator: localStorage.getItem("username") || "Admin"
+                        });
+                        return;
+                    }
+
+                    if (res.status === 404) {
+                        setInboundResult({
+                            success: false,
+                            message: "Nie znaleziono produktu o podanym kodzie kreskowym. Dodaj produkt do katalogu przed przyjęciem.",
+                            timestamp: new Date().toLocaleString(),
+                            operator: localStorage.getItem("username") || "Admin"
+                        });
+                        return;
+                    }
+
+                    if (res.ok) {
+                        const data = JSON.parse(errorText);
+                        setInboundResult({
+                            ...data,
+                            success: true,
+                            timestamp: new Date().toLocaleString(),
+                            operator: localStorage.getItem("username") || "Admin"
+                        });
+                        fetchData();
+                    } else {
+                        setInboundResult({
+                            success: false,
+                            message: errorText || "Błąd podczas przyjmowania produktu.",
+                            timestamp: new Date().toLocaleString(),
+                            operator: localStorage.getItem("username") || "Admin"
+                        });
+                    }
+                } catch (e) {
+                    setInboundResult({
+                        success: false,
+                        message: "Błąd połączenia z serwerem.",
+                        timestamp: new Date().toLocaleString(),
+                        operator: localStorage.getItem("username") || "Admin"
+                    });
+                }
+            }, (_) => { /* ignoruj błędy skanowania */ });
         }
         return () => { scanner?.clear(); };
     }, [isScannerOpen]);
@@ -184,7 +271,17 @@ const InventoryContent = () => {
             if (res.status === 409) {
                 setInboundResult({
                     success: false,
-                    message: errorText || "Brak regałów spełniających wymagania produktu.",
+                    message: errorText || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                return;
+            }
+
+            if (res.status === 404) {
+                setInboundResult({
+                    success: false,
+                    message: "Nie znaleziono produktu o podanym kodzie kreskowym. Dodaj produkt do katalogu przed przyjęciem.",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -200,25 +297,51 @@ const InventoryContent = () => {
                     operator: localStorage.getItem("username") || "Admin"
                 });
                 fetchData();
+            } else {
+                setInboundResult({
+                    success: false,
+                    message: errorText || "Błąd podczas przyjmowania produktu.",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
             }
         } catch (e) {
-            setInboundResult({ success: false, message: "Błąd połączenia z serwerem." });
+            setInboundResult({
+                success: false,
+                message: "Błąd połączenia z serwerem.",
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
+            });
         }
     };
     const handleDeleteRack = async (id: number | string) => {
         if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
+        setIsLoading(true);
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_BASE_URL}/api/Rack/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (res.ok) fetchData();
-        } catch (e) { console.error(e); }
+            if (res.ok) {
+                fetchData();
+            } else {
+                const text = await res.text();
+                if (res.status === 500) {
+                    alert("Nie można usunąć regału. Sprawdź, czy regał jest pusty (nie zawiera produktów).");
+                } else {
+                    alert(`Błąd usuwania: ${text || res.statusText}`);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Wystąpił błąd podczas usuwania regału.");
+        } finally { setIsLoading(false); }
     };
 
     const handleDeleteProduct = async (id: number | string) => {
         if (!window.confirm("Czy na pewno chcesz usunąć ten produkt z katalogu?")) return;
+        setIsLoading(true);
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_BASE_URL}/api/Product/${id}`, {
@@ -226,17 +349,23 @@ const InventoryContent = () => {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) fetchData();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
 
     const handleOpenAddRackModal = () => { setEditingRack(null); setIsModalOpen(true); };
     const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
+
+    const handleEditProduct = (product: Product) => {
+        setEditingProduct(product);
+        setIsProductModalOpen(true);
+    };
 
     const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         const token = localStorage.getItem("token");
         const dto = {
+            id: editingProduct ? editingProduct.id : 0,
             scanCode: f.get("scanCode"),
             name: f.get("name"),
             photoUrl: f.get("photoUrl") || null,
@@ -253,8 +382,27 @@ const InventoryContent = () => {
         };
         const method = editingProduct ? "PUT" : "POST";
         const url = editingProduct ? `${API_BASE_URL}/api/Product/${editingProduct.id}` : `${API_BASE_URL}/api/Product`;
-        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
-        if (res.ok) { fetchData(); closeModal(); }
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
+            if (res.ok) {
+                fetchData();
+                closeModal();
+            } else {
+                const text = await res.text();
+                if (res.status === 409) {
+                    alert(`Konflikt: ${text || "Kod kreskowy jest już zajęty przez inny produkt."}`);
+                } else {
+                    alert(`Błąd zapisu: ${text || res.statusText}`);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Błąd połączenia z serwerem.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleSaveRack = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -262,22 +410,49 @@ const InventoryContent = () => {
         const f = new FormData(e.currentTarget);
         const token = localStorage.getItem("token");
         const code = f.get("code")?.toString();
-        const dto = {
+
+        const dto: any = {
+            id: editingRack ? editingRack.id : 0,
             code: code,
-            rows: editingRack ? undefined : Number(f.get("rows")),
-            columns: editingRack ? undefined : Number(f.get("columns")),
+            comment: f.get("comment"),
+            // Always send physical constraints (UI makes them readOnly when rack has items)
             minTemperature: Number(f.get("minTemperature")),
             maxTemperature: Number(f.get("maxTemperature")),
             maxWeightKg: Number(f.get("maxWeightKg")),
             maxItemWidthMm: Number(f.get("maxItemWidthMm")),
             maxItemHeightMm: Number(f.get("maxItemHeightMm")),
-            maxItemDepthMm: Number(f.get("maxItemDepthMm")),
-            comment: f.get("comment")
+            maxItemDepthMm: Number(f.get("maxItemDepthMm"))
         };
+
+        // Only include rows/columns for new racks
+        if (!editingRack) {
+            dto.rows = Number(f.get("rows"));
+            dto.columns = Number(f.get("columns"));
+        }
+
         const method = editingRack ? "PUT" : "POST";
         const url = editingRack ? `${API_BASE_URL}/api/Rack/${editingRack.id}` : `${API_BASE_URL}/api/Rack`;
-        const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
-        if (res.ok) { fetchData(); closeModal(); }
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
+            if (res.ok) {
+                fetchData();
+                closeModal();
+            } else {
+                const text = await res.text();
+                if (res.status === 409) {
+                    alert(`Błąd konfiguracji: ${text || "Parametry regału nie są zgodne z przechowywanym towarem lub kod jest zajęty."}`);
+                } else {
+                    alert(`Błąd zapisu: ${text || res.statusText}`);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Błąd połączenia z serwerem.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -294,8 +469,8 @@ const InventoryContent = () => {
                                     <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
                                     <Tabs.Trigger value="inbounds" className="ht-tabs-trigger">Przyjęcia</Tabs.Trigger>
                                 </Tabs.List>
-                                <button onClick={fetchData} className="btn-action-ht">
-                                    <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                                <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>
+                                    {isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}
                                 </button>
                             </div>
                         </div>
@@ -309,11 +484,19 @@ const InventoryContent = () => {
                                 <Plus size={18} /><span>{invT.addRack}</span>
                             </button>
                         </div>
-                        {isLoading ? <div className="loading-state">Syncing...</div> : (
-                            <div className="stats-grid">
-                                {racks.map(r => <RackCard key={r.id} rack={r} onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }} onDelete={() => handleDeleteRack(r.id)} />)}
-                            </div>
-                        )}
+                        <div className="stats-grid">
+                            {racks.map(r => (
+                                <RackCard
+                                    key={r.id}
+                                    rack={r}
+                                    inventory={inventoryData.filter(i => (i as any).RackCode === r.code || i.rackCode === r.code)} // Filter by code
+                                    onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
+                                    onDelete={() => handleDeleteRack(r.id)}
+                                    onSlotClick={handleSlotClick}
+                                />
+                            ))}
+                            {isLoading && <SkeletonGrid count={6} type="rack" />}
+                        </div>
                     </Tabs.Content>
 
                     <Tabs.Content value="products">
@@ -330,8 +513,14 @@ const InventoryContent = () => {
                                 <Plus size={18} /><span>{invT.defineProduct}</span>
                             </button>
                         </div>
-                        {!isLoading && products.length > 0 ? (
-                            <ProductCatalog products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))} viewMode={productViewMode} onDeleteProduct={handleDeleteProduct} />
+                        {(products.length > 0 || isLoading) ? (
+                            <ProductCatalog
+                                products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))}
+                                viewMode={productViewMode}
+                                onDeleteProduct={handleDeleteProduct}
+                                onEditProduct={handleEditProduct}
+                                isLoading={isLoading}
+                            />
                         ) : <div className="empty-state-ht">Brak produktów.</div>}
                     </Tabs.Content>
 
@@ -368,6 +557,19 @@ const InventoryContent = () => {
                                 </button>
                             </form>
 
+                            {isScannerOpen && (
+                                <div style={{ marginTop: '1.5rem' }}>
+                                    <div id="reader" style={{ width: '100%' }}></div>
+                                    <button
+                                        onClick={() => setIsScannerOpen(false)}
+                                        className="btn-secondary-ht"
+                                        style={{ marginTop: '1rem', width: '100%' }}
+                                    >
+                                        Anuluj skanowanie
+                                    </button>
+                                </div>
+                            )}
+
                             {inboundResult && (
                                 <div className={`inbound-result-card ${inboundResult.success ? 'success' : 'error'}`} style={{
                                     marginTop: '2rem',
@@ -389,12 +591,12 @@ const InventoryContent = () => {
 
                                     <div style={{ display: 'grid', gap: '12px', fontSize: '0.9rem' }}>
                                         <div style={{ display: 'flex', gap: '15px', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={14} /> {inboundResult.timestamp}
-                    </span>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <UserIcon size={14} /> {inboundResult.operator}
-                    </span>
+                                                <Clock size={14} /> {inboundResult.timestamp}
+                                            </span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <UserIcon size={14} /> {inboundResult.operator}
+                                            </span>
                                         </div>
 
                                         {inboundResult.success ? (
@@ -455,9 +657,23 @@ const InventoryContent = () => {
                 </Dialog.Portal>
             </Dialog.Root>
 
-            <RackModal open={isModalOpen} onOpenChange={setIsModalOpen} editingRack={editingRack} onSave={handleSaveRack} invT={invT} existingRacks={racks}/>
-            <ProductModal open={isProductModalOpen} onOpenChange={setIsProductModalOpen} onSave={handleSaveProduct} />
-        </Tooltip.Provider>
+            <RackModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                editingRack={editingRack}
+                onSave={handleSaveRack}
+                invT={invT}
+                existingRacks={racks}
+                hasItems={editingRack ? inventoryData.some(i => (i as any).RackCode === editingRack.code || i.rackCode === editingRack.code) : false}
+            />
+            <ProductModal
+                open={isProductModalOpen}
+                onOpenChange={setIsProductModalOpen}
+                onSave={handleSaveProduct}
+                editingProduct={editingProduct}
+                hasInventoryItems={editingProduct ? inventoryData.some(i => (i as any).ProductId === editingProduct.id || i.productId === editingProduct.id) : false}
+            />
+        </Tooltip.Provider >
     );
 };
 
