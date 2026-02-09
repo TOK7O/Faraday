@@ -14,6 +14,7 @@ desktop.ini
 backend/**/bin/
 backend/**/obj/
 backend/**/wwwroot/
+backend/Faraday.API/Migrations
 
 TestResults/
 coverage/
