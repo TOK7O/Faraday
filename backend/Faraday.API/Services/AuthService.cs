@@ -16,11 +16,13 @@ namespace Faraday.API.Services
     {
         private readonly FaradayDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthService(FaradayDbContext context, IConfiguration configuration)
+        public AuthService(FaradayDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
@@ -310,6 +312,45 @@ namespace Faraday.API.Services
             user.IsTwoFactorEnabled = false;
             user.TwoFactorSecretKey = null;
             user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ForgotPasswordAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) 
+            {
+                // Security: Zawsze zwracamy sukces, żeby nie zdradzać, czy email istnieje w bazie
+                return;
+            }
+
+            // Generowanie tokena
+            user.PasswordResetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
+
+            await _context.SaveChangesAsync();
+
+            var baseUrl = _configuration["ClientApp:BaseUrl"] ?? "http://localhost:5173";
+            var resetLink = $"{baseUrl}/reset-password?token={user.PasswordResetToken}";
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == dto.Token);
+
+            if (user == null || user.ResetTokenExpires < DateTime.UtcNow)
+            {
+                throw new Exception("Invalid or expired password reset token.");
+            }
+
+            // Ustaw nowe hasło
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            // Wyczyść token
+            user.PasswordResetToken = null;
+            user.ResetTokenExpires = null;
 
             await _context.SaveChangesAsync();
         }

@@ -10,13 +10,16 @@ using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
 using Faraday.API.Workers;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env file
-Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env"));
-// Use environment variable for ConnectionString if available, otherwise use configuration (which now also includes env vars)
+// --- 1. LOAD .ENV FILE ---
+// TraversePath() automatically looks up the directory tree until it finds .env
+Env.TraversePath().Load();
+
+// Debug: Verify it loaded
+var testEnv = Environment.GetEnvironmentVariable("SMTP_SERVER");
+Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER found: {testEnv ?? "NULL"}");
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // DB CONFIG
@@ -102,6 +105,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 
 // Registration of WMS services.
+// --- SERVICE REGISTRATION ---
+builder.Services.Configure<EmailSettings>(builder.Configuration);
+
+// Register Services (Scoped)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRackService, RackService>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -110,6 +117,7 @@ builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only once here
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 
 // Registration of WMS workers.
