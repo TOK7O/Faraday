@@ -83,7 +83,6 @@ namespace Faraday.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
-        [Authorize(Roles = "Administrator,Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             await _productService.DeleteProductAsync(id);
