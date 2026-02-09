@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Dodano useEffect
 import * as Tabs from "@radix-ui/react-tabs";
 import "./DashboardPage.scss";
-import {Link} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Dodano useNavigate
 
 // Views
 import OverviewContent from "./views/OverviewContent";
@@ -21,6 +21,45 @@ import { useTranslation } from "@/context/LanguageContext";
 const DashboardPage = () => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState("overview");
+    const navigate = useNavigate(); // Hook do przekierowania
+
+    // --- LOGIKA AUTOMATYCZNEGO WYLOGOWANIA ---
+    useEffect(() => {
+    const logout = () => {
+        console.warn("Sesja wygasła. Wylogowywanie...");
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+    };
+
+    const getExpirationTime = () => {
+        const token = localStorage.getItem("token");
+        if (!token) return null;
+
+        try {
+            const payload = JSON.parse(
+                atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+            );
+
+            return payload.exp ? payload.exp * 1000 : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const checkSession = () => {
+        const expirationTime = getExpirationTime();
+
+        if (!expirationTime || Date.now() >= expirationTime) {
+            logout();
+        }
+    };
+
+    checkSession();
+
+    const intervalId = setInterval(checkSession, 1000);
+
+    return () => clearInterval(intervalId);
+}, [navigate]);
 
     return (
         <div className="dashboard-container">
