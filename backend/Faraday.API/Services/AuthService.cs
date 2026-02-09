@@ -16,11 +16,13 @@ namespace Faraday.API.Services
     {
         private readonly FaradayDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthService(FaradayDbContext context, IConfiguration configuration)
+        public AuthService(FaradayDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
@@ -319,18 +321,20 @@ namespace Faraday.API.Services
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null) 
             {
-                // Nie ujawniamy, czy użytkownik istnieje
-                return; 
+                // Security: Zawsze zwracamy sukces, żeby nie zdradzać, czy email istnieje w bazie
+                return;
             }
 
-            // Generowanie bezpiecznego tokena
+            // Generowanie tokena
             user.PasswordResetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
-            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1); // Token ważny 1h
+            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
 
             await _context.SaveChangesAsync();
 
-            // TODO: W produkcji wyślij email. W dev: wypisz do konsoli
-            Console.WriteLine($"GENERATED RESET LINK: http://localhost:5173/reset-password?token={user.PasswordResetToken}");
+            var baseUrl = _configuration["ClientApp:BaseUrl"] ?? "http://localhost:5173";
+            var resetLink = $"{baseUrl}/reset-password?token={user.PasswordResetToken}";
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordDto dto)
@@ -375,4 +379,3 @@ namespace Faraday.API.Services
         }
     }
 }
-

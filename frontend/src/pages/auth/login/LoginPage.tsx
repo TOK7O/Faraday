@@ -231,15 +231,6 @@ const LoginPage = () => {
               )}
             </button>
           </Form.Root>
-
-          {!status.requires2FA && (
-              <div className="form-footer">
-                <span>{loginStrings.footer.text} </span>
-                <Link to={loginStrings.footer.linkUrl} className="register-link">
-                  {loginStrings.footer.linkText}
-                </Link>
-              </div>
-          )}
         </section>
       </div>
   );

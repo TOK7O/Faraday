@@ -10,17 +10,19 @@ using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
 using Faraday.API.Workers;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env file
-Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env"));
-// Use environment variable for ConnectionString if available, otherwise use configuration (which now also includes env vars)
+// --- 1. LOAD .ENV FILE ---
+// TraversePath() automatically looks up the directory tree until it finds .env
+Env.TraversePath().Load();
+
+// Debug: Verify it loaded
+var testEnv = Environment.GetEnvironmentVariable("SMTP_SERVER");
+Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER found: {testEnv ?? "NULL"}");
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // DB CONFIG
-// Register Entity Framework Core context with PostgreSQL provider.
 builder.Services.AddDbContext<FaradayDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -29,7 +31,6 @@ var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationExcep
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
-// Configure the authentication service to use JWT Bearer tokens as the default scheme.
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -37,8 +38,6 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    // Define parameters for validating incoming tokens.
-    // IssuerSigningKey validation is critical to ensure the token was signed by this server.
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -67,22 +66,20 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Swagger generation to include support for JWT Bearer Authentication.
+// Configure Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Faraday WMS API", Version = "v1" });
 
-    // Define the security scheme for the Swagger UI (Bearer token input).
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer [space] [token]'. Example: 'Bearer 12345abcdef'",
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer [space] [token]'.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    // Apply the defined security requirement globally to all endpoints.
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -99,7 +96,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Registration of WMS services.
+// --- SERVICE REGISTRATION ---
+builder.Services.Configure<EmailSettings>(builder.Configuration);
+
+// Register Services (Scoped)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRackService, RackService>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -108,32 +108,28 @@ builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only once here
 
-// Registration of WMS workers.
+// Register Workers (Hosted)
 builder.Services.AddHostedService<BackupBackgroundWorker>();
 builder.Services.AddHostedService<SimulationBackgroundWorker>();
 
 var app = builder.Build();
 
-// Create a temporary service scope to access the DbContext during application startup.
-// This block ensures the database schema is up-to-date and the default admin user exists.
+// Database Migration & Seeding
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
 
-    // Automatically apply any pending migrations to the database.
     try
     {
         dbContext.Database.Migrate();
     }
     catch (Exception ex)
     {
-        // If migration fails (e.g. tables already exist), we try to EnsureCreated as a fallback
-        // for dev environments, or just log and continue if we trust the schema is there.
         Console.WriteLine($"[WARNING] Migration failed: {ex.Message}. Attempting to continue...");
     }
 
-    // Seed default administrator account if the Users table is empty.
     if (!dbContext.Users.Any())
     {
         dbContext.Users.Add(new User
@@ -148,7 +144,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// HTTP Request Pipeline Configuration
+// Pipeline Configuration
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -159,16 +155,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Enable CORS
 app.UseCors("AllowAll");
 
-// app.UseHttpsRedirection(); // Commented out to prevent Docker port issues
-
-// Note: DO NOT move UseAuthorization before UseAuthentication! Ask Dawid if you don't know why.
-// Enable Authentication middleware to validate the JWT token.
 app.UseAuthentication();
-
-// Enable Authorization middleware to check user permissions/roles.
 app.UseAuthorization();
 
 app.MapControllers();

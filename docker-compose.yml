@@ -36,6 +36,8 @@ services:
       - faraday-network
 
   backend:
+    env_file:
+      - .env
     build:
       context: ./backend/Faraday.API
       dockerfile: Dockerfile
