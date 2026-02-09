@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import * as Form from "@radix-ui/react-form";
 import { Eye, EyeOff } from "lucide-react";
+import { Link } from 'react-router-dom';
 
 interface PasswordFieldProps {
     data: any;
@@ -61,9 +62,9 @@ export const PasswordField = ({
 
             {forgotPasswordLabel && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-            <span className="forgot-link" style={{ fontSize: '0.9rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-            {forgotPasswordLabel}
-            </span>
+                    <Link to="/forgot-password" className="forgot-link" style={{ fontSize: '0.9rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                        {forgotPasswordLabel}
+                    </Link>
                 </div>
             )}
         </Form.Field>
