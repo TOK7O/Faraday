@@ -2,17 +2,18 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, Info, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, Clock, UserIcon, MapPin, PackagePlus, Box, Trash2, Copy, Ban } from "lucide-react";
+import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Trash2, Copy, Ban, Move, PackageMinus, X } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
-import type { Rack, Product, FullInventoryItem } from "@components/layouts/dashboard/inventory/InventoryContent.types";
-import { RackCard } from "@components/layouts/dashboard/inventory/RackCard";
-import { ProductCatalog } from "@components/layouts/dashboard/inventory/ProductCatalog";
-import { RackModal } from "@components/layouts/dashboard/inventory/RackModal";
-import { ProductModal } from "@components/layouts/dashboard/inventory/ProductModal";
-import { Spinner } from "@components/ui/Spinner";
-import { SkeletonGrid } from "@components/layouts/dashboard/inventory/InventorySkeletons";
+import type { Rack, Product, FullInventoryItem } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
+import { RackCard } from "@/components/layouts/dashboard/inventory/RackCard";
+import { ProductCatalog } from "@/components/layouts/dashboard/inventory/ProductCatalog";
+import { RackModal } from "@/components/layouts/dashboard/inventory/RackModal";
+import { ProductModal } from "@/components/layouts/dashboard/inventory/ProductModal";
+import { MoveModal } from "@/components/layouts/dashboard/inventory/MoveModal";
+import { Spinner } from "@/components/ui/Spinner";
+import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
 
 import "./InventoryContent.scss";
 
@@ -89,8 +90,16 @@ const InventoryContent = () => {
     const [conflictingCodes, setConflictingCodes] = useState<string[]>([]);
 
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [scannerMode, setScannerMode] = useState<'inbound' | 'outbound' | 'move'>('inbound');
     const [inboundBarcode, setInboundBarcode] = useState("");
     const [inboundResult, setInboundResult] = useState<any>(null);
+    const [outboundBarcode, setOutboundBarcode] = useState("");
+    const [outboundResult, setOutboundResult] = useState<any>(null);
+    const [moveResult, setMoveResult] = useState<any>(null);
+
+    const [moveBarcode, setMoveBarcode] = useState("");
+    const [movingItem, setMovingItem] = useState<FullInventoryItem | null>(null);
+    const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -254,16 +263,38 @@ const InventoryContent = () => {
         if (isScannerOpen) {
             scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
             scanner.render(async (decodedText) => {
-                setInboundBarcode(decodedText);
+                if (scannerMode === 'inbound') {
+                    setInboundBarcode(decodedText);
+                } else if (scannerMode === 'outbound') {
+                    setOutboundBarcode(decodedText);
+                } else {
+                    // Move mode: find item first
+                    const item = inventoryData.find(i => i.barcode === decodedText);
+                    if (item) {
+                        setMovingItem(item);
+                        setIsMoveModalOpen(true);
+                    } else {
+                        setMoveResult({
+                            success: false,
+                            message: "Nie znaleziono produktu o tym kodzie w magazynie.",
+                            timestamp: new Date().toLocaleString(),
+                            operator: localStorage.getItem("username") || "Admin"
+                        });
+                    }
+                    setIsScannerOpen(false);
+                    scanner?.clear();
+                    return;
+                }
+
                 setIsScannerOpen(false);
                 scanner?.clear();
 
-                // Automatically trigger inbound operation after scan
                 const token = localStorage.getItem("token");
                 const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+                const endpoint = scannerMode === 'inbound' ? "inbound" : "outbound";
 
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
+                    const res = await fetch(`${API_BASE_URL}/api/Operation/${endpoint}`, {
                         method: "POST",
                         headers,
                         body: JSON.stringify({ barcode: decodedText })
@@ -279,10 +310,12 @@ const InventoryContent = () => {
                         }
                     }
 
+                    const setResult = scannerMode === 'inbound' ? setInboundResult : setOutboundResult;
+
                     if (res.status === 409) {
-                        setInboundResult({
+                        setResult({
                             success: false,
-                            message: formatMessageNumbers(responseText) || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                            message: formatMessageNumbers(responseText) || "Konflikt operacji.",
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
                         });
@@ -290,9 +323,9 @@ const InventoryContent = () => {
                     }
 
                     if (res.status === 404) {
-                        setInboundResult({
+                        setResult({
                             success: false,
-                            message: "Nie znaleziono produktu o podanym kodzie kreskowym. Dodaj produkt do katalogu przed przyjęciem.",
+                            message: "Nie znaleziono produktu lub zasobu.",
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
                         });
@@ -300,7 +333,7 @@ const InventoryContent = () => {
                     }
 
                     if (res.ok) {
-                        setInboundResult({
+                        setResult({
                             ...responseData,
                             success: true,
                             timestamp: new Date().toLocaleString(),
@@ -308,15 +341,16 @@ const InventoryContent = () => {
                         });
                         fetchData();
                     } else {
-                        setInboundResult({
+                        setResult({
                             success: false,
-                            message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania produktu.",
+                            message: formatMessageNumbers(responseText) || "Błąd podczas operacji.",
                             timestamp: new Date().toLocaleString(),
                             operator: localStorage.getItem("username") || "Admin"
                         });
                     }
                 } catch (e) {
-                    setInboundResult({
+                    const setResult = scannerMode === 'inbound' ? setInboundResult : setOutboundResult;
+                    setResult({
                         success: false,
                         message: "Błąd połączenia z serwerem.",
                         timestamp: new Date().toLocaleString(),
@@ -326,7 +360,7 @@ const InventoryContent = () => {
             }, (_) => { /* ignoruj błędy skanowania */ });
         }
         return () => { scanner?.clear(); };
-    }, [isScannerOpen]);
+    }, [isScannerOpen, scannerMode]);
 
     const handleInbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -353,7 +387,7 @@ const InventoryContent = () => {
             if (res.status === 409) {
                 setInboundResult({
                     success: false,
-                    message: formatMessageNumbers(responseText) || "Brak wolnego miejsca w regałach spełniających wymagania produktu (temperatura, wymiary, waga).",
+                    message: formatMessageNumbers(responseText) || "Brak wolnego miejsca.",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -363,7 +397,7 @@ const InventoryContent = () => {
             if (res.status === 404) {
                 setInboundResult({
                     success: false,
-                    message: "Nie znaleziono produktu o podanym kodzie kreskowym. Dodaj produkt do katalogu przed przyjęciem.",
+                    message: "Nie znaleziono produktu.",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -381,7 +415,7 @@ const InventoryContent = () => {
             } else {
                 setInboundResult({
                     success: false,
-                    message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania produktu.",
+                    message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania.",
                     timestamp: new Date().toLocaleString(),
                     operator: localStorage.getItem("username") || "Admin"
                 });
@@ -389,10 +423,131 @@ const InventoryContent = () => {
         } catch (e) {
             setInboundResult({
                 success: false,
+                message: "Błąd połączenia.",
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
+            });
+        }
+    };
+
+    const handleOutbound = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const token = localStorage.getItem("token");
+        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Operation/outbound`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ barcode: outboundBarcode })
+            });
+
+            const responseText = await res.text();
+            let responseData = null;
+            if (responseText) {
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Failed to parse response as JSON:", responseText);
+                }
+            }
+
+            if (res.status === 404) {
+                setOutboundResult({
+                    success: false,
+                    message: "Nie znaleziono produktu w magazynie (nieprawidłowy kod lub produkt już wydany).",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                return;
+            }
+
+            if (res.ok) {
+                setOutboundResult({
+                    ...responseData,
+                    success: true,
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                fetchData();
+            } else {
+                setOutboundResult({
+                    success: false,
+                    message: formatMessageNumbers(responseText) || "Błąd podczas wydawania produktu.",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+            }
+        } catch (e) {
+            setOutboundResult({
+                success: false,
                 message: "Błąd połączenia z serwerem.",
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
+        }
+    };
+
+    const handleMoveSubmit = async (targetRackCode: string, targetSlotX: number, targetSlotY: number) => {
+        if (!movingItem) return;
+        const token = localStorage.getItem("token");
+        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+
+        const dto = {
+            barcode: movingItem.barcode,
+            sourceRackCode: movingItem.rackCode,
+            sourceSlotX: movingItem.slotX,
+            sourceSlotY: movingItem.slotY,
+            targetRackCode,
+            targetSlotX,
+            targetSlotY
+        };
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Operation/move`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(dto)
+            });
+
+            const text = await res.text();
+            let responseData = null;
+            if (text) {
+                try {
+                    responseData = JSON.parse(text);
+                } catch (e) { }
+            }
+
+            if (res.ok) {
+                setMoveResult({
+                    ...responseData,
+                    success: true,
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                setIsMoveModalOpen(false);
+                setMovingItem(null);
+                fetchData();
+            } else {
+                setMoveResult({
+                    success: false,
+                    message: formatMessageNumbers(text) || "Błąd podczas przesuwania.",
+                    timestamp: new Date().toLocaleString(),
+                    operator: localStorage.getItem("username") || "Admin"
+                });
+                setIsMoveModalOpen(false);
+            }
+        } catch (e) {
+            setMoveResult({
+                success: false,
+                message: "Błąd połączenia z serwerem.",
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
+            });
+            setIsMoveModalOpen(false);
+        } finally {
+            setIsLoading(false);
         }
     };
     const handleDeleteRack = async (id: number | string) => {
@@ -544,7 +699,7 @@ const InventoryContent = () => {
                                     <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
                                     <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
                                     <Tabs.Trigger value="stock" className="ht-tabs-trigger">Stan magazynowy</Tabs.Trigger>
-                                    <Tabs.Trigger value="inbounds" className="ht-tabs-trigger">Przyjęcia</Tabs.Trigger>
+                                    <Tabs.Trigger value="operations" className="ht-tabs-trigger">Operacje</Tabs.Trigger>
                                 </Tabs.List>
                                 <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>
                                     {isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}
@@ -659,6 +814,14 @@ const InventoryContent = () => {
                                             <div className="received-by">
                                                 Przyjął: <strong>{item.receivedByUsername}</strong>
                                             </div>
+                                            <button
+                                                className="btn-action-ht"
+                                                onClick={() => { setMovingItem(item); setIsMoveModalOpen(true); }}
+                                                title="Przesuń towar"
+                                                style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
+                                            >
+                                                <Move size={14} /> <span>Przesuń</span>
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -666,119 +829,249 @@ const InventoryContent = () => {
                         </div>
                     </Tabs.Content>
 
-                    <Tabs.Content value="inbounds">
-                        <div className="glass-card" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <PackagePlus size={24} color="var(--accent-primary)" />
-                                    Przyjmowanie asortymentu
-                                </h2>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '5px' }}>
-                                    Wprowadź kod produktu, aby system automatycznie wskazał regał spełniający wymagania (wymóg b).
-                                </p>
+                    <Tabs.Content value="operations">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', padding: '1rem' }}>
+                            {/* Przyjęcia */}
+                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+                                        <PackagePlus size={20} color="var(--accent-primary)" />
+                                        Przyjęcia
+                                    </h2>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        Automatyczna alokacja miejsca.
+                                    </p>
+                                </div>
+
+                                <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
+                                    <div className="input-group">
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input
+                                                value={inboundBarcode}
+                                                onChange={(e) => setInboundBarcode(e.target.value)}
+                                                placeholder="Kod produktu..."
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button type="button" onClick={() => { setScannerMode('inbound'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                                <Camera size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}>
+                                        Przyjmij towar
+                                    </button>
+                                </form>
+
+                                {inboundResult && (
+                                    <div className={`operation-result-mini ${inboundResult.success ? 'success' : 'error'}`} style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        background: inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
+                                        border: `1px solid ${inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                                            {inboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
+                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{inboundResult.success ? "Przyjęto" : "Błąd"}</span>
+                                        </div>
+                                        {inboundResult.success ? (
+                                            <div style={{ fontSize: '0.8rem' }}>
+                                                <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]</div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{prettifyBackendError(inboundResult.message)}</div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
-                                <div className="input-group">
-                                    <label>Zeskanuj lub wpisz kod produktu</label>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <input
-                                            value={inboundBarcode}
-                                            onChange={(e) => setInboundBarcode(e.target.value)}
-                                            placeholder="Zeskanuj towar..."
-                                            style={{ flex: 1 }}
-                                            autoFocus
-                                        />
-                                        <button type="button" onClick={() => setIsScannerOpen(true)} className="btn-action-ht">
-                                            <Camera size={20} />
-                                        </button>
-                                    </div>
+                            {/* Przesunięcia */}
+                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+                                        <Move size={20} color="var(--accent-primary)" />
+                                        Przesunięcia
+                                    </h2>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        Relokacja między regałami.
+                                    </p>
                                 </div>
-                                <button type="submit" className="btn-primary-ht" style={{ marginTop: '1rem', width: '100%' }}>
-                                    Zatwierdź i przydziel miejsce
-                                </button>
-                            </form>
 
-                            {inboundResult && (
-                                <div className={`inbound-result-card ${inboundResult.success ? 'success' : 'error'}`} style={{
-                                    marginTop: '2rem',
-                                    padding: '1.5rem',
-                                    borderRadius: '12px',
-                                    border: `1px solid ${inboundResult.success ? 'var(--accent-primary)' : '#ff4d4d'}`,
-                                    background: 'rgba(255, 255, 255, 0.02)'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
-                                        {inboundResult.success ? (
-                                            <CheckCircle2 size={28} color="var(--accent-primary)" />
-                                        ) : (
-                                            <AlertTriangle size={28} color="#ff4d4d" />
-                                        )}
-                                        <h3 style={{ margin: 0 }}>
-                                            {inboundResult.success ? "Przyjęcie zatwierdzone" : "Błąd przyjęcia"}
-                                        </h3>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gap: '12px', fontSize: '0.9rem' }}>
-                                        <div style={{ display: 'flex', gap: '15px', color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Clock size={14} /> {inboundResult.timestamp}
-                                            </span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <UserIcon size={14} /> {inboundResult.operator}
-                                            </span>
+                                <div className="ht-form">
+                                    <div className="input-group">
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Kod produktu do przesunięcia..."
+                                                value={moveBarcode}
+                                                onChange={(e) => setMoveBarcode(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        const item = inventoryData.find(i => i.barcode === moveBarcode);
+                                                        if (item) {
+                                                            setMovingItem(item);
+                                                            setIsMoveModalOpen(true);
+                                                            setMoveBarcode("");
+                                                        } else {
+                                                            setMoveResult({ success: false, message: "Nie znaleziono produktu." });
+                                                        }
+                                                    }
+                                                }}
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button type="button" onClick={() => { setScannerMode('move'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                                <Camera size={18} />
+                                            </button>
                                         </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="btn-primary-ht"
+                                        style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}
+                                        onClick={() => {
+                                            const item = inventoryData.find(i => i.barcode === moveBarcode);
+                                            if (item) {
+                                                setMovingItem(item);
+                                                setIsMoveModalOpen(true);
+                                                setMoveBarcode("");
+                                            } else {
+                                                setMoveResult({ success: false, message: "Nie znaleziono produktu." });
+                                            }
+                                        }}
+                                    >
+                                        Inicjuj przesunięcie
+                                    </button>
+                                </div>
 
-                                        {inboundResult.success ? (
-                                            <div style={{ marginTop: '5px' }}>
-                                                <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <MapPin size={18} /> LOKALIZACJA: {inboundResult.rackCode}
-                                                </div>
-                                                <p style={{ marginLeft: '26px', opacity: 0.8 }}>
-                                                    Poziom (M): <strong>{inboundResult.slotX}</strong> | Miejsce (N): <strong>{inboundResult.slotY}</strong>
-                                                </p>
-                                                <div className="instruction-tip" style={{ marginTop: '10px', padding: '8px', background: 'rgba(0,255,139,0.1)', borderRadius: '4px', fontSize: '0.8rem' }}>
-                                                    <Info size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-                                                    Miejsce dobrane automatycznie na podstawie gabarytów i temperatury.
-                                                </div>
+                                {moveResult && (
+                                    <div className={`operation-result-mini ${moveResult.success ? 'success' : 'error'}`} style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        background: moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
+                                        border: `1px solid ${moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                                            {moveResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
+                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{moveResult.success ? "Przesunięto" : "Błąd"}</span>
+                                        </div>
+                                        {moveResult.success ? (
+                                            <div style={{ fontSize: '0.8rem' }}>
+                                                {moveResult.productName}<br />
+                                                <span style={{ color: 'var(--accent-primary)' }}>→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span>
                                             </div>
                                         ) : (
-                                            <div style={{ color: '#ff4d4d', padding: '10px', background: 'rgba(255,77,77,0.1)', borderRadius: '6px' }}>
-                                                {prettifyBackendError(inboundResult.message)}
-                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{moveResult.message}</div>
                                         )}
                                     </div>
+                                )}
+                            </div>
+
+                            {/* Wydania */}
+                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+                                        <PackageMinus size={20} color="#ff4d4d" />
+                                        Wydania
+                                    </h2>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        Wydanie towaru zgodnie z FIFO.
+                                    </p>
                                 </div>
-                            )}
+
+                                <form onSubmit={(e) => { e.preventDefault(); handleOutbound(e); }} className="ht-form">
+                                    <div className="input-group">
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input
+                                                value={outboundBarcode}
+                                                onChange={(e) => setOutboundBarcode(e.target.value)}
+                                                placeholder="Kod produktu..."
+                                                style={{ flex: 1 }}
+                                            />
+                                            <button type="button" onClick={() => { setScannerMode('outbound'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                                <Camera size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', background: '#ff4d4d', borderColor: '#ff4d4d', fontSize: '0.85rem' }}>
+                                        Wydaj towar
+                                    </button>
+                                </form>
+
+                                {outboundResult && (
+                                    <div className={`operation-result-mini ${outboundResult.success ? 'success' : 'error'}`} style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        background: outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
+                                        border: `1px solid ${outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                                            {outboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
+                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{outboundResult.success ? "Wydano" : "Błąd"}</span>
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem' }}>
+                                            {outboundResult.success ? "Produkt opuścił magazyn." : outboundResult.message}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </Tabs.Content>
                 </Tabs.Root>
-            </div >
+            </div>
+
+            <MoveModal
+                open={isMoveModalOpen}
+                onOpenChange={setIsMoveModalOpen}
+                item={movingItem}
+                racks={racks}
+                products={products}
+                inventory={inventoryData}
+                onMove={handleMoveSubmit}
+            />
+
+            <Dialog.Root open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="modal-overlay" />
+                    <Dialog.Content className="modal-content" style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <Camera size={20} className="header-icon" />
+                            <Dialog.Title>Skaner kodów - {scannerMode === 'inbound' ? 'Przyjęcie' : scannerMode === 'outbound' ? 'Wydanie' : 'Przesunięcie'}</Dialog.Title>
+                            <Dialog.Close asChild>
+                                <button className="close-btn"><X size={20} /></button>
+                            </Dialog.Close>
+                        </div>
+                        <div id="reader" style={{ width: '100%', minHeight: '300px' }}></div>
+                        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                            <p>Umieść kod kreskowy w polu widzenia kamery. Skanowanie nastąpi automatycznie.</p>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
 
             <Dialog.Root open={isConflictModalOpen} onOpenChange={setIsConflictModalOpen}>
                 <Dialog.Portal>
-                    <Dialog.Overlay className="dialog-overlay-ht" />
-                    <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '500px' }}>
+                    <Dialog.Overlay className="modal-overlay" />
+                    <Dialog.Content className="modal-content" style={{ maxWidth: '500px' }}>
                         <div className="modal-header">
-                            <Dialog.Title><h2>Konflikt oznaczeń</h2></Dialog.Title>
+                            <AlertTriangle size={20} className="header-icon" style={{ color: '#ff4d4d' }} />
+                            <Dialog.Title>Konflikt oznaczeń regałów</Dialog.Title>
                         </div>
                         <div style={{ margin: '1.5rem 0' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff4d4d', marginBottom: '1rem' }}>
-                                <AlertTriangle size={24} />
-                                <strong>Wykryto powtarzające się kody regałów!</strong>
-                            </div>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                Następujące kody już istnieją w bazie: <br />
+                                Niektóre kody regałów z importu już istnieją w bazie danych: <br />
                                 <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{conflictingCodes.join(', ')}</span>
                             </p>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'OVERWRITE')}>
+                            <button className="btn-primary" onClick={() => processImport(csvBuffer, 'OVERWRITE')}>
                                 <Trash2 size={16} /> Nadpisz istniejące regały
                             </button>
-                            <button className="btn-primary-ht" onClick={() => processImport(csvBuffer, 'RENAME')}>
-                                <Copy size={16} /> Zmień nazwy na wolne (np. {getSmallestAvailableCode(racks)})
+                            <button className="btn-primary" onClick={() => processImport(csvBuffer, 'RENAME')}>
+                                <Copy size={16} /> Zmień nazwy na wolne
                             </button>
-                            <button className="btn-action-ht" onClick={() => setIsConflictModalOpen(false)} style={{ color: '#ff4d4d' }}>
+                            <button className="btn-secondary" onClick={() => setIsConflictModalOpen(false)}>
                                 <Ban size={16} /> Anuluj operację
                             </button>
                         </div>
@@ -795,6 +1088,7 @@ const InventoryContent = () => {
                 existingRacks={racks}
                 hasItems={editingRack ? inventoryData.some(i => i.rackCode === editingRack.code) : false}
             />
+
             <ProductModal
                 open={isProductModalOpen}
                 onOpenChange={setIsProductModalOpen}
