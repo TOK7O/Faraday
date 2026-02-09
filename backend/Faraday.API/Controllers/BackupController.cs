@@ -25,13 +25,6 @@ namespace Faraday.API.Controllers
             return Ok(history);
         }
 
-        [HttpGet("db-history")]
-        public async Task<ActionResult<IEnumerable<BackupLog>>> GetDatabaseHistory()
-        {
-            var logs = await _backupService.GetBackupHistoryFromDbAsync();
-            return Ok(logs);
-        }
-
         [HttpPost("create")]
         public async Task<IActionResult> CreateBackup()
         {

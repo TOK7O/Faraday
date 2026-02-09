@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
-import { Database, Plus, RefreshCw, CheckCircle2, AlertCircle, Download, FileArchive } from "lucide-react";
+import { Database, Plus, RefreshCw, CheckCircle2, AlertCircle, Download, FileArchive, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
+import "./BackupsContent.scss"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -18,6 +19,9 @@ const BackupsContent = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [history, setHistory] = useState<BackupHistoryItem[]>([]);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+    const [selectedBackup, setSelectedBackup] = useState<BackupHistoryItem | null>(null);
 
     useEffect(() => {
         fetchHistory();
@@ -37,7 +41,13 @@ const BackupsContent = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                setHistory(data);
+
+                // Filtrujemy wpisy, odrzucając te, które zaczynają się od "RESTORE:"
+                const validBackups = data.filter((item: BackupHistoryItem) =>
+                    !item.fileName.startsWith("RESTORE:")
+                );
+
+                setHistory(validBackups);
             }
         } catch (error) {
             console.error("Failed to fetch backup history:", error);
@@ -134,6 +144,51 @@ const BackupsContent = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    // --- LOGIKA PRZYWRACANIA ---
+    const handleRestoreClick = (backup: BackupHistoryItem) => {
+        setSelectedBackup(backup);
+        setRestoreModalOpen(true);
+    };
+
+    const confirmRestore = async () => {
+        if (!selectedBackup) return;
+        try {
+            setIsRestoring(true);
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("Brak tokena uwierzytelniającego.");
+            const response = await fetch(`${API_BASE_URL}/api/Backup/restore/${selectedBackup.fileName}`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            if (!response.ok) {
+                let errorMessage = `Błąd ${response.status}: nie udało się przywrócić bazy.`;
+                try {
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } else {
+                        const errorText = await response.text();
+                        if (errorText) errorMessage = errorText;
+                    }
+                } catch (e) {}
+                throw new Error(errorMessage);
+            }
+            alert("Baza danych została pomyślnie przywrócona! Nastąpi wylogowanie w celu odświeżenia sesji.");
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+        } catch (error: any) {
+            alert(`Błąd przywracania: ${error.message}`);
+        } finally {
+            setIsRestoring(false);
+            setRestoreModalOpen(false);
+            setSelectedBackup(null);
+        }
+    };
+
     return (
         <div className="standard-view">
             <header className="content-header">
@@ -218,6 +273,14 @@ const BackupsContent = () => {
                                             >
                                                 <Download size={18} />
                                             </button>
+                                            <button
+                                                className="btn-action-ht btn-danger"
+                                                onClick={() => handleRestoreClick(item)}
+                                                title="Przywróć bazę z tego pliku"
+                                                style={{ color: 'red', marginLeft: '10px' }}
+                                            >
+                                                <Database size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -230,6 +293,46 @@ const BackupsContent = () => {
                     </div>
                 )}
             </div>
+            {/* --- MODAL POTWIERDZENIA --- */}
+            {restoreModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content danger-modal">
+                        <div className="modal-header">
+                            <AlertTriangle color="red" size={32} />
+                            <h3>Potwierdź przywracanie</h3>
+                        </div>
+                        <div className="modal-body">
+                            <p>Czy na pewno chcesz przywrócić bazę danych z pliku:</p>
+                            <p><strong>{selectedBackup?.fileName}</strong>?</p>
+                            <div className="warning-box" style={{background: '#ffe6e6', padding: '10px', border: '1px solid red', margin: '15px 0'}}>
+                                <strong>UWAGA:</strong>
+                                <ul>
+                                    <li>Ta operacja <strong>nadpisze</strong> wszystkie obecne dane.</li>
+                                    <li>Wszystkie aktywne sesje zostaną zerwane.</li>
+                                    <li>Tej operacji nie można cofnąć.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn-cancel"
+                                onClick={() => setRestoreModalOpen(false)}
+                                disabled={isRestoring}
+                            >
+                                Anuluj
+                            </button>
+                            <button
+                                className="btn-confirm-danger"
+                                onClick={confirmRestore}
+                                disabled={isRestoring}
+                                style={{ background: 'red', color: 'white' }}
+                            >
+                                {isRestoring ? "Przywracanie..." : "Tak, przywróć bazę"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
