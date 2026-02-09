@@ -117,9 +117,9 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                                     const isTarget = targetSlotX === colNum && targetSlotY === rowNum;
 
                                                     // Compatibility checks
-                                                    const tooTall = product ? product.height > selectedRack.maxHeight : false;
-                                                    const tooWide = product ? product.width > selectedRack.maxWidth : false;
-                                                    const tooDeep = product ? product.depth > selectedRack.maxDepth : false;
+                                                    const tooTall = product ? product.heightMm > selectedRack.maxHeight : false;
+                                                    const tooWide = product ? product.widthMm > selectedRack.maxWidth : false;
+                                                    const tooDeep = product ? product.depthMm > selectedRack.maxDepth : false;
                                                     const tooHeavy = item ? item.productWeightKg > selectedRack.maxWeight : false;
 
                                                     const tempMin = product?.requiredMinTemp ?? -999;

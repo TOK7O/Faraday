@@ -17,17 +17,18 @@ export interface Product {
     scanCode: string;
     name: string;
     category?: string;
-    weight: number;
-    width: number;
-    height: number;
-    depth: number;
-    tempRequired: number;
-    requiredMinTemp?: number;
-    requiredMaxTemp?: number;
+    weightKg: number;
+    widthMm: number;
+    heightMm: number;
+    depthMm: number;
+    requiredMinTemp: number;
+    requiredMaxTemp: number;
     isHazardous: boolean;
     hazardClassification?: number;
     validityDays?: number;
     photoUrl?: string;
+    comment?: string;
+    tempRequired?: number;
 }
 
 export interface ProductCatalogProps {
