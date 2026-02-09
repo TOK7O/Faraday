@@ -5,23 +5,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Faraday.API.Workers
 {
-    public class SimulationBackgroundWorker : BackgroundService
+    public class SimulationBackgroundWorker(
+        IServiceProvider serviceProvider,
+        ILogger<SimulationBackgroundWorker> logger,
+        IConfiguration configuration)
+        : BackgroundService
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<SimulationBackgroundWorker> _logger;
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
+        private readonly ILogger<SimulationBackgroundWorker> _logger = logger;
         private readonly Random _random = new Random();
 
-        // Settings for simulation frequency
-        private const int CycleDelaySeconds = 30;
-        
-        // Configuration: How many anomalies (theft/temperature failure) should happen statistically per hour?
-        private const int ExpectedFaultsPerHour = 1; 
-
-        public SimulationBackgroundWorker(IServiceProvider serviceProvider, ILogger<SimulationBackgroundWorker> logger)
-        {
-            _serviceProvider = serviceProvider;
-            _logger = logger;
-        }
+        private readonly int _cycleDelaySeconds = configuration.GetValue("Simulation:CycleDelaySeconds", 30);
+        private readonly int _expectedFaultsPerHour = configuration.GetValue("Simulation:ExpectedFaultsPerHour", 1);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -38,7 +33,7 @@ namespace Faraday.API.Workers
                     _logger.LogError(ex, "Error in Simulation Worker cycle.");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(CycleDelaySeconds), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(_cycleDelaySeconds), stoppingToken);
             }
         }
 
@@ -62,12 +57,12 @@ namespace Faraday.API.Workers
             // GLOBAL PROBABILITY CALCULATION
             // 1 hour = 3600 seconds.
             // Cycles per hour = 3600 / CycleDelaySeconds (e.g., 3600 / 10 = 360 cycles).
-            int cyclesPerHour = 3600 / CycleDelaySeconds;
+            int cyclesPerHour = 3600 / _cycleDelaySeconds;
             
-            // Use ExpectedFaultsPerHour to determine probability range.
+            // Use ExpectedFaultsPerHour to determine the probability range.
             // If ExpectedFaultsPerHour is 1, we check if Random(0..360) < 1 (only 0 is true).
             // If ExpectedFaultsPerHour is 5, we check if Random(0..360) < 5 (0,1,2,3,4 are true).
-            bool triggerAnomaly = _random.Next(0, cyclesPerHour) < ExpectedFaultsPerHour;
+            bool triggerAnomaly = _random.Next(0, cyclesPerHour) < _expectedFaultsPerHour;
 
             // If anomaly triggers, pick ONE random victim rack
             Rack? victimRack = null;
@@ -88,12 +83,12 @@ namespace Faraday.API.Workers
                 decimal simulatedTemp;
                 decimal simulatedWeight;
 
-                // 2. Apply Simulation Logic
+                // Apply Simulation Logic
                 if (rack == victimRack)
                 {
-                    // === ANOMALY SCENARIO (The Chosen One) ===
+                    // Anomaly scenario
                     
-                    // Randomly choose failure type (0 = Temperature Failure, 1 = Theft)
+                    // Randomly choose a failure type (0 = Temperature Failure, 1 = Theft)
                     int failureType = _random.Next(0, 2);
 
                     if (failureType == 0) 

@@ -126,6 +126,10 @@ namespace Faraday.API.Services
                 // Temperature validation - new range must cover all products
                 foreach (var product in storedItems)
                 {
+                    // Temperature constraints (Rack must be safe for the product)
+                    // The rack's range must cover the product's requirement.
+                    // So basically, if a product requires 2-6C, then the rack needs
+                    // to provide 2-6, or 3-6, or 4-5, etc.
                     if (dto.MinTemperature < product.RequiredMinTemp || 
                         dto.MaxTemperature > product.RequiredMaxTemp)
                     {

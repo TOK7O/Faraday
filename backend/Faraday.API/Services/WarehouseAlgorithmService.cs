@@ -35,6 +35,8 @@ namespace Faraday.API.Services
                             && r.MaxItemDepthMm >= product.DepthMm
                             // Temperature constraints (Rack must be safe for the product)
                             // The rack's range must cover the product's requirement.
+                            // So basically, if a product requires 2-6C, then the rack needs
+                            // to provide 2-6, or 3-6, or 4-5, etc.
                             && r.MinTemperature >= product.RequiredMinTemp
                             && r.MaxTemperature <= product.RequiredMaxTemp)
                 .OrderBy(r => r.Code)

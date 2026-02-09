@@ -8,7 +8,7 @@ namespace Faraday.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class OperationController : ControllerBase
     {
         private readonly IOperationService _operationService;
@@ -20,18 +20,12 @@ namespace Faraday.API.Controllers
 
         private int GetCurrentUserId()
         {
-            try
+            var idClaim = User.FindFirst("id");
+            if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
             {
-                var idClaim = User.FindFirst("id");
-                if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
-                {
-                    return userId;
-                }
+                return userId;
             }
-            catch { }
-
-            // Default user ID for non-authenticated access (e.g., when calling GetHistory without token)
-            return 1;
+            throw new UnauthorizedAccessException("Invalid token: User ID missing.");
         }
 
         [Authorize]
