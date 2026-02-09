@@ -160,8 +160,6 @@ namespace Faraday.API.Services
             }
         }
         
-        
-        
         public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
         {
             var user = await _context.Users.FindAsync(userId);
