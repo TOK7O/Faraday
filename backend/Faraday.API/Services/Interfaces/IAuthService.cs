@@ -1,4 +1,4 @@
-﻿﻿using Faraday.API.DTOs;
+﻿using Faraday.API.DTOs;
 
 namespace Faraday.API.Services.Interfaces
 {
@@ -31,5 +31,6 @@ namespace Faraday.API.Services.Interfaces
         // Forgot/Reset Password
         Task ForgotPasswordAsync(string email);
         Task ResetPasswordAsync(ResetPasswordDto dto);
+        Task<bool> GetTwoFactorEnabledStatusAsync(int userId);
     }
 }
