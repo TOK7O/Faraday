@@ -13,22 +13,39 @@ using Faraday.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. LOAD .ENV FILE ---
-// TraversePath() automatically looks up the directory tree until it finds .env
 Env.TraversePath().Load();
 
-// Debug: Verify it loaded
 var testEnv = Environment.GetEnvironmentVariable("SMTP_SERVER");
 Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER found: {testEnv ?? "NULL"}");
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
+var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "faraday_db";
+var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
+var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+if (string.IsNullOrEmpty(dbPass))
+{
+    throw new InvalidOperationException("No password for the database inside .env!");
+}
+
+var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Disable";
+
+builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+
 
 // DB CONFIG
 // Register Entity Framework Core context with PostgreSQL provider.
 builder.Services.AddDbContext<FaradayDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Configuration["BACKUP_ENCRYPTION_KEY"] = Environment.GetEnvironmentVariable("BACKUP_ENCRYPTION_KEY");
+builder.Configuration["BACKUP_ENCRYPTION_IV"] = Environment.GetEnvironmentVariable("BACKUP_ENCRYPTION_IV");
+
 // Auth and JWT configuration
+builder.Configuration["Jwt:Key"] = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("JWT_KEY not found in environment");
+builder.Configuration["Jwt:Issuer"] = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "FaradayServer";
+builder.Configuration["Jwt:Audience"] = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "FaradayClient";
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
