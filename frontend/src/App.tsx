@@ -5,8 +5,6 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 import Documentation from "./pages/docs/docs";
 import HomePage from "./pages/home/HomePage";
 import { useTranslation } from "./context/LanguageContext";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 function App() {
   const { t } = useTranslation();
@@ -18,8 +16,6 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/docs" element={<Documentation />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<div>{t.dashboardPage.content.pageNotFound}</div>} />
     </Routes>
   );

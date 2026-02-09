@@ -314,43 +314,6 @@ namespace Faraday.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task ForgotPasswordAsync(string email)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) 
-            {
-                // Nie ujawniamy, czy użytkownik istnieje
-                return; 
-            }
-
-            // Generowanie bezpiecznego tokena
-            user.PasswordResetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
-            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1); // Token ważny 1h
-
-            await _context.SaveChangesAsync();
-
-            // TODO: W produkcji wyślij email. W dev: wypisz do konsoli
-            Console.WriteLine($"GENERATED RESET LINK: http://localhost:5173/reset-password?token={user.PasswordResetToken}");
-        }
-
-        public async Task ResetPasswordAsync(ResetPasswordDto dto)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == dto.Token);
-
-            if (user == null || user.ResetTokenExpires < DateTime.UtcNow)
-            {
-                throw new Exception("Invalid or expired password reset token.");
-            }
-
-            // Ustaw nowe hasło
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            // Wyczyść token
-            user.PasswordResetToken = null;
-            user.ResetTokenExpires = null;
-
-            await _context.SaveChangesAsync();
-        }
-
         private string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
@@ -375,4 +338,3 @@ namespace Faraday.API.Services
         }
     }
 }
-
