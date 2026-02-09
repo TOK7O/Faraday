@@ -319,7 +319,7 @@ namespace Faraday.API.Services
         public async Task ForgotPasswordAsync(string email)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) 
+            if (user == null)
             {
                 // Security: Zawsze zwracamy sukces, żeby nie zdradzać, czy email istnieje w bazie
                 return;

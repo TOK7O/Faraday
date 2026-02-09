@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -35,7 +35,8 @@ namespace Faraday.API.Models
         public DateTime? LastLoginDate { get; set; }
 
         public bool IsActive { get; set; } = true;
-        
-        
+
+        public string? PasswordResetToken { get; set; }
+        public DateTime? ResetTokenExpires { get; set; }
     }
 }

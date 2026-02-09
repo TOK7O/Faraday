@@ -191,5 +191,27 @@ namespace Faraday.API.Controllers
                 return Conflict(ex.Message);
             }
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordDto request)
+        {
+            await _authService.ForgotPasswordAsync(request.Email);
+            // Zawsze zwracamy OK, by nie ujawniać czy email istnieje
+            return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
+        {
+            try
+            {
+                await _authService.ResetPasswordAsync(request);
+                return Ok(new { Message = "Password has been reset successfully." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
