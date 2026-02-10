@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, ArrowRight, Move } from "lucide-react";
-import type { FullInventoryItem, Rack, Product } from "./InventoryContent.types";
+import type { FullInventoryItem, Rack, Product } from "../InventoryContent.types.ts";
 
 interface MoveModalProps {
     open: boolean;

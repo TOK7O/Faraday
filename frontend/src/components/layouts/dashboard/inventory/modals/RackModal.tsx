@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, AlertCircle } from "lucide-react";
-import type { Rack } from "./InventoryContent.types";
+import type { Rack } from "../InventoryContent.types.ts";
 
 interface RackModalProps {
     open: boolean;
