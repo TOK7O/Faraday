@@ -99,11 +99,18 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            // SignalR requires WithOrigins and AllowCredentials instead of AllowAnyOrigin
+            
             policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials(); // Required for SignalR
+                .AllowCredentials();
+            //For testing Logging Subscription use this code instead:
+            /*
+            policy.SetIsOriginAllowed(origin => true)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+            */
         });
 });
 
@@ -163,6 +170,7 @@ builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only on
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
 builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
+builder.Services.AddSingleton<ILogsService, LogsService>();
 startupLogger.LogInformation("All services registered successfully");
 
 // Registration of WMS workers.
@@ -171,8 +179,12 @@ builder.Services.AddHostedService<SimulationBackgroundWorker>();
 builder.Services.AddHostedService<ExpirationMonitoringWorker>();
 startupLogger.LogInformation("Background workers registered successfully");
 
-
 var app = builder.Build();
+
+// Register SignalR Logger Provider
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+loggerFactory.AddProvider(new SignalRLoggerProvider(app.Services, LogLevel.Information));
+app.Logger.LogInformation("SignalR Logger Provider registered for real-time log streaming");
 
 // Create a temporary service scope to access the DbContext during application startup.
 // This block ensures the database schema is up-to-date and the default admin user exists.
@@ -233,6 +245,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<AlertsHub>("/hubs/alerts");
+app.MapHub<LogsHub>("/hubs/logs");
 
 app.MapControllers();
 
