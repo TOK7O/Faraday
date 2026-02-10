@@ -12,25 +12,17 @@ namespace Faraday.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class ReportController : ControllerBase
+    public class ReportController(IReportService reportService, ILogger<ReportController> logger)
+        : ControllerBase
     {
-        private readonly IReportService _reportService;
-        private readonly ILogger<ReportController> _logger;
-
-        public ReportController(IReportService reportService, ILogger<ReportController> logger)
-        {
-            _reportService = reportService;
-            _logger = logger;
-        }
-
         /// <summary>
         /// Retrieves high-level operational statistics for the main dashboard.
         /// </summary>
         [HttpGet("dashboard-stats")]
         public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats()
         {
-            _logger.LogInformation("Dashboard statistics requested");
-            var stats = await _reportService.GetDashboardStatsAsync();
+            logger.LogInformation("Dashboard statistics requested");
+            var stats = await reportService.GetDashboardStatsAsync();
             return Ok(stats);
         }
 
@@ -40,19 +32,19 @@ namespace Faraday.API.Controllers
         [HttpGet("inventory-summary")]
         public async Task<ActionResult<IEnumerable<InventorySummaryDto>>> GetInventorySummary()
         {
-            _logger.LogInformation("Inventory summary requested");
-            var summary = await _reportService.GetInventorySummaryAsync();
+            logger.LogInformation("Inventory summary requested");
+            var summary = await reportService.GetInventorySummaryAsync();
             return Ok(summary);
         }
         
         /// <summary>
-        /// Generates complete warehouse inventory report with full details of every item currently in stock.
+        /// Generates a complete warehouse inventory report with full details of every item currently in stock.
         /// </summary>
         [HttpGet("full-inventory")]
         public async Task<ActionResult<IEnumerable<FullInventoryDto>>> GetFullInventory()
         {
-            _logger.LogInformation("Full inventory report requested");
-            var inventory = await _reportService.GetFullInventoryReportAsync();
+            logger.LogInformation("Full inventory report requested");
+            var inventory = await reportService.GetFullInventoryReportAsync();
             return Ok(inventory);
         }
 
@@ -62,8 +54,8 @@ namespace Faraday.API.Controllers
         [HttpGet("expiring-items")]
         public async Task<ActionResult<IEnumerable<ExpiringItemDto>>> GetExpiringItems([FromQuery] int days = 7)
         {
-            _logger.LogInformation("Expiring items report requested with threshold: {Days} days", days);
-            var items = await _reportService.GetExpiringItemsAsync(days);
+            logger.LogInformation("Expiring items report requested with threshold: {Days} days", days);
+            var items = await reportService.GetExpiringItemsAsync(days);
             return Ok(items);
         }
 
@@ -74,8 +66,8 @@ namespace Faraday.API.Controllers
         [HttpGet("rack-utilization")]
         public async Task<ActionResult<IEnumerable<RackUtilizationDto>>> GetRackUtilization()
         {
-            _logger.LogInformation("Rack utilization report requested");
-            var utilization = await _reportService.GetRackUtilizationAsync();
+            logger.LogInformation("Rack utilization report requested");
+            var utilization = await reportService.GetRackUtilizationAsync();
             return Ok(utilization);
         }
         
@@ -94,9 +86,9 @@ namespace Faraday.API.Controllers
             if (limit > 1000) limit = 1000;
             if (limit < 1) limit = 1;
             
-            _logger.LogInformation("Temperature history requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
+            logger.LogInformation("Temperature history requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
 
-            var history = await _reportService.GetTemperatureHistoryAsync(rackId, fromDate, toDate, limit);
+            var history = await reportService.GetTemperatureHistoryAsync(rackId, fromDate, toDate, limit);
             return Ok(history);
         }
 
@@ -114,9 +106,9 @@ namespace Faraday.API.Controllers
             if (limit > 1000) limit = 1000;
             if (limit < 1) limit = 1;
             
-            _logger.LogInformation("Weight history requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
+            logger.LogInformation("Weight history requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
 
-            var history = await _reportService.GetWeightHistoryAsync(rackId, fromDate, toDate, limit);
+            var history = await reportService.GetWeightHistoryAsync(rackId, fromDate, toDate, limit);
             return Ok(history);
         }
 
@@ -129,8 +121,8 @@ namespace Faraday.API.Controllers
             [FromQuery] DateTime? fromDate = null,
             [FromQuery] DateTime? toDate = null)
         {
-            _logger.LogInformation("Alert history requested. RackId: {RackId}", rackId);
-            var history = await _reportService.GetAlertHistoryAsync(rackId, fromDate, toDate);
+            logger.LogInformation("Alert history requested. RackId: {RackId}", rackId);
+            var history = await reportService.GetAlertHistoryAsync(rackId, fromDate, toDate);
             return Ok(history);
         }
 
@@ -140,13 +132,13 @@ namespace Faraday.API.Controllers
         [HttpGet("active-alerts")]
         public async Task<ActionResult<IEnumerable<ActiveAlertDto>>> GetActiveAlerts()
         {
-            _logger.LogInformation("Active alerts requested");
-            var alerts = await _reportService.GetActiveAlertsAsync();
+            logger.LogInformation("Active alerts requested");
+            var alerts = await reportService.GetActiveAlertsAsync();
             return Ok(alerts);
         }
         
         /// <summary>
-        /// Retrieves temperature violations for racks (where recorded temp was outside rack's allowed range).
+        /// Retrieves temperature violations for racks (where recorded temp was outside the rack's allowed range).
         /// </summary>
         [HttpGet("rack-temperature-violations")]
         public async Task<ActionResult<IEnumerable<RackTemperatureViolationDto>>> GetRackTemperatureViolations(
@@ -157,13 +149,13 @@ namespace Faraday.API.Controllers
         {
             if (limit > 1000) limit = 1000;
             if (limit < 1) limit = 1;
-            _logger.LogInformation("Rack temperature violations requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
-            var violations = await _reportService.GetRackTemperatureViolationsAsync(rackId, fromDate, toDate, limit);
+            logger.LogInformation("Rack temperature violations requested. RackId: {RackId}, Limit: {Limit}", rackId, limit);
+            var violations = await reportService.GetRackTemperatureViolationsAsync(rackId, fromDate, toDate, limit);
             return Ok(violations);
         }
 
         /// <summary>
-        /// Retrieves temperature violations for stored items (where recorded temp was outside product's required range).
+        /// Retrieves temperature violations for stored items (where recorded temp was outside the product's required range).
         /// Shows which products were exposed to improper temperatures.
         /// </summary>
         [HttpGet("item-temperature-violations")]
@@ -171,8 +163,8 @@ namespace Faraday.API.Controllers
             [FromQuery] DateTime? fromDate = null,
             [FromQuery] DateTime? toDate = null)
         {
-            _logger.LogInformation("Item temperature violations requested");
-            var violations = await _reportService.GetItemTemperatureViolationsAsync(fromDate, toDate);
+            logger.LogInformation("Item temperature violations requested");
+            var violations = await reportService.GetItemTemperatureViolationsAsync(fromDate, toDate);
             return Ok(violations);
         }
     }

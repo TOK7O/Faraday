@@ -53,7 +53,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Lookup a product by its unique barcode or QR code (ScanCode).
+        /// Look up a product by its unique barcode or QR code (ScanCode).
         /// </summary>
         [HttpGet("scanCode/{scanCode}")]
         public async Task<ActionResult<ProductDto>> GetScanCode(string scanCode)
@@ -154,7 +154,7 @@ namespace Faraday.API.Controllers
             
             _logger.LogInformation("Product CSV import initiated. Filename: {FileName}", file.FileName);
             
-            using var stream = file.OpenReadStream();
+            await using var stream = file.OpenReadStream();
             var result = await _productService.ImportProductsFromCsvAsync(stream);
             
             _logger.LogInformation("Product CSV import completed. Success: " +

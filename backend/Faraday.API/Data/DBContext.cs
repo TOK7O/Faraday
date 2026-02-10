@@ -85,7 +85,10 @@ namespace Faraday.API.Data
                 .HasForeignKey<InventoryItem>(i => i.RackSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
             
-            
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => new { a.RackId, a.Type, a.IsResolved })
+                .HasFilter("[IsResolved] = 0")
+                .IsUnique();
         }
     }
 }
