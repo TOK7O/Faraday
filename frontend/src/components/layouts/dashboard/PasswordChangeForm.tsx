@@ -8,9 +8,9 @@ import { PasswordField as SignInPasswordField } from "@/components/ui/SignInPass
 // Import the Complex component for "New Password" & "Confirm"
 import { PasswordField as RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
 
-import "./PasswordChangeForm.scss";
+import { changePassword } from '@/api/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import "./PasswordChangeForm.scss";
 
 export const ChangePasswordForm = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -48,55 +48,23 @@ export const ChangePasswordForm = () => {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        // Capture form reference immediately
         const form = event.currentTarget;
-
         setMessage(null);
         setIsLoading(true);
-
         const formData = new FormData(form);
         const oldPassword = formData.get("oldPassword") as string;
         const newPassword = formData.get("newPassword") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
-
-        // 1. Client-side Validation: Match Check
         if (newPassword !== confirmPassword) {
             setMessage({ type: 'error', text: "New passwords do not match." });
             setIsLoading(false);
             return;
         }
-
         try {
-            const token = localStorage.getItem("token");
-
-            const response = await fetch(`${API_BASE_URL}/api/Auth/change-password`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    oldPassword,
-                    newPassword
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorMessage = errorText;
-                try {
-                    const json = JSON.parse(errorText);
-                    errorMessage = json.message || errorText;
-                } catch { /* ignore */ }
-                throw new Error(errorMessage || "Failed to change password");
-            }
-
+            await changePassword(oldPassword, newPassword);
             setMessage({ type: 'success', text: "Password changed successfully." });
-
             form.reset();
-            setNewPasswordValue(""); // Reset local state as well
-
+            setNewPasswordValue("");
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
         } finally {

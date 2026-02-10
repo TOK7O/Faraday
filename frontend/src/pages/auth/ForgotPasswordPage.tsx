@@ -3,9 +3,8 @@ import * as Form from "@radix-ui/react-form";
 import { Link } from "react-router-dom";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { LoginField } from "@components/ui/SignInLoginField";
+import { forgotPassword } from '@/api/axios';
 import "./login/LoginPage.scss";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const ForgotPasswordPage = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -16,16 +15,10 @@ const ForgotPasswordPage = () => {
         event.preventDefault();
         setIsLoading(true);
         setError(null);
-
         const formData = new FormData(event.currentTarget);
-        const email = formData.get("email");
-
+        const email = formData.get("email") as string;
         try {
-            await fetch(`${API_BASE_URL}/api/Auth/forgot-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            });
+            await forgotPassword(email);
             setIsSent(true);
         } catch (err) {
             setError("Something went wrong. Please try again.");
@@ -90,4 +83,3 @@ const ForgotPasswordPage = () => {
 };
 
 export default ForgotPasswordPage;
-

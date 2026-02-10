@@ -5,10 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { LoginField } from "@components/ui/SignInLoginField";
 import { PasswordField } from "@components/ui/SignInPasswordField";
+import { login } from '@/api/axios';
 import "./LoginPage.scss";
-
-// Load API URL from environment variables or fallback to localhost
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const LoginPage = () => {
   const { t } = useTranslation();
@@ -61,11 +59,7 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await login(payload.username, payload.password, payload.twoFactorCode);
 
       // CASE: 2FA Required (Backend returns 428 Precondition Required)
       if (response.status === 428) {
@@ -74,19 +68,13 @@ const LoginPage = () => {
       }
 
       // CASE: Error
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = errorText;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorText;
-        } catch { /* ignore JSON parse error */ }
-
-        throw new Error(errorMessage || "Login failed");
+      if (!response.status || response.status < 200 || response.status >= 300) {
+        let errorMessage = response.data?.message || response.statusText || "Login failed";
+        throw new Error(errorMessage);
       }
 
       // CASE: Success
-      const data = await response.json();
+      const data = response.data;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);

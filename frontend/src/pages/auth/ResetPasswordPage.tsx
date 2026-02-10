@@ -3,9 +3,8 @@ import * as Form from "@radix-ui/react-form";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import { PasswordField } from "@/components/ui/RegisterPasswordField";
+import { resetPassword } from '@/api/axios';
 import "./login/LoginPage.scss";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const ResetPasswordPage = () => {
     const navigate = useNavigate();
@@ -43,13 +42,7 @@ const ResetPasswordPage = () => {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/Auth/reset-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, newPassword }),
-            });
-
-            if (!response.ok) throw new Error("Link expired or invalid");
+            await resetPassword(token!, newPassword);
 
             navigate("/login");
         } catch (err) {

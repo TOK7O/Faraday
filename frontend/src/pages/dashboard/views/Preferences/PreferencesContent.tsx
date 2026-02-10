@@ -15,9 +15,7 @@ import "./PreferencesContent.scss";
 import { useTranslation } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import { ChangePasswordForm } from "@components/layouts/dashboard/PasswordChangeForm.tsx";
-
-// Define the API URL (adjust if you have a specific config file)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { get2faStatus, setup2fa, enable2fa, disable2fa } from '@/api/axios';
 
 const PreferencesContent = () => {
     const { lang, setLang, t } = useTranslation();
@@ -44,22 +42,12 @@ const PreferencesContent = () => {
     useEffect(() => {
         const fetch2faStatus = async () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) return;
-
-                const response = await fetch(`${API_URL}/api/Auth/2fa/status`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setIs2faEnabled(data.isEnabled);
-                }
+                const data = await get2faStatus();
+                setIs2faEnabled(data.isEnabled);
             } catch (error) {
                 console.error("Failed to fetch 2FA status", error);
             }
         };
-
         fetch2faStatus();
     }, []);
 
@@ -68,15 +56,7 @@ const PreferencesContent = () => {
         setLoading2fa(true);
         setMessage(null);
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${API_URL}/api/Auth/2fa/setup`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error("Failed to initiate setup");
-
-            const data = await response.json();
+            const data = await setup2fa();
             setSetupData(data); // Contains qrCodeImage and manualEntryKey
         } catch (error) {
             setMessage({ type: 'error', text: "Could not generate QR code." });
@@ -90,21 +70,7 @@ const PreferencesContent = () => {
         setLoading2fa(true);
         setMessage(null);
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${API_URL}/api/Auth/2fa/enable`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ code: verifyCode })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.message || "Verification failed");
-            }
-
+            await enable2fa(verifyCode);
             setIs2faEnabled(true);
             setSetupData(null); // Close setup window
             setVerifyCode("");
@@ -119,19 +85,11 @@ const PreferencesContent = () => {
     // 4. Disable 2FA
     const handleDisable2fa = async () => {
         if (!confirm("Are you sure you want to disable 2FA? Your account will be less secure.")) return;
-
         setLoading2fa(true);
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${API_URL}/api/Auth/2fa/disable`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                setIs2faEnabled(false);
-                setMessage({ type: 'success', text: "Two-Factor Authentication disabled." });
-            }
+            await disable2fa();
+            setIs2faEnabled(false);
+            setMessage({ type: 'success', text: "Two-Factor Authentication disabled." });
         } catch (error) {
             setMessage({ type: 'error', text: "Failed to disable 2FA." });
         } finally {

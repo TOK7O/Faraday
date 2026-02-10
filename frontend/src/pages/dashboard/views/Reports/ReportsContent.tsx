@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from "@/context/LanguageContext";
 import "./ReportsContent.scss";
-import ReportService from "@/api/services/reportService";
+import {
+    getDashboardStats,
+    getInventorySummary,
+    getFullInventory,
+    getExpiringItems,
+    getRackUtilization,
+    getTemperatureHistory,
+    getWeightHistory,
+    getRackTemperatureViolations,
+    getItemTemperatureViolations,
+    getActiveAlerts,
+    getAlertHistory
+} from '@/api/axios';
 import type {
     ActiveAlertDto, AlertHistoryDto, DashboardStatsDto, ExpiringItemDto,
     FullInventoryDto, InventorySummaryDto, ItemTemperatureViolationDto,
@@ -45,7 +57,7 @@ const ReportsContent = () => {
 
     const fetchDashboardStats = async () => {
         try {
-            const data = await ReportService.getDashboardStats();
+            const data = await getDashboardStats();
             setStats(data);
         } catch (error) {
             console.error("Failed to fetch stats", error);
@@ -65,9 +77,9 @@ const ReportsContent = () => {
             switch (activeTab) {
                 case 'inventory':
                     const [summary, full, expiring] = await Promise.all([
-                        ReportService.getInventorySummary(),
-                        ReportService.getFullInventory(),
-                        ReportService.getExpiringItems(7)
+                        getInventorySummary(),
+                        getFullInventory(),
+                        getExpiringItems(7)
                     ]);
                     setInventorySummary(summary);
                     setFullInventory(full);
@@ -75,16 +87,16 @@ const ReportsContent = () => {
                     break;
 
                 case 'utilization':
-                    const util = await ReportService.getRackUtilization();
+                    const util = await getRackUtilization();
                     setRackUtilization(util);
                     break;
 
                 case 'sensors':
                     const [temp, weight, rackV, itemV] = await Promise.all([
-                        ReportService.getTemperatureHistory(filterParams),
-                        ReportService.getWeightHistory(filterParams),
-                        ReportService.getRackTemperatureViolations(filterParams),
-                        ReportService.getItemTemperatureViolations({ fromDate: filterParams.fromDate, toDate: filterParams.toDate })
+                        getTemperatureHistory(filterParams),
+                        getWeightHistory(filterParams),
+                        getRackTemperatureViolations(filterParams),
+                        getItemTemperatureViolations({ fromDate: filterParams.fromDate, toDate: filterParams.toDate })
                     ]);
                     setTempHistory(temp);
                     setWeightHistory(weight);
@@ -94,8 +106,8 @@ const ReportsContent = () => {
 
                 case 'alerts':
                     const [active, history] = await Promise.all([
-                        ReportService.getActiveAlerts(),
-                        ReportService.getAlertHistory({
+                        getActiveAlerts(),
+                        getAlertHistory({
                             rackId: filterParams.rackId,
                             fromDate: filterParams.fromDate,
                             toDate: filterParams.toDate

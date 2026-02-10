@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { Database, Plus, RefreshCw, CheckCircle2, AlertCircle, Download, FileArchive, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
+import { getBackupHistory, createBackup, downloadBackup, restoreBackup } from '@/api/axios';
 import "./BackupsContent.scss"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -30,25 +31,14 @@ const BackupsContent = () => {
     const fetchHistory = async () => {
         setHistoryLoading(true);
         try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
+            const data = await getBackupHistory();
 
-            const response = await fetch(`${API_BASE_URL}/api/Backup/history`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+            // Filtrujemy wpisy, odrzucając te, które zaczynają się od "RESTORE:"
+            const validBackups = data.filter((item: BackupHistoryItem) =>
+                !item.fileName.startsWith("RESTORE:")
+            );
 
-            if (response.ok) {
-                const data = await response.json();
-
-                // Filtrujemy wpisy, odrzucając te, które zaczynają się od "RESTORE:"
-                const validBackups = data.filter((item: BackupHistoryItem) =>
-                    !item.fileName.startsWith("RESTORE:")
-                );
-
-                setHistory(validBackups);
-            }
+            setHistory(validBackups);
         } catch (error) {
             console.error("Failed to fetch backup history:", error);
         } finally {
@@ -61,35 +51,7 @@ const BackupsContent = () => {
         setStatus(null);
 
         try {
-            const token = localStorage.getItem("token");
-            //if (!token) throw new Error("Authentication token missing.");
-
-            const response = await fetch(`${API_BASE_URL}/api/Backup/create`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (!response.ok) {
-                let errorMessage = `Error ${response.status}: Failed to create backup`;
-                try {
-                    const contentType = response.headers.get("content-type");
-                    if (contentType && contentType.includes("application/json")) {
-                        const errorData = await response.json();
-                        errorMessage = errorData.message || errorData.error || errorMessage;
-                    } else {
-                        const errorText = await response.text();
-                        if (errorText) errorMessage = errorText;
-                    }
-                } catch (e) {
-                    console.error("Failed to parse error response", e);
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
+            const data = await createBackup();
             setStatus({
                 type: 'success',
                 message: `${backupT?.success || "Backup created successfully"}: ${data.fileName}`
@@ -111,26 +73,15 @@ const BackupsContent = () => {
 
     const handleDownload = async (fileName: string) => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            const response = await fetch(`${API_BASE_URL}/api/Backup/download/${fileName}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-            }
+            const blob = await downloadBackup(fileName);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Download failed:", error);
         }
@@ -154,29 +105,7 @@ const BackupsContent = () => {
         if (!selectedBackup) return;
         try {
             setIsRestoring(true);
-            const token = localStorage.getItem("token");
-            if (!token) throw new Error("Brak tokena uwierzytelniającego.");
-            const response = await fetch(`${API_BASE_URL}/api/Backup/restore/${selectedBackup.fileName}`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            });
-            if (!response.ok) {
-                let errorMessage = `Błąd ${response.status}: nie udało się przywrócić bazy.`;
-                try {
-                    const contentType = response.headers.get("content-type");
-                    if (contentType && contentType.includes("application/json")) {
-                        const errorData = await response.json();
-                        errorMessage = errorData.message || errorData.error || errorMessage;
-                    } else {
-                        const errorText = await response.text();
-                        if (errorText) errorMessage = errorText;
-                    }
-                } catch (e) {}
-                throw new Error(errorMessage);
-            }
+            await restoreBackup(selectedBackup.fileName);
             alert("Baza danych została pomyślnie przywrócona! Nastąpi wylogowanie w celu odświeżenia sesji.");
             localStorage.removeItem("token");
             window.location.href = "/login";

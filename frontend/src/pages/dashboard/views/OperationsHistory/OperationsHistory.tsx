@@ -1,9 +1,8 @@
 ﻿import { useState, useEffect } from "react";
 import { History, Search, RefreshCw, Box, User, MapPin, ArrowRight, ArrowLeft, RefreshCcw } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
+import { getOperationHistory } from '@/api/axios';
 import "./OperationsHistory.scss"; // Import the styles
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 interface OperationLog {
     id: number;
@@ -25,13 +24,8 @@ const OperationsHistory = () => {
     const fetchHistory = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/Operation/history?limit=${limit}`);
-            if (response.ok) {
-                const data = await response.json();
-                setLogs(data);
-            } else {
-                console.error("Server error");
-            }
+            const data = await getOperationHistory(limit);
+            setLogs(data);
         } catch (error) {
             console.error("Network error", error);
         } finally {

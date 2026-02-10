@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Move, PackageMinus, X } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { getRacks, getProducts, getFullInventoryList, inboundOperation, outboundOperation, moveOperation, createRack, updateRack, deleteRack, createProduct, updateProduct, deleteProduct } from '@/api/axios';
 
 import type { Rack, Product, FullInventoryItem } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@/components/layouts/dashboard/inventory/RackCard";
@@ -17,9 +18,8 @@ import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/Inventory
 
 import "./InventoryContent.scss";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 const formatMessageNumbers = (msg: string) => {
-    if (!msg || typeof msg !== 'string') return msg;
+    if (!msg) return msg;
     return msg
         .replace(/(\.\d*[1-9])0+(?!\d)/g, '$1')
         .replace(/\.0+(?!\d)/g, '');
@@ -112,59 +112,48 @@ const InventoryContent = () => {
 
     const fetchData = async () => {
         setIsLoading(true);
-        const token = localStorage.getItem("token");
-        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
         try {
-            const [rR, pR, iR] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/Rack`, { headers }),
-                fetch(`${API_BASE_URL}/api/Product`, { headers }),
-                fetch(`${API_BASE_URL}/api/Report/full-inventory`, { headers })
-            ]);
-            if (rR.ok) {
-                const data = await rR.json();
-                setRacks(data.map((r: any) => ({
-                    id: r.id, code: r.code, m: r.rows, n: r.columns, tempMin: r.minTemperature, tempMax: r.maxTemperature,
-                    maxWeight: r.maxWeightKg, maxWidth: r.maxItemWidthMm, maxHeight: r.maxItemHeightMm, maxDepth: r.maxItemDepthMm, comment: r.comment
-                })));
-            }
-            if (pR.ok) {
-                const data = await pR.json();
-                setProducts(data.map((p: any) => ({
-                    id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
-                    weightKg: p.weightKg, widthMm: p.widthMm, heightMm: p.heightMm, depthMm: p.depthMm,
-                    tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2,
-                    requiredMinTemp: p.requiredMinTemp,
-                    requiredMaxTemp: p.requiredMaxTemp,
-                    isHazardous: p.isHazardous,
-                    hazardClassification: p.hazardClassification,
-                    validityDays: p.validityDays,
-                    photoUrl: p.photoUrl,
-                    comment: p.comment || ""
-                })));
-            }
-            if (iR.ok) {
-                const data = await iR.json();
-                setInventoryData(data.map((item: any) => ({
-                    itemId: item.itemId,
-                    productId: item.productId,
-                    productName: item.productName,
-                    barcode: item.barcode,
-                    productPhotoUrl: item.productPhotoUrl,
-                    productWeightKg: item.productWeightKg,
-                    rackCode: item.rackCode,
-                    slotX: item.slotX,
-                    slotY: item.slotY,
-                    locationCode: item.locationCode,
-                    status: item.status,
-                    entryDate: item.entryDate,
-                    expirationDate: item.expirationDate,
-                    daysUntilExpiration: item.daysUntilExpiration,
-                    currentRackTemperature: item.currentRackTemperature,
-                    receivedByUsername: item.receivedByUsername,
-                    isHazardous: item.isHazardous,
-                    hazardClassification: item.hazardClassification
-                })));
-            }
+            const racksData = await getRacks();
+            setRacks(racksData.map((r: any) => ({
+                id: r.id, code: r.code, m: r.rows, n: r.columns, tempMin: r.minTemperature, tempMax: r.maxTemperature,
+                maxWeight: r.maxWeightKg, maxWidth: r.maxItemWidthMm, maxHeight: r.maxItemHeightMm, maxDepth: r.maxItemDepthMm, comment: r.comment
+            })));
+
+            const productsData = await getProducts();
+            setProducts(productsData.map((p: any) => ({
+                id: p.id, scanCode: p.scanCode, name: p.name, category: p.isHazardous ? "ADR" : "Standard",
+                weightKg: p.weightKg, widthMm: p.widthMm, heightMm: p.heightMm, depthMm: p.depthMm,
+                tempRequired: (p.requiredMinTemp + p.requiredMaxTemp) / 2,
+                requiredMinTemp: p.requiredMinTemp,
+                requiredMaxTemp: p.requiredMaxTemp,
+                isHazardous: p.isHazardous,
+                hazardClassification: p.hazardClassification,
+                validityDays: p.validityDays,
+                photoUrl: p.photoUrl,
+                comment: p.comment || ""
+            })));
+
+            const inventoryData = await getFullInventoryList();
+            setInventoryData(inventoryData.map((item: any) => ({
+                itemId: item.itemId,
+                productId: item.productId,
+                productName: item.productName,
+                barcode: item.barcode,
+                productPhotoUrl: item.productPhotoUrl,
+                productWeightKg: item.productWeightKg,
+                rackCode: item.rackCode,
+                slotX: item.slotX,
+                slotY: item.slotY,
+                locationCode: item.locationCode,
+                status: item.status,
+                entryDate: item.entryDate,
+                expirationDate: item.expirationDate,
+                daysUntilExpiration: item.daysUntilExpiration,
+                currentRackTemperature: item.currentRackTemperature,
+                receivedByUsername: item.receivedByUsername,
+                isHazardous: item.isHazardous,
+                hazardClassification: item.hazardClassification
+            })));
         } catch (e) {
             console.error(e);
         } finally {
@@ -396,20 +385,11 @@ const InventoryContent = () => {
 
         let success = 0;
         let errors: string[] = [];
-        const token = localStorage.getItem("token");
-
         for (let i = 0; i < toProcess.length; i++) {
             const item = toProcess[i];
             setBatchProgress({ current: i + 1, total: toProcess.length });
 
             try {
-                const url = importType === 'racks'
-                    ? `${API_BASE_URL}/api/Rack${item.action === 'update' ? `/${item.id}` : ''}`
-                    : `${API_BASE_URL}/api/Product${item.action === 'update' ? `/${item.id}` : ''}`;
-
-                const method = item.action === 'update' ? 'PUT' : 'POST';
-
-                // Przygotowanie danych sesuai z DTO backendu
                 let payload = { ...item.data };
                 if (item.action === 'update') {
                     if (importType === 'racks') {
@@ -422,34 +402,26 @@ const InventoryContent = () => {
                         payload = updateData;
                     }
                 }
-
-                const res = await fetch(url, {
-                    method,
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    success++;
+                if (importType === 'racks') {
+                    if (item.action === 'update') {
+                        await updateRack(item.id, payload);
+                    } else {
+                        await createRack(payload);
+                    }
                 } else {
-                    const errMsg = await res.text();
-                    const identifier = item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
-                    errors.push(`${identifier}: ${errMsg || res.statusText}`);
+                    if (item.action === 'update') {
+                        await updateProduct(item.id, payload);
+                    } else {
+                        await createProduct(payload);
+                    }
                 }
+                success++;
             } catch (err: any) {
                 const identifier = item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
-                errors.push(`Błąd sieci dla ${identifier}: ${err.message}`);
+                errors.push(`Błąd dla ${identifier}: ${err.response?.data?.message || err.message}`);
             }
         }
-
-        setImportResult({
-            successCount: success,
-            errorCount: errors.length,
-            errors
-        });
+        setImportResult({ successCount: success, errorCount: errors.length, errors });
         setIsImportPreviewModalOpen(false);
         setIsImportResultModalOpen(true);
         setBatchProgress(null);
@@ -465,8 +437,22 @@ const InventoryContent = () => {
             scanner.render(async (decodedText) => {
                 if (scannerMode === 'inbound') {
                     setInboundBarcode(decodedText);
+                    try {
+                        const responseData = await inboundOperation(decodedText);
+                        setInboundResult({ ...responseData, success: true, timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
+                        fetchData();
+                    } catch (e: any) {
+                        setInboundResult({ success: false, message: e.response?.data?.message || "Błąd podczas przyjmowania.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
+                    }
                 } else if (scannerMode === 'outbound') {
                     setOutboundBarcode(decodedText);
+                    try {
+                        const responseData = await outboundOperation(decodedText);
+                        setOutboundResult({ ...responseData, success: true, timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
+                        fetchData();
+                    } catch (e: any) {
+                        setOutboundResult({ success: false, message: e.response?.data?.message || "Błąd podczas wydawania produktu.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
+                    }
                 } else {
                     // Move mode: find item first
                     const item = inventoryData.find(i => i.barcode === decodedText);
@@ -474,89 +460,11 @@ const InventoryContent = () => {
                         setMovingItem(item);
                         setIsMoveModalOpen(true);
                     } else {
-                        setMoveResult({
-                            success: false,
-                            message: "Nie znaleziono produktu o tym kodzie w magazynie.",
-                            timestamp: new Date().toLocaleString(),
-                            operator: localStorage.getItem("username") || "Admin"
-                        });
+                        setMoveResult({ success: false, message: "Nie znaleziono produktu o tym kodzie w magazynie.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
                     }
-                    setIsScannerOpen(false);
-                    scanner?.clear();
-                    return;
                 }
-
                 setIsScannerOpen(false);
                 scanner?.clear();
-
-                const token = localStorage.getItem("token");
-                const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
-                const endpoint = scannerMode === 'inbound' ? "inbound" : "outbound";
-
-                try {
-                    const res = await fetch(`${API_BASE_URL}/api/Operation/${endpoint}`, {
-                        method: "POST",
-                        headers,
-                        body: JSON.stringify({ barcode: decodedText })
-                    });
-
-                    const responseText = await res.text();
-                    let responseData = null;
-                    if (responseText) {
-                        try {
-                            responseData = JSON.parse(responseText);
-                        } catch (e) {
-                            console.error("Failed to parse response as JSON:", responseText);
-                        }
-                    }
-
-                    const setResult = scannerMode === 'inbound' ? setInboundResult : setOutboundResult;
-
-                    if (res.status === 409) {
-                        setResult({
-                            success: false,
-                            message: formatMessageNumbers(responseText) || "Konflikt operacji.",
-                            timestamp: new Date().toLocaleString(),
-                            operator: localStorage.getItem("username") || "Admin"
-                        });
-                        return;
-                    }
-
-                    if (res.status === 404) {
-                        setResult({
-                            success: false,
-                            message: "Nie znaleziono produktu lub zasobu.",
-                            timestamp: new Date().toLocaleString(),
-                            operator: localStorage.getItem("username") || "Admin"
-                        });
-                        return;
-                    }
-
-                    if (res.ok) {
-                        setResult({
-                            ...responseData,
-                            success: true,
-                            timestamp: new Date().toLocaleString(),
-                            operator: localStorage.getItem("username") || "Admin"
-                        });
-                        fetchData();
-                    } else {
-                        setResult({
-                            success: false,
-                            message: formatMessageNumbers(responseText) || "Błąd podczas operacji.",
-                            timestamp: new Date().toLocaleString(),
-                            operator: localStorage.getItem("username") || "Admin"
-                        });
-                    }
-                } catch (e) {
-                    const setResult = scannerMode === 'inbound' ? setInboundResult : setOutboundResult;
-                    setResult({
-                        success: false,
-                        message: "Błąd połączenia z serwerem.",
-                        timestamp: new Date().toLocaleString(),
-                        operator: localStorage.getItem("username") || "Admin"
-                    });
-                }
             }, (_) => { /* ignoruj błędy skanowania */ });
         }
         return () => { scanner?.clear(); };
@@ -564,66 +472,19 @@ const InventoryContent = () => {
 
     const handleInbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const token = localStorage.getItem("token");
-        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
-
         try {
-            const res = await fetch(`${API_BASE_URL}/api/Operation/inbound`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({ barcode: inboundBarcode })
+            const responseData = await inboundOperation(inboundBarcode);
+            setInboundResult({
+                ...responseData,
+                success: true,
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
             });
-
-            const responseText = await res.text();
-            let responseData = null;
-            if (responseText) {
-                try {
-                    responseData = JSON.parse(responseText);
-                } catch (e) {
-                    console.error("Failed to parse response as JSON:", responseText);
-                }
-            }
-
-            if (res.status === 409) {
-                setInboundResult({
-                    success: false,
-                    message: formatMessageNumbers(responseText) || "Brak wolnego miejsca.",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                return;
-            }
-
-            if (res.status === 404) {
-                setInboundResult({
-                    success: false,
-                    message: "Nie znaleziono produktu.",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                return;
-            }
-
-            if (res.ok) {
-                setInboundResult({
-                    ...responseData,
-                    success: true,
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                fetchData();
-            } else {
-                setInboundResult({
-                    success: false,
-                    message: formatMessageNumbers(responseText) || "Błąd podczas przyjmowania.",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-            }
-        } catch (e) {
+            fetchData();
+        } catch (e: any) {
             setInboundResult({
                 success: false,
-                message: "Błąd połączenia.",
+                message: e.response?.data?.message || "Błąd podczas przyjmowania.",
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -632,56 +493,19 @@ const InventoryContent = () => {
 
     const handleOutbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const token = localStorage.getItem("token");
-        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
-
         try {
-            const res = await fetch(`${API_BASE_URL}/api/Operation/outbound`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({ barcode: outboundBarcode })
+            const responseData = await outboundOperation(outboundBarcode);
+            setOutboundResult({
+                ...responseData,
+                success: true,
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
             });
-
-            const responseText = await res.text();
-            let responseData = null;
-            if (responseText) {
-                try {
-                    responseData = JSON.parse(responseText);
-                } catch (e) {
-                    console.error("Failed to parse response as JSON:", responseText);
-                }
-            }
-
-            if (res.status === 404) {
-                setOutboundResult({
-                    success: false,
-                    message: "Nie znaleziono produktu w magazynie (nieprawidłowy kod lub produkt już wydany).",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                return;
-            }
-
-            if (res.ok) {
-                setOutboundResult({
-                    ...responseData,
-                    success: true,
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                fetchData();
-            } else {
-                setOutboundResult({
-                    success: false,
-                    message: formatMessageNumbers(responseText) || "Błąd podczas wydawania produktu.",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-            }
-        } catch (e) {
+            fetchData();
+        } catch (e: any) {
             setOutboundResult({
                 success: false,
-                message: "Błąd połączenia z serwerem.",
+                message: e.response?.data?.message || "Błąd podczas wydawania produktu.",
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -690,58 +514,31 @@ const InventoryContent = () => {
 
     const handleMoveSubmit = async (targetRackCode: string, targetSlotX: number, targetSlotY: number) => {
         if (!movingItem) return;
-        const token = localStorage.getItem("token");
-        const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
-
-        const dto = {
-            barcode: movingItem.barcode,
-            sourceRackCode: movingItem.rackCode,
-            sourceSlotX: movingItem.slotX,
-            sourceSlotY: movingItem.slotY,
-            targetRackCode,
-            targetSlotX,
-            targetSlotY
-        };
-
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/Operation/move`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify(dto)
+            const dto = {
+                barcode: movingItem.barcode,
+                sourceRackCode: movingItem.rackCode,
+                sourceSlotX: movingItem.slotX,
+                sourceSlotY: movingItem.slotY,
+                targetRackCode,
+                targetSlotX,
+                targetSlotY
+            };
+            const responseData = await moveOperation(dto);
+            setMoveResult({
+                ...responseData,
+                success: true,
+                timestamp: new Date().toLocaleString(),
+                operator: localStorage.getItem("username") || "Admin"
             });
-
-            const text = await res.text();
-            let responseData = null;
-            if (text) {
-                try {
-                    responseData = JSON.parse(text);
-                } catch (e) { }
-            }
-
-            if (res.ok) {
-                setMoveResult({
-                    ...responseData,
-                    success: true,
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                setIsMoveModalOpen(false);
-                setMovingItem(null);
-                fetchData();
-            } else {
-                setMoveResult({
-                    success: false,
-                    message: formatMessageNumbers(text) || "Błąd podczas przesuwania.",
-                    timestamp: new Date().toLocaleString(),
-                    operator: localStorage.getItem("username") || "Admin"
-                });
-                setIsMoveModalOpen(false);
-            }
-        } catch (e) {
+            setIsMoveModalOpen(false);
+            setMovingItem(null);
+            fetchData();
+        } catch (e: any) {
             setMoveResult({
                 success: false,
-                message: "Błąd połączenia z serwerem.",
+                message: e.response?.data?.message || "Błąd podczas przesuwania.",
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -753,24 +550,10 @@ const InventoryContent = () => {
     const handleDeleteRack = async (id: number | string) => {
         if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
         setIsLoading(true);
-        const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${API_BASE_URL}/api/Rack/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (res.ok) {
-                fetchData();
-            } else {
-                const text = await res.text();
-                if (res.status === 500) {
-                    alert("Nie można usunąć regału. Sprawdź, czy regał jest pusty (nie zawiera produktów).");
-                } else {
-                    alert(`Błąd usuwania: ${formatMessageNumbers(text) || res.statusText} `);
-                }
-            }
+            await deleteRack(id);
+            fetchData();
         } catch (e) {
-            console.error(e);
             alert("Wystąpił błąd podczas usuwania regału.");
         } finally { setIsLoading(false); }
     };
@@ -778,14 +561,10 @@ const InventoryContent = () => {
     const handleDeleteProduct = async (id: number | string) => {
         if (!window.confirm("Czy na pewno chcesz usunąć ten produkt z katalogu?")) return;
         setIsLoading(true);
-        const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`${API_BASE_URL}/api/Product/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (res.ok) fetchData();
-        } catch (e) { console.error(e); } finally { setIsLoading(false); }
+            await deleteProduct(id);
+            fetchData();
+        } catch (e) { alert("Wystąpił błąd podczas usuwania produktu."); } finally { setIsLoading(false); }
     };
 
     const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
@@ -794,7 +573,6 @@ const InventoryContent = () => {
     const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
-        const token = localStorage.getItem("token");
         const dto = {
             id: editingProduct ? editingProduct.id : 0,
             scanCode: f.get("scanCode"),
@@ -811,26 +589,17 @@ const InventoryContent = () => {
             validityDays: f.get("validityDays") ? Number(f.get("validityDays")) : null,
             comment: f.get("comment")
         };
-        const method = editingProduct ? "PUT" : "POST";
-        const url = editingProduct ? `${API_BASE_URL}/api/Product/${editingProduct.id}` : `${API_BASE_URL}/api/Product`;
-
         setIsLoading(true);
         try {
-            const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
-            if (res.ok) {
-                fetchData();
-                closeModal();
+            if (editingProduct) {
+                await updateProduct(editingProduct.id, dto);
             } else {
-                const text = await res.text();
-                if (res.status === 409) {
-                    alert(`Konflikt: ${formatMessageNumbers(text) || "Kod kreskowy jest już zajęty przez inny produkt."} `);
-                } else {
-                    alert(`Błąd zapisu: ${formatMessageNumbers(text) || res.statusText} `);
-                }
+                await createProduct(dto);
             }
-        } catch (error) {
-            console.error(error);
-            alert("Błąd połączenia z serwerem.");
+            fetchData();
+            closeModal();
+        } catch (error: any) {
+            alert(error.response?.data?.message || "Błąd połączenia z serwerem.");
         } finally {
             setIsLoading(false);
         }
@@ -839,14 +608,11 @@ const InventoryContent = () => {
     const handleSaveRack = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
-        const token = localStorage.getItem("token");
         const code = f.get("code")?.toString();
-
         const dto: any = {
             id: editingRack ? editingRack.id : 0,
             code: code,
             comment: f.get("comment"),
-            // Always send physical constraints (UI makes them readOnly when rack has items)
             minTemperature: Number(f.get("minTemperature")),
             maxTemperature: Number(f.get("maxTemperature")),
             maxWeightKg: Number(f.get("maxWeightKg")),
@@ -854,33 +620,21 @@ const InventoryContent = () => {
             maxItemHeightMm: Number(f.get("maxItemHeightMm")),
             maxItemDepthMm: Number(f.get("maxItemDepthMm"))
         };
-
-        // Only include rows/columns for new racks
         if (!editingRack) {
             dto.rows = Number(f.get("rows"));
             dto.columns = Number(f.get("columns"));
         }
-
-        const method = editingRack ? "PUT" : "POST";
-        const url = editingRack ? `${API_BASE_URL}/api/Rack/${editingRack.id}` : `${API_BASE_URL}/api/Rack`;
-
         setIsLoading(true);
         try {
-            const res = await fetch(url, { method, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(dto) });
-            if (res.ok) {
-                fetchData();
-                closeModal();
+            if (editingRack) {
+                await updateRack(editingRack.id, dto);
             } else {
-                const text = await res.text();
-                if (res.status === 409) {
-                    alert(`Błąd konfiguracji: ${formatMessageNumbers(text) || "Parametry regału nie są zgodne z przechowywanym towarem lub kod jest zajęty."} `);
-                } else {
-                    alert(`Błąd zapisu: ${formatMessageNumbers(text) || res.statusText} `);
-                }
+                await createRack(dto);
             }
-        } catch (error) {
-            console.error(error);
-            alert("Błąd połączenia z serwerem.");
+            fetchData();
+            closeModal();
+        } catch (error: any) {
+            alert(error.response?.data?.message || "Błąd połączenia z serwerem.");
         } finally {
             setIsLoading(false);
         }

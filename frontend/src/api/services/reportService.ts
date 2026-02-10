@@ -1,4 +1,5 @@
-﻿import axios from "@/api/axios";
+﻿// Usunięto całą logikę requestów, przenieś importy typów do axios.ts
+
 // --- Interfaces matching C# DTOs ---
 
 export interface DashboardStatsDto {
@@ -126,61 +127,6 @@ export interface ItemTemperatureViolationDto {
 // --- API Service ---
 
 const ReportService = {
-    getDashboardStats: async () => {
-        const response = await axios.get<DashboardStatsDto>("/api/report/dashboard-stats");
-        return response.data;
-    },
-
-    getInventorySummary: async () => {
-        const response = await axios.get<InventorySummaryDto[]>("/api/report/inventory-summary");
-        return response.data;
-    },
-
-    getFullInventory: async () => {
-        const response = await axios.get<FullInventoryDto[]>("/api/report/full-inventory");
-        return response.data;
-    },
-
-    getExpiringItems: async (days: number = 7) => {
-        const response = await axios.get<ExpiringItemDto[]>("/api/report/expiring-items", { params: { days } });
-        return response.data;
-    },
-
-    getRackUtilization: async () => {
-        const response = await axios.get<RackUtilizationDto[]>("/api/report/rack-utilization");
-        return response.data;
-    },
-
-    getTemperatureHistory: async (params: { rackId?: number, fromDate?: string, toDate?: string, limit?: number }) => {
-        const response = await axios.get<TemperatureHistoryDto[]>("/api/report/temperature-history", { params });
-        return response.data;
-    },
-
-    getWeightHistory: async (params: { rackId?: number, fromDate?: string, toDate?: string, limit?: number }) => {
-        const response = await axios.get<WeightHistoryDto[]>("/api/report/weight-history", { params });
-        return response.data;
-    },
-
-    getAlertHistory: async (params: { rackId?: number, fromDate?: string, toDate?: string }) => {
-        const response = await axios.get<AlertHistoryDto[]>("/api/report/alert-history", { params });
-        return response.data;
-    },
-
-    getActiveAlerts: async () => {
-        const response = await axios.get<ActiveAlertDto[]>("/api/report/active-alerts");
-        return response.data;
-    },
-
-    getRackTemperatureViolations: async (params: { rackId?: number, fromDate?: string, toDate?: string, limit?: number }) => {
-        const response = await axios.get<RackTemperatureViolationDto[]>("/api/report/rack-temperature-violations", { params });
-        return response.data;
-    },
-
-    getItemTemperatureViolations: async (params: { fromDate?: string, toDate?: string }) => {
-        const response = await axios.get<ItemTemperatureViolationDto[]>("/api/report/item-temperature-violations", { params });
-        return response.data;
-    }
 };
 
 export default ReportService;
-
