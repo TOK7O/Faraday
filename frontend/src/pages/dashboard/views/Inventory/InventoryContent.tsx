@@ -176,9 +176,6 @@ const InventoryContent = () => {
         if (stockTabTrigger) stockTabTrigger.click();
     };
 
-    // ... existing csv import code ...
-
-
     const parseCSV = (text: string, type: 'racks' | 'products') => {
         const lines = text.split(/\r?\n/);
         const results: any[] = [];
@@ -434,46 +431,86 @@ const InventoryContent = () => {
     };
 
     // scanner
+    const handleScanResult = async (decodedText: string) => {
+        const operator = localStorage.getItem("username") || "Admin";
+        const timestamp = new Date().toLocaleString();
+
+        if (scannerMode === 'inbound') {
+            setInboundBarcode(decodedText);
+        }
+        else if (scannerMode === 'outbound') {
+            setOutboundBarcode(decodedText);
+        }
+        else if (scannerMode === 'move') {
+            setMoveBarcode(decodedText);
+
+            const item = inventoryData.find(i => i.barcode === decodedText);
+            if (item) {
+                setMovingItem(item);
+                setIsMoveModalOpen(true);
+                setMoveBarcode("");
+            } else {
+                setMoveResult({
+                    success: false,
+                    message: "Nie znaleziono produktu w magazynie.",
+                    timestamp,
+                    operator
+                });
+            }
+        }
+    };
+
     useEffect(() => {
         let scanner: Html5QrcodeScanner | null = null;
-        if (isScannerOpen) {
-            scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
-            scanner.render(async (decodedText) => {
-                if (scannerMode === 'inbound') {
-                    setInboundBarcode(decodedText);
-                    try {
-                        const responseData = await inboundOperation(decodedText);
-                        setInboundResult({ ...responseData, success: true, timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
-                        fetchData();
-                    } catch (e: any) {
-                        setInboundResult({ success: false, message: e.response?.data?.message || "Błąd podczas przyjmowania.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
-                    }
-                } else if (scannerMode === 'outbound') {
-                    setOutboundBarcode(decodedText);
-                    try {
-                        const responseData = await outboundOperation(decodedText);
-                        setOutboundResult({ ...responseData, success: true, timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
-                        fetchData();
-                    } catch (e: any) {
-                        setOutboundResult({ success: false, message: e.response?.data?.message || "Błąd podczas wydawania produktu.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
-                    }
-                } else {
-                    // Move mode: find item first
-                    const item = inventoryData.find(i => i.barcode === decodedText);
-                    if (item) {
-                        setMovingItem(item);
-                        setIsMoveModalOpen(true);
-                    } else {
-                        setMoveResult({ success: false, message: "Nie znaleziono produktu o tym kodzie w magazynie.", timestamp: new Date().toLocaleString(), operator: localStorage.getItem("username") || "Admin" });
-                    }
-                }
-                setIsScannerOpen(false);
-                scanner?.clear();
-            }, (_) => { /* ignoruj błędy skanowania */ });
-        }
-        return () => { scanner?.clear(); };
-    }, [isScannerOpen, scannerMode]);
 
+        if (isScannerOpen) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById("reader");
+                if (!element) return;
+
+                scanner = new Html5QrcodeScanner(
+                    "reader",
+                    {
+                        fps: 20,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0
+                    },
+                    false
+                );
+
+                scanner.render(
+                    async (decodedText) => {
+                        handleScanResult(decodedText);
+
+                        if (scanner) {
+                            try {
+                                await scanner.clear();
+                                scanner = null;
+                            } catch (err) {
+                                console.error("Błąd przy zamykaniu skanera:", err);
+                            }
+                        }
+
+                        setIsScannerOpen(false);
+                    },
+                    (error) => {
+                    }
+                );
+            }, 500);
+
+            return () => {
+                clearTimeout(timer);
+                if (scanner) {
+                    scanner.clear().catch(err => console.error("Cleanup error:", err));
+                }
+            };
+        }
+    }, [isScannerOpen, scannerMode, inventoryData]);
+    const resetOperationResults = () => {
+        setInboundResult(null);
+        setOutboundResult(null);
+        setMoveResult(null);
+    };
     const handleInbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         try {
@@ -997,19 +1034,29 @@ const InventoryContent = () => {
 
             <Dialog.Root open={isScannerOpen} onOpenChange={setIsScannerOpen}>
                 <Dialog.Portal>
+                    {/* Upewnij się, że klasa modal-overlay ma w CSS:
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); */}
                     <Dialog.Overlay className="modal-overlay" />
-                    <Dialog.Content className="modal-content" style={{ maxWidth: '500px' }}>
+
+                    <Dialog.Content className="modal-content" aria-describedby="scanner-description">
                         <div className="modal-header">
-                            <Camera size={20} className="header-icon" />
-                            <Dialog.Title>Skaner kodów - {scannerMode === 'inbound' ? 'Przyjęcie' : scannerMode === 'outbound' ? 'Wydanie' : 'Przesunięcie'}</Dialog.Title>
+                            <Dialog.Title>Skaner kodów</Dialog.Title>
+                            {/* To naprawi błąd "Missing Description" */}
+                            <Dialog.Description id="scanner-description" className="visually-hidden">
+                                Użyj kamery, aby zeskanować kod kreskowy produktu.
+                            </Dialog.Description>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
                             </Dialog.Close>
                         </div>
-                        <div id="reader" style={{ width: '100%', minHeight: '300px' }}></div>
-                        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '0.85rem' }}>
-                            <p>Umieść kod kreskowy w polu widzenia kamery. Skanowanie nastąpi automatycznie.</p>
-                        </div>
+
+                        <div id="reader" style={{
+                            width: '100%',
+                            minHeight: '300px',
+                            background: '#000',
+                            borderRadius: '8px',
+                            overflow: 'hidden'
+                        }}></div>
                     </Dialog.Content>
                 </Dialog.Portal>
             </Dialog.Root>

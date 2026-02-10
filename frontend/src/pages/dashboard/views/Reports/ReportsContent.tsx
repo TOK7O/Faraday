@@ -125,7 +125,6 @@ const ReportsContent = () => {
 
     const renderInventoryView = () => (
         <div className="view-container">
-            {/* Summary Grid */}
             <div className="stats-grid">
                 <div className="stat-card">
                     <h4>Total Items</h4>

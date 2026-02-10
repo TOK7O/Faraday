@@ -59,9 +59,6 @@ const Sidebar = () => {
                             <Users size={18} /> {t.dashboardPage.sidebar.nav.personnel}
                         </Tabs.Trigger>
                     )}
-                    <Tabs.Trigger className="nav-item" value="inventory">
-                        <Package size={18} /> {t.dashboardPage.sidebar.nav.inventory}
-                    </Tabs.Trigger>
 
                     <Tabs.Trigger className="nav-item" value="operations">
                         <History size={18} /> {t.dashboardPage.sidebar.nav.operations}
