@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Loader2, UserPlus } from "lucide-react";
 import { registerUser } from "@/api/axios";
