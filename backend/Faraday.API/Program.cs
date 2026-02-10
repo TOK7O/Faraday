@@ -89,7 +89,26 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
+    // Konfiguracja pozwalająca SignalR na przesyłanie tokena w URL (Query String)
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            // Jeśli zapytanie ma token i idzie do Huba (Logs lub Alerts)
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                (path.StartsWithSegments("/hubs/logs") || path.StartsWithSegments("/hubs/alerts")))
+            {
+                // Przypisz token z URL do kontekstu autoryzacji
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
+
 
 builder.Services.AddControllers();
 
