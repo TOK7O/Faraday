@@ -12,11 +12,11 @@
       },
       "fields": {
         "email": {
-          "label": "Login",
+          "label": "Nazwa użytkownika",
           "placeholder": "",
           "validation": {
-            "required": "Login jest wymagany",
-            "invalid": "Podany login jest nieprawidłowy"
+            "required": "Nazwa użytkownika jest wymagana",
+            "invalid": "Podana nazwa użytkownika jest nieprawidłowy"
           }
         },
         "password": {
