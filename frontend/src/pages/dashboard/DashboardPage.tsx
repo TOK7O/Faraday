@@ -11,6 +11,7 @@ import OperationsHistory from "./views/OperationsHistory/OperationsHistory";
 import ReportsContent from "./views/Reports/ReportsContent";
 import BackupsContent from "./views/Backups/BackupsContent";
 import PreferencesContent from "./views/Preferences/PreferencesContent";
+import LogsContent from "./views/Logs/LogsContent";
 
 // Components
 import Sidebar from "@/components/layouts/dashboard/Sidebar";
@@ -106,6 +107,9 @@ const DashboardPage = () => {
                         </Tabs.Content>
                         <Tabs.Content value="settings">
                             <PreferencesContent />
+                        </Tabs.Content>
+                        <Tabs.Content value="logs">
+                            <LogsContent />
                         </Tabs.Content>
                     </section>
                 </main>

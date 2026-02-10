@@ -1,5 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import "./Sidebar.scss";
 import {
   LayoutDashboard,
@@ -10,34 +10,36 @@ import {
   Settings,
   Database,
   LogOut,
+  Terminal // Dodano ikonę dla logów
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext.tsx";
 
 const Sidebar = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate(); // Initialize the navigation hook
+  const navigate = useNavigate();
+
+  // Pobieramy rolę, aby ukryć zakładkę logów przed zwykłymi użytkownikami
+  // (API i tak zablokuje dostęp, ale ukrycie przycisku to lepsze UX)
+  const userRole = localStorage.getItem("role");
+  const isAdmin = userRole === "Administrator";
 
   // --- LOGOUT LOGIC ---
   const handleLogout = () => {
-    // 1. Remove specific auth items
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("role");
-
-    // Optional: You could use localStorage.clear() if you don't store other settings
-    // localStorage.clear();
-
-    // 2. Redirect the user to the login screen
     navigate("/login");
   };
 
   return (
       <div className="sidebar-container">
         <Tabs.List className="sidebar-nav">
+
+          {/* Grupa 1: Terminal / Główne */}
           <div className="nav-group">
-          <span className="group-label">
-            {t.dashboardPage.sidebar.groups.terminal}
-          </span>
+            <span className="group-label">
+                {t.dashboardPage.sidebar.groups.terminal}
+            </span>
             <Tabs.Trigger className="nav-item" value="overview">
               <LayoutDashboard size={18} /> {t.dashboardPage.sidebar.nav.overview}
             </Tabs.Trigger>
@@ -46,10 +48,11 @@ const Sidebar = () => {
             </Tabs.Trigger>
           </div>
 
+          {/* Grupa 2: Logi Bezpieczeństwa / Operacje */}
           <div className="nav-group">
-          <span className="group-label">
-            {t.dashboardPage.sidebar.groups.securityLogs}
-          </span>
+            <span className="group-label">
+                {t.dashboardPage.sidebar.groups.securityLogs}
+            </span>
             <Tabs.Trigger className="nav-item" value="personnel">
               <Users size={18} /> {t.dashboardPage.sidebar.nav.personnel}
             </Tabs.Trigger>
@@ -62,13 +65,22 @@ const Sidebar = () => {
             <Tabs.Trigger className="nav-item" value="backups">
               <Database size={18} /> {t.dashboardPage.sidebar.nav.backups}
             </Tabs.Trigger>
+
+            {/* --- NOWA ZAKŁADKA: LOGI SYSTEMOWE (Tylko Admin) --- */}
+            {isAdmin && (
+                <Tabs.Trigger className="nav-item" value="logs">
+                  <Terminal size={18} />
+                  {/* Fallback tekstowy, jeśli nie dodałeś jeszcze klucza do tłumaczeń */}
+                  {t.dashboardPage.sidebar.nav.logs || "System Logs"}
+                </Tabs.Trigger>
+            )}
           </div>
 
+          {/* Grupa 3: Ustawienia */}
           <div className="nav-group">
-          <span className="group-label">
-            {t.dashboardPage.sidebar.groups.settings}
-          </span>
-
+            <span className="group-label">
+                {t.dashboardPage.sidebar.groups.settings}
+            </span>
             <Tabs.Trigger className="nav-item" value="settings">
               <Settings size={18} /> {t.dashboardPage.sidebar.nav.settings}
             </Tabs.Trigger>
