@@ -17,7 +17,7 @@ import {
 
 import {
     BarChart3, Box, AlertTriangle, Thermometer,
-    Scale, RefreshCw
+    Scale, RefreshCw, Notebook
 } from 'lucide-react';
 
 type ReportTab = 'inventory' | 'utilization' | 'sensors' | 'alerts';
@@ -27,13 +27,11 @@ const ReportsContent = () => {
     const [activeTab, setActiveTab] = useState<ReportTab>('inventory');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Filters
     const [fromDate, setFromDate] = useState<string>('');
     const [toDate, setToDate] = useState<string>('');
     const [rackIdFilter, setRackIdFilter] = useState<string>('');
     const [limit] = useState<number>(100);
 
-    // Data States
     const [stats, setStats] = useState<any>(null);
     const [inventorySummary, setInventorySummary] = useState<any[]>([]);
     const [fullInventory, setFullInventory] = useState<any[]>([]);
@@ -124,8 +122,6 @@ const ReportsContent = () => {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleString();
     };
-
-    // --- RENDER HELPERS ---
 
     const renderInventoryView = () => (
         <div className="view-container">
@@ -253,8 +249,8 @@ const ReportsContent = () => {
     const renderSensorsView = () => (
         <div className="view-container">
             {/* Violations */}
-            <div className="table-container" style={{marginBottom: '2rem', border: '1px solid #7f1d1d'}}>
-                <h3 style={{background: 'rgba(127, 29, 29, 0.2)', color: '#fca5a5'}}>Temperature Violations</h3>
+            <div className="table-container">
+                <h3>Temperature Violations</h3>
                 <table className="data-table">
                     <thead>
                         <tr>
@@ -373,11 +369,14 @@ const ReportsContent = () => {
     return (
         <div className="reports-view">
             <div className="bg-grid-overlay" />
+            <div className="system-tag">
+                <Notebook size={14} className="icon-glow" />
+                <span>Reports and alarms</span>
+            </div>
             <div className="header">
                 <h1>{t.dashboardPage.content.reports.title || "System Reports"}</h1>
             </div>
 
-            {/* Dashboard Stats (Always Visible) */}
             {stats && (
                 <div className="stats-grid">
                     <div className="stat-card">

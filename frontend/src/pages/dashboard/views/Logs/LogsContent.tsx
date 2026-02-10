@@ -170,11 +170,11 @@ const LogsContent = () => {
                         Showing <strong>{currentLogs.length}</strong> entries on this page
                     </div>
                     <div className="pagination-controls">
-                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                        <button className={"btn-ht"} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                             <ChevronLeft size={18} />
                         </button>
                         <span className="current-page">Page {currentPage} / {totalPages || 1}</span>
-                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+                        <button className={"btn-ht"} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
                             <ChevronRight size={18} />
                         </button>
                     </div>
