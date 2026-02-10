@@ -26,7 +26,7 @@
     }
 
     &.empty {
-      background-color: var(--bg-input);
+      background-color: var(--placeholder-color);
       opacity: 0.3;
       cursor: default;
     }

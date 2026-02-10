@@ -85,7 +85,7 @@ const OperationsHistory = () => {
                     className="ht-select"
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
-                    style={{ background: 'var(--bg-input)', border: '1px solid var(--border-input)', color: 'white', borderRadius: '8px', padding: '0 1rem' }}
+                    style={{ background:'var(--bg-form)',color: 'var(--text-main)', borderRadius: '8px', padding: '0 1rem' }}
                 >
                     <option value={20}>Last 20 entries</option>
                     <option value={50}>Last 50 entries</option>
