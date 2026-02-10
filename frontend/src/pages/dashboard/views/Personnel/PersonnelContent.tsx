@@ -248,7 +248,8 @@ const PersonnelContent = () => {
                                                 }}
                                             >
                                                 {person.role === 'Administrator' ? <Shield size={12} /> : <User size={12} />}
-                                                {person.role}
+                                                {/* Dodaje space między Warehouse a Worker */}
+                                                {person.role.replace(/([a-z])([A-Z])/g, '$1 $2')}
                                             </span>
                                     </td>
                                     <td>
