@@ -3,6 +3,43 @@ export const formatMessageNumbers = (msg: string) => {
     return msg.replace(/(\.\d*[1-9])0+(?!\d)/g, '$1').replace(/\.0+(?!\d)/g, '');
 };
 
+export const prettifyBackendError = (rawMsg: string) => {
+    if (!rawMsg) return "Nieznany błąd serwera.";
+    const msg = formatMessageNumbers(rawMsg);
+
+    const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
+    if (noRacksMatch) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Brak pasujących regałów</strong> dla produktu <strong>{noRacksMatch[1]}</strong>.</p>
+                <div className="error-specs">
+                    <span>Wymiary: <strong>{noRacksMatch[2]} mm</strong></span>
+                    <span>Wymagana temp: <strong>{noRacksMatch[3]}°C</strong></span>
+                </div>
+            </div>
+        );
+    }
+
+    if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Brak wolnego miejsca</strong> w regałach spełniających wymagania techniczne.</p>
+            </div>
+        );
+    }
+
+    const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
+    if (productNotFound) {
+        return (
+            <div className="pretty-error">
+                <p><strong>Produkt nieznany</strong> (kod: {productNotFound[1]}).</p>
+            </div>
+        );
+    }
+
+    return <div className="pretty-error">{msg}</div>;
+};
+
 export const parseCSV = (text: string, type: 'racks' | 'products', currentRacks: any[], currentProducts: any[], inventoryData: any[]) => {
     const lines = text.split(/\r?\n/);
     const results: any[] = [];

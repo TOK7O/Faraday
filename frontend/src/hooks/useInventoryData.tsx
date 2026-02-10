@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { inventoryApi } from '../api/inventoryApi';
+import { inventoryApi } from '../api/services/inventoryApi';
 
 export const useInventoryData = () => {
     const [racks, setRacks] = useState([]);
