@@ -194,14 +194,14 @@ const BackupsContent = () => {
                                         <td>{new Date(item.createdAt).toLocaleString()}</td>
                                         <td className="text-right">
                                             <button 
-                                                className="btn-action-ht" 
+                                                className=""
                                                 onClick={() => handleDownload(item.fileName)}
                                                 title={backupT?.download || "Download"}
                                             >
                                                 <Download size={18} />
                                             </button>
                                             <button
-                                                className="btn-action-ht btn-danger"
+                                                className=" btn-danger"
                                                 onClick={() => handleRestoreClick(item)}
                                                 title="Przywróć bazę z tego pliku"
                                                 style={{ color: 'red', marginLeft: '10px' }}
