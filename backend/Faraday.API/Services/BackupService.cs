@@ -173,7 +173,7 @@ namespace Faraday.API.Services
         /// <summary>
         /// Restores the database from an encrypted backup file.
         /// <para>
-        /// WARNING: This is a destructive operation. It terminates active connections
+        /// WATCH OUT: This is a destructive operation. It terminates active connections
         /// and overwrites existing data in the target database.
         /// </para>
         /// </summary>

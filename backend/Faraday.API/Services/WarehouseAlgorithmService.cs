@@ -5,6 +5,10 @@ using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// The "Brain" of the WMS. Determines the optimal storage location for incoming inventory.
+    /// Implements specific strategies (like Bottom-Up filling) and validates physical/environmental constraints.
+    /// </summary>
     public class WarehouseAlgorithmService : IWarehouseAlgorithmService
     {
         private readonly FaradayDbContext _context;
@@ -16,6 +20,12 @@ namespace Faraday.API.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Scans the warehouse for the best available slot for a specific product.
+        /// Considers dimensions, temperature compatibility, and rack weight capacity.
+        /// </summary>
+        /// <param name="productDefinitionId">The ID of the product being received.</param>
+        /// <returns>The allocated RackSlot entity.</returns>
         public async Task<RackSlot> FindBestSlotForProductAsync(int productDefinitionId)
         {
             // Fetch the product definition
@@ -34,9 +44,8 @@ namespace Faraday.API.Services
                             && r.MaxItemHeightMm >= product.HeightMm
                             && r.MaxItemDepthMm >= product.DepthMm
                             // Temperature constraints (Rack must be safe for the product)
-                            // The rack's range must cover the product's requirement.
-                            // So basically, if a product requires 2-6C, then the rack needs
-                            // to provide 2-6, or 3-6, or 4-5, etc.
+                            // The rack's operating range must be a SUBSET of the product's safe range.
+                            // Example: Product needs 0-10°C. Rack operates at 2-5°C. This is valid.
                             && r.MinTemperature >= product.RequiredMinTemp
                             && r.MaxTemperature <= product.RequiredMaxTemp)
                 .OrderBy(r => r.Code)
@@ -52,7 +61,7 @@ namespace Faraday.API.Services
             foreach (var rack in candidateRacks)
             {
                 // Check Rack Weight Limit (Total Rack Load)
-                // We sum up the weight of all items currently in this rack.
+                // We sum up the weight of all items currently in this rack to ensure structural integrity.
                 var currentLoad = rack.Slots
                     .Where(s => s.CurrentItem != null)
                     .Sum(s => s.CurrentItem!.Product.WeightKg);
@@ -63,8 +72,7 @@ namespace Faraday.API.Services
                     continue; 
                 }
 
-                // First Fit (Bottom-Up, Left-to-Right)
-                // Heaviest items should go lower for stability.
+                // First Fit (Bottom-Up, Left-to-Right) strategy.
                 var freeSlot = rack.Slots
                     .Where(s => s.Status == RackSlotStatus.Available && s.CurrentItem == null)
                     .OrderBy(s => s.Y) // Bottom shelves first
@@ -77,6 +85,7 @@ namespace Faraday.API.Services
                     return freeSlot;
                 }
             }
+            
             _logger.LogWarning("No available slots found for product '{ProductName}' (ID: {ProductId}) " +
                                "after checking {RackCount} compatible racks. " +
                                "All racks are either full or would exceed weight limits",

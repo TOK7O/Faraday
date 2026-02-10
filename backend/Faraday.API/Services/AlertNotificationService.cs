@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Service responsible for broadcasting real-time alert notifications to connected clients.
+    /// Uses SignalR to push updates immediately when anomalies are detected.
+    /// </summary>
     public class AlertNotificationService : IAlertNotificationService
     {
         private readonly IHubContext<AlertsHub> _hubContext;
@@ -18,11 +22,13 @@ namespace Faraday.API.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Pushes a new alert to all connected SignalR clients.
+        /// </summary>
         public async Task SendNewAlertNotificationAsync(Alert alert)
         {
             try
             {
-                // Create DTO for frontend (without navigation properties to avoid circular references)
                 var alertDto = new
                 {
                     alert.Id,
@@ -35,6 +41,7 @@ namespace Faraday.API.Services
                 };
 
                 // Broadcast to all connected clients
+                // "NewAlertCreated" is the event name the frontend client must listen for.
                 await _hubContext.Clients.All.SendAsync("NewAlertCreated", alertDto);
                 
                 _logger.LogInformation($"Alert notification sent via SignalR: {alert.Type} - {alert.Message}");

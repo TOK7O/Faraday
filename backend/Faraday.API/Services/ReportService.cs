@@ -6,6 +6,10 @@ using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Service responsible for generating analytical data, dashboards, and operational reports.
+    /// Focuses on read-heavy operations, aggregating data from multiple entities.
+    /// </summary>
     public class ReportService : IReportService
     {
         private readonly FaradayDbContext _context;
@@ -18,6 +22,10 @@ namespace Faraday.API.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Aggregates high-level metrics for the main application dashboard.
+        /// Provides an immediate snapshot of warehouse health (capacity, occupancy, alerts).
+        /// </summary>
         public async Task<DashboardStatsDto> GetDashboardStatsAsync()
         {
             _logger.LogInformation("Calculating dashboard statistics");
@@ -26,7 +34,7 @@ namespace Faraday.API.Services
             var occupiedSlots = await _context.InventoryItems.CountAsync(i => i.Status == ItemStatus.InStock);
             
             // Calculate weight statistics
-            // Note: We sum up the weight of all active items and the capacity of all active racks
+            // We sum up the weight of all active items and the capacity of all active racks
             var totalWeight = await _context.InventoryItems
                 .Include(i => i.Product)
                 .SumAsync(i => i.Product.WeightKg);
@@ -34,9 +42,8 @@ namespace Faraday.API.Services
             var totalCapacity = await _context.Racks
                 .Where(r => r.IsActive)
                 .SumAsync(r => r.MaxWeightKg);
-
-            // Calculate alerts
-            var expirationThreshold = DateTime.UtcNow.AddDays(7); // Default 7 days logic for dashboard
+            
+            var expirationThreshold = DateTime.UtcNow.AddDays(7);
             var expiringCount = await _context.InventoryItems
                 .CountAsync(i => i.ExpirationDate != null && i.ExpirationDate <= expirationThreshold);
 
@@ -57,11 +64,14 @@ namespace Faraday.API.Services
             };
         }
 
+        /// <summary>
+        /// Generates a summarized view of inventory grouped by Product ScanCode.
+        /// Useful for inventory managers to see total counts of a specific product regardless of location.
+        /// </summary>
         public async Task<List<InventorySummaryDto>> GetInventorySummaryAsync()
         {
             _logger.LogInformation("Generating inventory summary report");
-            // Group by product definition to get aggregated view
-            // using SQL groupby for performance optimization
+            // Group by product definition to get aggregated view.
             var summary = await _context.InventoryItems
                 .Include(i => i.Product)
                 .GroupBy(i => new { i.Product.Name, i.Product.ScanCode })
@@ -71,7 +81,7 @@ namespace Faraday.API.Services
                     Barcode = g.Key.ScanCode,
                     TotalQuantity = g.Count(),
                     BlockedQuantity = g.Count(x => x.Status != ItemStatus.InStock),
-                    NextExpirationDate = g.Min(x => x.ExpirationDate)
+                    NextExpirationDate = g.Min(x => x.ExpirationDate) // Earliest expiration date
                 })
                 .OrderBy(x => x.ProductName)
                 .ToListAsync();
@@ -79,12 +89,16 @@ namespace Faraday.API.Services
             return summary;
         }
 
+        /// <summary>
+        /// Identifies inventory items that are approaching their expiration date within a specified threshold.
+        /// </summary>
         public async Task<List<ExpiringItemDto>> GetExpiringItemsAsync(int daysThreshold)
         {
             _logger.LogInformation("Fetching expiring items with threshold: {Days} days", daysThreshold);
             var thresholdDate = DateTime.UtcNow.AddDays(daysThreshold);
 
             // Filter items approaching expiration date
+            // Includes slot/rack details to help operators physically locate the items for removal/sale.
             var items = await _context.InventoryItems
                 .Include(i => i.Product)
                 .Include(i => i.Slot)
@@ -105,6 +119,9 @@ namespace Faraday.API.Services
             return items;
         }
 
+        /// <summary>
+        /// Analyzes the efficiency of space and weight usage per rack.
+        /// </summary>
         public async Task<List<RackUtilizationDto>> GetRackUtilizationAsync()
         {
             _logger.LogInformation("Calculating rack utilization statistics");
@@ -123,8 +140,7 @@ namespace Faraday.API.Services
                         .Sum(s => s.CurrentItem!.Product.WeightKg)
                 })
                 .ToListAsync();
-
-            // Map to DTO
+            
             return racks.Select(r => new RackUtilizationDto
             {
                 RackCode = r.Code,
@@ -140,8 +156,11 @@ namespace Faraday.API.Services
                     : 0
             }).OrderByDescending(r => r.WeightUtilizationPercentage).ToList();
         }
+
+        /// <summary>
+        /// Retrieves historical sensor data for temperature analysis.
+        /// </summary>
         public async Task<List<TemperatureHistoryDto>> GetTemperatureHistoryAsync(
-            
             int? rackId = null, 
             DateTime? fromDate = null, 
             DateTime? toDate = null, 
@@ -149,7 +168,6 @@ namespace Faraday.API.Services
         {
             _logger.LogInformation("Fetching temperature history. RackId: {RackId}, FromDate: {FromDate}, ToDate: {ToDate}, Limit: {Limit}", 
                 rackId, fromDate?.ToString("yyyy-MM-dd") ?? "ALL", toDate?.ToString("yyyy-MM-dd") ?? "NOW", limit);
-            // Start with base query
             var query = _context.TemperatureReadings
                 .Include(t => t.Rack)
                 .AsQueryable();
@@ -187,6 +205,9 @@ namespace Faraday.API.Services
             return readings;
         }
 
+        /// <summary>
+        /// Retrieves historical sensor data for weight analysis.
+        /// </summary>
         public async Task<List<WeightHistoryDto>> GetWeightHistoryAsync(
             int? rackId = null, 
             DateTime? fromDate = null, 
@@ -232,6 +253,9 @@ namespace Faraday.API.Services
             return readings;
         }
 
+        /// <summary>
+        /// Retrieves the audit log of all alerts (both resolved and unresolved).
+        /// </summary>
         public async Task<List<AlertHistoryDto>> GetAlertHistoryAsync(
             int? rackId = null, 
             DateTime? fromDate = null, 
@@ -276,6 +300,9 @@ namespace Faraday.API.Services
             return alerts;
         }
 
+        /// <summary>
+        /// Fetches only currently unresolved alerts for operational dashboard displays.
+        /// </summary>
         public async Task<List<ActiveAlertDto>> GetActiveAlertsAsync()
         {
             _logger.LogInformation("Fetching active unresolved alerts");
@@ -297,6 +324,10 @@ namespace Faraday.API.Services
 
             return activeAlerts;
         }
+
+        /// <summary>
+        /// Reports instances where a rack's sensor readings violated the rack's own configured limits.
+        /// </summary>
         public async Task<List<RackTemperatureViolationDto>> GetRackTemperatureViolationsAsync(
             int? rackId = null,
             DateTime? fromDate = null,
@@ -357,6 +388,9 @@ namespace Faraday.API.Services
             }).ToList();
         }
 
+        /// <summary>
+        /// Reports instances where environmental conditions violated the safety requirements of the stored products.
+        /// </summary>
         public async Task<List<ItemTemperatureViolationDto>> GetItemTemperatureViolationsAsync(
             DateTime? fromDate = null,
             DateTime? toDate = null)
@@ -366,7 +400,6 @@ namespace Faraday.API.Services
                 toDate?.ToString("yyyy-MM-dd") ?? "NOW");
             
             // Build query for temperature readings that violate product requirements
-            // This is a complex query - we need to join readings with items stored at that time
             var query = from reading in _context.TemperatureReadings
                         join rack in _context.Racks on reading.RackId equals rack.Id
                         join slot in _context.RackSlots on rack.Id equals slot.RackId
@@ -425,6 +458,9 @@ namespace Faraday.API.Services
             
         }
 
+        /// <summary>
+        /// Generates a massive, flat-list report of every single item in the warehouse with all related details.
+        /// </summary>
         public async Task<List<FullInventoryDto>> GetFullInventoryReportAsync()
         {
             _logger.LogInformation("Generating full inventory report...");

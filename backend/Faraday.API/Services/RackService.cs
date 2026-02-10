@@ -9,6 +9,11 @@ using CsvHelper.Configuration;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Manages the physical storage infrastructure (Racks) of the warehouse.
+    /// Handles the lifecycle of Racks, including automatic slot generation, 
+    /// capacity validation, and bulk import operations.
+    /// </summary>
     public class RackService : IRackService
     {
         private readonly FaradayDbContext _context;
@@ -67,6 +72,9 @@ namespace Faraday.API.Services
             return rack == null ? null : MapToDto(rack);
         }
 
+        /// <summary>
+        /// Creates a new Rack definition and automatically generates the grid of storage slots.
+        /// </summary>
         public async Task<RackDto> CreateRackAsync(RackCreateDto dto)
         {
             if (await _context.Racks.AnyAsync(r => r.Code == dto.Code))
@@ -89,6 +97,8 @@ namespace Faraday.API.Services
                 IsActive = true
             };
             
+            // Automatically generate slots based on the grid dimensions (Rows x Columns).
+            // This initializes the rack as fully empty and available.
             for (int x = 1; x <= dto.Columns; x++)
             {
                 for (int y = 1; y <= dto.Rows; y++)
@@ -109,6 +119,11 @@ namespace Faraday.API.Services
             return MapToDto(rack);
         }
         
+        /// <summary>
+        /// Updates an existing Rack's properties.
+        /// Includes strict validation to ensure that changing the rack's physical constraints (e.g., shrinking dimensions)
+        /// does not conflict with items currently stored in it.
+        /// </summary>
         public async Task<RackDto> UpdateRackAsync(int id, RackUpdateDto dto)
         {
             var rack = await _context.Racks
@@ -123,6 +138,7 @@ namespace Faraday.API.Services
             }
 
             // Validate new constraints against currently stored items
+            // We cannot allow an update that renders the current inventory physically impossible/unsafe.
             var storedItems = rack.Slots
                 .Where(s => s.CurrentItem != null)
                 .Select(s => s.CurrentItem!.Product)
@@ -187,10 +203,14 @@ namespace Faraday.API.Services
             return MapToDto(rack);
         }
 
+        /// <summary>
+        /// Soft-deletes a rack.
+        /// Renames the rack Code (e.g., "ARCHIVED: R-01") to allow the physical label/barcode 
+        /// to be reused for a new rack in the future.
+        /// </summary>
         public async Task DeleteRackAsync(int id)
         {
             // Check if Rack is empty (cannot delete if not)
-            // Optimization: Check directly in DB to avoid loading all slots into memory
             bool hasItems = await _context.Racks
                 .Where(r => r.Id == id)
                 .SelectMany(r => r.Slots)
@@ -198,7 +218,6 @@ namespace Faraday.API.Services
 
             if (hasItems)
             {
-                // Retrieve code only for the error message
                 var rackCode = await _context.Racks
                     .Where(r => r.Id == id)
                     .Select(r => r.Code)
@@ -221,7 +240,7 @@ namespace Faraday.API.Services
                 string newCode = $"ARCHIVED: {originalCode}";
                 int counter = 1;
 
-                // We must use IgnoreQueryFilters to check against other archived items too
+                // We must use IgnoreQueryFilters to check against other archived items
                 while (await _context.Racks.IgnoreQueryFilters().AnyAsync(r => r.Code == newCode))
                 {
                     newCode = $"ARCHIVED_{counter}: {originalCode}";
@@ -238,6 +257,10 @@ namespace Faraday.API.Services
             }
         }
 
+        /// <summary>
+        /// Imports multiple rack definitions from a CSV stream.
+        /// </summary>
+        /// <returns>Success count, error count, and a list of error messages.</returns>
         public async Task<(int successCount, int errorCount, List<string> errors)> ImportRacksFromCsvAsync(Stream fileStream)
         {
             var errors = new List<string>();
@@ -252,7 +275,7 @@ namespace Faraday.API.Services
                 Delimiter = ";",
                 Comment = '#',
                 AllowComments = true,
-                HasHeaderRecord = false, // # serves as a header, so we skip this
+                HasHeaderRecord = false,
                 MissingFieldFound = null,
                 BadDataFound = null
             };
@@ -287,6 +310,7 @@ namespace Faraday.API.Services
             // Duplicate validation
             
             // Remove duplicates within the file based on Code
+            // So if the user pasted the same rack twice in the CSV, we will take the first one.
             var distinctDtos = validDtos.DistinctBy(d => d.Code).ToList();
             if (distinctDtos.Count < validDtos.Count)
             {

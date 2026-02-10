@@ -4,6 +4,10 @@ using Microsoft.Extensions.Options;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Provider required by the logging infrastructure to create instances of the custom SignalR logger.
+    /// This allows the application to inject the real-time logging capability into the standard .NET logging pipeline.
+    /// </summary>
     public class SignalRLoggerProvider : ILoggerProvider
     {
         private readonly IServiceProvider _serviceProvider;
@@ -23,6 +27,11 @@ namespace Faraday.API.Services
         public void Dispose() { }
     }
 
+    /// <summary>
+    /// Custom logger implementation that intercepts log messages and broadcasts them in real-time 
+    /// to connected clients via SignalR. 
+    /// Meant for live console monitoring on the frontend.
+    /// </summary>
     public class SignalRLogger : ILogger
     {
         private readonly string _categoryName;
@@ -60,12 +69,13 @@ namespace Faraday.API.Services
                 EventId = eventId.Id
             };
 
-            // Fire and forget - use background task to avoid blocking logging pipeline
+            // Fire and forget strategy:
+            // We offload the broadcasting to a background thread to ensure that the logging operation 
+            // is non-blocking and does not impact the performance of the main request processing pipeline.
             Task.Run(async () =>
             {
                 try
                 {
-                    // Create scope for each log to get fresh service instance
                     using var scope = _serviceProvider.CreateScope();
                     var logsService = scope.ServiceProvider.GetService<ILogsService>();
             
@@ -76,7 +86,10 @@ namespace Faraday.API.Services
                 }
                 catch
                 {
-                    // Suppress errors to avoid logging loop
+                    // Critical safety measure here!: We strictly suppress all exceptions here.
+                    // If the logging service itself fails (e.g., SignalR is down), we cannot "log" that error 
+                    // using this same logger, as it would trigger an infinite recursion loop (StackOverflow) 
+                    // and crash the application.
                 }
             });
         }
