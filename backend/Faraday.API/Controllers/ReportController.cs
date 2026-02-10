@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Faraday.API.Controllers
 {
+    /// <summary>
+    /// API Controller responsible for generating analytical reports and dashboard metrics.
+    /// Aggregates data from various sources (inventory, sensors, logs) to provide operational insights.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -19,6 +23,9 @@ namespace Faraday.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves high-level operational statistics for the main dashboard.
+        /// </summary>
         [HttpGet("dashboard-stats")]
         public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats()
         {
@@ -27,6 +34,9 @@ namespace Faraday.API.Controllers
             return Ok(stats);
         }
 
+        /// <summary>
+        /// Retrieves an aggregated summary of inventory grouped by product.
+        /// </summary>
         [HttpGet("inventory-summary")]
         public async Task<ActionResult<IEnumerable<InventorySummaryDto>>> GetInventorySummary()
         {
@@ -37,8 +47,6 @@ namespace Faraday.API.Controllers
         
         /// <summary>
         /// Generates complete warehouse inventory report with full details of every item currently in stock.
-        /// Includes location, status, expiration dates, temperature conditions, and hazard information.
-        /// Sorted by rack code and slot position for easy physical verification.
         /// </summary>
         [HttpGet("full-inventory")]
         public async Task<ActionResult<IEnumerable<FullInventoryDto>>> GetFullInventory()
@@ -48,6 +56,9 @@ namespace Faraday.API.Controllers
             return Ok(inventory);
         }
 
+        /// <summary>
+        /// Retrieves a list of inventory items that are approaching their expiration date.
+        /// </summary>
         [HttpGet("expiring-items")]
         public async Task<ActionResult<IEnumerable<ExpiringItemDto>>> GetExpiringItems([FromQuery] int days = 7)
         {
@@ -56,6 +67,10 @@ namespace Faraday.API.Controllers
             return Ok(items);
         }
 
+        /// <summary>
+        /// Retrieves space and weight utilization statistics for all active racks.
+        /// Helps identify capacity bottlenecks or underutilized storage areas.
+        /// </summary>
         [HttpGet("rack-utilization")]
         public async Task<ActionResult<IEnumerable<RackUtilizationDto>>> GetRackUtilization()
         {
@@ -66,7 +81,7 @@ namespace Faraday.API.Controllers
         
         /// <summary>
         /// Retrieves temperature sensor history with optional filters.
-        /// Query params: rackId, fromDate (ISO 8601), toDate (ISO 8601), limit (default 100, max 1000)
+        /// Query params: rackId, fromDate, toDate, limit (default 100, max 1000)
         /// </summary>
         [HttpGet("temperature-history")]
         public async Task<ActionResult<IEnumerable<TemperatureHistoryDto>>> GetTemperatureHistory(
@@ -87,7 +102,7 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Retrieves weight sensor history with optional filters.
-        /// Query params: rackId, fromDate (ISO 8601), toDate (ISO 8601), limit (default 100, max 1000)
+        /// Query params: rackId, fromDate, toDate, limit (default 100, max 1000)
         /// </summary>
         [HttpGet("weight-history")]
         public async Task<ActionResult<IEnumerable<WeightHistoryDto>>> GetWeightHistory(
@@ -107,7 +122,6 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Retrieves complete alert history (resolved and unresolved).
-        /// Query params: rackId, fromDate (ISO 8601), toDate (ISO 8601)
         /// </summary>
         [HttpGet("alert-history")]
         public async Task<ActionResult<IEnumerable<AlertHistoryDto>>> GetAlertHistory(
@@ -133,7 +147,6 @@ namespace Faraday.API.Controllers
         
         /// <summary>
         /// Retrieves temperature violations for racks (where recorded temp was outside rack's allowed range).
-        /// Query params: rackId, fromDate (ISO 8601), toDate (ISO 8601), limit (default 200, max 1000)
         /// </summary>
         [HttpGet("rack-temperature-violations")]
         public async Task<ActionResult<IEnumerable<RackTemperatureViolationDto>>> GetRackTemperatureViolations(
@@ -152,7 +165,6 @@ namespace Faraday.API.Controllers
         /// <summary>
         /// Retrieves temperature violations for stored items (where recorded temp was outside product's required range).
         /// Shows which products were exposed to improper temperatures.
-        /// Query params: fromDate (ISO 8601), toDate (ISO 8601)
         /// </summary>
         [HttpGet("item-temperature-violations")]
         public async Task<ActionResult<IEnumerable<ItemTemperatureViolationDto>>> GetItemTemperatureViolations(

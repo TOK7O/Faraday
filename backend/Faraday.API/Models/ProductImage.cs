@@ -13,8 +13,7 @@ namespace Faraday.API.Models
         [Required]
         [MaxLength(500)]
         public required string ImagePath { get; set; }
-
-        // Feature vector extracted from the image (serialized as JSON array of floats)
+        
         [Required]
         [MaxLength(10000)]
         public required string FeatureVector { get; set; }

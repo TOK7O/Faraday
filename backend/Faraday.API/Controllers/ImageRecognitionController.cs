@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Faraday.API.Controllers
 {
+    /// <summary>
+    /// API Controller for handling computer vision operations.
+    /// Manages the uploading of reference images for matching and the actual product recognition process.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -23,7 +27,8 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Upload reference images for a product (by scan code).
-        /// Maximum 10 images per product.
+        /// These images serve as the basis for the visual recognition algorithm.
+        /// Maximum 10 images per product are allowed to maintain performance.
         /// </summary>
         [HttpPost("upload-reference")]
         public async Task<ActionResult<UploadResultDto>> UploadReferenceImages([FromForm] UploadReferenceImagesDto dto)
@@ -32,6 +37,7 @@ namespace Faraday.API.Controllers
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
                 _logger.LogInformation("Reference image upload initiated for product: {ScanCode} by user {UserId}", dto.ScanCode, userId);
+                
                 var result = await _imageRecognitionService.UploadReferenceImagesAsync(
                     dto.ScanCode, 
                     dto.Images, 
@@ -48,6 +54,7 @@ namespace Faraday.API.Controllers
             }
             catch (Exception ex)
             {
+                // If something unexpected breaks during file I/O
                 return StatusCode(500, new UploadResultDto 
                 { 
                     Success = false, 
@@ -58,7 +65,8 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Recognize a product from an uploaded image.
-        /// Returns product details and confidence score if match found.
+        /// Compares the uploaded image against the reference library.
+        /// Returns product details and confidence score if a match is found.
         /// </summary>
         [HttpPost("recognize")]
         public async Task<ActionResult<RecognitionResultDto>> RecognizeProduct([FromForm] RecognizeProductDto dto)
@@ -75,6 +83,7 @@ namespace Faraday.API.Controllers
                                             result.Product?.Name, result.ConfidenceScore);
                     return Ok(result);
                 }
+                
                 _logger.LogWarning("Product recognition failed: {Message}", result.Message);
                 return NotFound(result);
             }
@@ -89,7 +98,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Get all reference images for a product by its ID.
+        /// Get all reference images associated with a specific product ID.
         /// </summary>
         [HttpGet("references/product/{productId}")]
         public async Task<ActionResult<List<ProductImageDto>>> GetReferenceImagesByProductId(int productId)
@@ -107,7 +116,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Get all reference images for a product by its scan code.
+        /// Get all reference images associated with a product scan code (barcode/QR).
         /// </summary>
         [HttpGet("references/scancode/{scanCode}")]
         public async Task<ActionResult<List<ProductImageDto>>> GetReferenceImagesByScanCode(string scanCode)
@@ -125,7 +134,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Get count of reference images for a specific product.
+        /// Get count of existing reference images for a specific product.
         /// </summary>
         [HttpGet("references/count/{productId}")]
         public async Task<ActionResult<int>> GetReferenceImageCount(int productId)
@@ -136,9 +145,10 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Delete a specific reference image by its ID.
+        /// Restricted to Administrators to prevent accidental data loss of training sets.
         /// </summary>
         [HttpDelete("reference/{imageId}")]
-        [Authorize(Roles = "Administrator,Manager")]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteReferenceImage(int imageId)
         {
             try
@@ -158,28 +168,32 @@ namespace Faraday.API.Controllers
             }
         }
         
-        //// <summary>
-        /// Get the actual image file by its unique GUID.
-        /// Returns the image as a downloadable file.
+        /// <summary>
+        /// Get the actual image file content by its unique GUID.
+        /// Returns the image as a downloadable binary stream.
         /// </summary>
+        /// <remarks>
+        /// This endpoint is anonymous to allow embedding images in `img` tags 
+        /// where setting Authorization headers might be difficult or impossible (e.g. standard HTML).
+        /// Security relies on the GUID being hard to guess, as it's nearly impossible.
+        /// </remarks>
         [HttpGet("image/{imageGuid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetImageFile(Guid imageGuid)
         {
             try
             {
-                // Przekazujemy GUID do serwisu
                 var (fileStream, contentType, fileName) = await _imageRecognitionService.GetImageFileAsync(imageGuid);
-
-                // Zwracamy plik
                 return File(fileStream, contentType, fileName, enableRangeProcessing: true);
             }
             catch (KeyNotFoundException ex)
             {
+                // Database record not found
                 return NotFound(new { Message = ex.Message });
             }
             catch (FileNotFoundException ex)
             {
+                // Physical file missing from disk
                 return NotFound(new { Message = ex.Message });
             }
             catch (Exception ex)

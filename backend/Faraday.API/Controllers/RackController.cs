@@ -5,9 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Faraday.API.Controllers
 {
+    /// <summary>
+    /// API Controller for managing the physical storage infrastructure (Racks).
+    /// Handles CRUD operations, configuration of physical constraints (dimensions, weight, temperature),
+    /// and bulk imports via CSV.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Require JWT for all endpoints by default
+    [Authorize]
     public class RackController : ControllerBase
     {
         private readonly IRackService _rackService;
@@ -20,6 +25,9 @@ namespace Faraday.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves a list of all defined racks in the warehouse.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RackDto>>> GetAll()
         {
@@ -28,6 +36,9 @@ namespace Faraday.API.Controllers
             return Ok(racks);
         }
 
+        /// <summary>
+        /// Retrieves details of a specific rack by its ID.
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<RackDto>> GetById(int id)
         {
@@ -40,6 +51,9 @@ namespace Faraday.API.Controllers
             return Ok(rack);
         }
 
+        /// <summary>
+        /// Creates a new rack definition.
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RackDto>> Create(RackCreateDto dto)
@@ -53,11 +67,18 @@ namespace Faraday.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Rack code already exists
+                // Rack code already exists or validation failed
                 return BadRequest(ex.Message);
             }
         }
         
+        /// <summary>
+        /// Updates an existing rack's configuration.
+        /// <para>
+        /// NOTE: The service layer performs strict validation. If the new configuration
+        /// conflicts with items currently stored in the rack, an exception is thrown.
+        /// </para>
+        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RackDto>> Update(int id, RackUpdateDto dto)
@@ -75,21 +96,36 @@ namespace Faraday.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Validation failed - new constraints incompatible with current inventory
                 return Conflict(ex.Message);
             }
         }
 
+        /// <summary>
+        /// Soft-deletes a rack from the system.
+        /// Only allowed if the rack is empty.
+        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
-            _logger.LogInformation("Rack deletion initiated for ID: {RackId}", id);
-            await _rackService.DeleteRackAsync(id);
-            _logger.LogInformation("Rack soft-deleted successfully. ID: {RackId}", id);
-            return NoContent();
+            try
+            {
+                _logger.LogInformation("Rack deletion initiated for ID: {RackId}", id);
+                await _rackService.DeleteRackAsync(id);
+                _logger.LogInformation("Rack soft-deleted successfully. ID: {RackId}", id);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Cannot delete rack with items
+                return BadRequest(ex.Message);
+            }
         }
 
+        /// <summary>
+        /// Bulk imports racks from a CSV file.
+        /// Returns a summary of success/failure counts.
+        /// </summary>
         [HttpPost("import")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> ImportCsv(IFormFile? file)
@@ -103,12 +139,16 @@ namespace Faraday.API.Controllers
             {
                 return BadRequest("File must be a CSV.");
             }
+            
             _logger.LogInformation("Rack CSV import initiated. Filename: {FileName}", file.FileName);
+            
             using var stream = file.OpenReadStream();
             var result = await _rackService.ImportRacksFromCsvAsync(stream);
+            
             _logger.LogInformation("Rack CSV import completed. " +
                                    "Success: {SuccessCount}, Errors: {ErrorCount}", 
                                     result.successCount, result.errorCount);
+            
             return Ok(new
             {
                 Message = "Import completed",

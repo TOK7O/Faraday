@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Faraday.API.Controllers
 {
+    /// <summary>
+    /// API Controller handling physical warehouse operations.
+    /// Manages the lifecycle of inventory items: Receiving (Inbound), Shipping (Outbound), and Relocation (Move).
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -22,6 +26,9 @@ namespace Faraday.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Helper method to extract the authenticated user's ID from JWT claims.
+        /// </summary>
         private int GetCurrentUserId()
         {
             var idClaim = User.FindFirst("id");
@@ -32,6 +39,10 @@ namespace Faraday.API.Controllers
             throw new UnauthorizedAccessException("Invalid token: User ID missing.");
         }
 
+        /// <summary>
+        /// Processes an incoming item receipt (Inbound).
+        /// Uses the allocation algorithm to automatically assign the best rack slot.
+        /// </summary>
         [Authorize]
         [HttpPost("inbound")]
         public async Task<ActionResult<OperationResultDto>> Inbound(OperationInboundDto request)
@@ -51,6 +62,8 @@ namespace Faraday.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                // This usually indicates that the warehouse is full or no suitable rack was found
+                // for the product's constraints (temp/size), implying a logical conflict rather than a bad request.
                 _logger.LogWarning("Inbound operation failed - {Reason}", ex.Message);
                 return Conflict(ex.Message);
             }
@@ -61,6 +74,10 @@ namespace Faraday.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Processes an item shipment (Outbound).
+        /// Applies FIFO logic to select the oldest available stock for the given barcode.
+        /// </summary>
         [Authorize]
         [HttpPost("outbound")]
         public async Task<ActionResult<OperationResultDto>> Outbound(OperationOutboundDto request)
@@ -75,6 +92,8 @@ namespace Faraday.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                // In Outbound context, InvalidOperation usually means that there is no such item.
+                // Therefore, 404 NotFound is the appropriate response code.
                 _logger.LogWarning("Outbound operation failed - {Reason}", ex.Message);
                 return NotFound(ex.Message);
             }
@@ -85,6 +104,10 @@ namespace Faraday.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Moves an item from one specific slot to another (Internal Movement).
+        /// Validates that the target slot can physically accommodate the item.
+        /// </summary>
         [Authorize]
         [HttpPost("move")]
         public async Task<ActionResult<OperationResultDto>> Move(OperationMovementDto request)
@@ -99,11 +122,14 @@ namespace Faraday.API.Controllers
             }
             catch (KeyNotFoundException ex)
             {
+                // Returns 404 if the Source/Target rack or slot coordinates do not exist.
                 _logger.LogWarning("Move operation failed - {Reason}", ex.Message);
                 return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
+                // Returns 400 Bad Request if the move violates rules 
+                // (e.g., target slot occupied, weight limit exceeded, temperature mismatch).
                 _logger.LogWarning("Move operation validation failed - {Reason}", ex.Message);
                 return BadRequest(ex.Message);
             }
@@ -114,6 +140,9 @@ namespace Faraday.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves the operational history log.
+        /// </summary>
         [HttpGet("history")]
         public async Task<ActionResult<IEnumerable<OperationLogDto>>> GetHistory([FromQuery] int? limit = null)
         {

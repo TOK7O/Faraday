@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Faraday.API.Controllers
 {
+    /// <summary>
+    /// API Controller for managing the Product Catalog.
+    /// Handles CRUD operations, search by scan code, and bulk CSV imports.
+    /// Distinguishes between "Product Definitions" (this controller) and "Inventory Items" (physical instances).
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -21,6 +26,9 @@ namespace Faraday.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves the full list of active product definitions.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll()
         {
@@ -29,6 +37,9 @@ namespace Faraday.API.Controllers
             return Ok(products);
         }
 
+        /// <summary>
+        /// Retrieves details for a specific product by its database ID.
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetById(int id)
         {
@@ -41,6 +52,9 @@ namespace Faraday.API.Controllers
             return Ok(product);
         }
 
+        /// <summary>
+        /// Lookup a product by its unique barcode or QR code (ScanCode).
+        /// </summary>
         [HttpGet("scanCode/{scanCode}")]
         public async Task<ActionResult<ProductDto>> GetScanCode(string scanCode)
         {
@@ -53,6 +67,10 @@ namespace Faraday.API.Controllers
             return Ok(product);
         }
 
+        /// <summary>
+        /// Creates a new product definition.
+        /// Restricted to Administrators to ensure catalog consistency.
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ProductDto>> Create(ProductCreateDto dto)
@@ -61,9 +79,11 @@ namespace Faraday.API.Controllers
             {
                 _logger.LogInformation("Product creation initiated: {ProductName}", dto.Name);
                 var createdProduct = await _productService.CreateProductAsync(dto);
+                
                 _logger.LogInformation("Product created successfully: " +
                                        "{ProductName} (ID: {ProductId})", 
                                         createdProduct.Name, createdProduct.Id);
+                
                 return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
             }
             catch (InvalidOperationException ex)
@@ -72,6 +92,14 @@ namespace Faraday.API.Controllers
             }
         }
         
+        /// <summary>
+        /// Updates an existing product definition.
+        /// <para>
+        /// Remember that this operation triggers complex validation in the service layer.
+        /// If the update (e.g., changing dimensions or temp requirements) conflicts with 
+        /// physical items currently stored in racks, the service will throw an exception.
+        /// </para>
+        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ProductDto>> Update(int id, ProductUpdateDto dto)
@@ -88,11 +116,14 @@ namespace Faraday.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Validation failed - new specs incompatible with current rack placements
                 return Conflict(ex.Message);
             }
         }
 
+        /// <summary>
+        /// Soft-deletes a product.
+        /// The service layer handles archiving the ScanCode to allow reuse.
+        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
@@ -103,6 +134,10 @@ namespace Faraday.API.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Bulk import of products via CSV file.
+        /// Validation results (successes/errors) are returned in the response body.
+        /// </summary>
         [HttpPost("import")]
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> ImportCsv(IFormFile? file)
@@ -116,12 +151,16 @@ namespace Faraday.API.Controllers
             {
                 return BadRequest("File must be a CSV.");
             }
+            
             _logger.LogInformation("Product CSV import initiated. Filename: {FileName}", file.FileName);
+            
             using var stream = file.OpenReadStream();
             var result = await _productService.ImportProductsFromCsvAsync(stream);
+            
             _logger.LogInformation("Product CSV import completed. Success: " +
                                    "{SuccessCount}, Errors: {ErrorCount}", 
                                     result.successCount, result.errorCount);
+            
             return Ok(new
             {
                 Message = "Import completed",
