@@ -130,7 +130,7 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   font-family: "Space Grotesk", sans-serif;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
-    0 0 20px color-mix(in srgb, var(--accent-primary), transparent 80%);
+  0 0 20px color-mix(in srgb, var(--accent-primary), transparent 80%);
   animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
   &[data-state='delayed-open'] {
