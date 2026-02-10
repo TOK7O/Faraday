@@ -9,16 +9,12 @@ import {
     getRackUtilization,
     getTemperatureHistory,
     getWeightHistory,
-    getRackTemperatureViolations,
-    getItemTemperatureViolations,
+    getAlertHistory,
     getActiveAlerts,
-    getAlertHistory
+    getRackTemperatureViolations,
+    getItemTemperatureViolations
 } from '@/api/axios';
-import type {
-    ActiveAlertDto, AlertHistoryDto, DashboardStatsDto, ExpiringItemDto,
-    FullInventoryDto, InventorySummaryDto, ItemTemperatureViolationDto,
-    RackTemperatureViolationDto, RackUtilizationDto, TemperatureHistoryDto, WeightHistoryDto
-} from "@/api/services/reportService";
+
 import {
     BarChart3, Box, AlertTriangle, Thermometer,
     Scale, RefreshCw
@@ -38,17 +34,17 @@ const ReportsContent = () => {
     const [limit] = useState<number>(100);
 
     // Data States
-    const [stats, setStats] = useState<DashboardStatsDto | null>(null);
-    const [inventorySummary, setInventorySummary] = useState<InventorySummaryDto[]>([]);
-    const [fullInventory, setFullInventory] = useState<FullInventoryDto[]>([]);
-    const [expiringItems, setExpiringItems] = useState<ExpiringItemDto[]>([]);
-    const [rackUtilization, setRackUtilization] = useState<RackUtilizationDto[]>([]);
-    const [tempHistory, setTempHistory] = useState<TemperatureHistoryDto[]>([]);
-    const [weightHistory, setWeightHistory] = useState<WeightHistoryDto[]>([]);
-    const [alertHistory, setAlertHistory] = useState<AlertHistoryDto[]>([]);
-    const [activeAlerts, setActiveAlerts] = useState<ActiveAlertDto[]>([]);
-    const [rackViolations, setRackViolations] = useState<RackTemperatureViolationDto[]>([]);
-    const [itemViolations, setItemViolations] = useState<ItemTemperatureViolationDto[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [inventorySummary, setInventorySummary] = useState<any[]>([]);
+    const [fullInventory, setFullInventory] = useState<any[]>([]);
+    const [expiringItems, setExpiringItems] = useState<any[]>([]);
+    const [rackUtilization, setRackUtilization] = useState<any[]>([]);
+    const [tempHistory, setTempHistory] = useState<any[]>([]);
+    const [weightHistory, setWeightHistory] = useState<any[]>([]);
+    const [alertHistory, setAlertHistory] = useState<any[]>([]);
+    const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+    const [rackViolations, setRackViolations] = useState<any[]>([]);
+    const [itemViolations, setItemViolations] = useState<any[]>([]);
 
     useEffect(() => {
         fetchDashboardStats();
