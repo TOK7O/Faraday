@@ -363,20 +363,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
     }
   }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
-    gap: 1.5rem;
-
-    @media (min-width: 640px) {
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-
-    @media (min-width: 1400px) {
-      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-    }
-  }
 }
 
 .btn-primary-ht {
@@ -1065,4 +1051,9 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+.stats-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1rem;
 }

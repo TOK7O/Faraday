@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
 
 import "./InventoryContent.scss";
+import "./StatsTab.scss";
 
 const formatMessageNumbers = (msg: string) => {
     if (!msg) return msg;
@@ -780,7 +781,7 @@ const InventoryContent = () => {
                                                 title="Przesuń towar"
                                                 style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
                                             >
-                                                <Move size={14} /> <span>Przesuń</span>
+                                                <span>Przesuń</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1012,8 +1013,7 @@ const InventoryContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht import-modal-ht">
                         <div className="modal-header">
-                            <FileUp size={20} className="header-icon" style={{ color: 'var(--accent-primary)', filter: 'drop-shadow(0 0 8px var(--accent-primary))' }} />
-                            <Dialog.Title>Paczka importowa: {importType === 'racks' ? 'Regały' : 'Produkty'}</Dialog.Title>
+                            <Dialog.Title>Import: {importType === 'racks' ? 'Regały' : 'Produkty'}</Dialog.Title>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
                             </Dialog.Close>
@@ -1023,7 +1023,7 @@ const InventoryContent = () => {
                             {batchProgress ? (
                                 <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '24px' }}>
                                     <Spinner size={40} />
-                                    <p style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>Przetwarzanie pakietu...</p>
+                                    <p style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>Przetwarzanie importu...</p>
                                     <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>{batchProgress.current} z {batchProgress.total} operacji zakończonych</p>
                                     <div style={{ width: '100%', maxWidth: '400px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', margin: '2rem auto 0', overflow: 'hidden' }}>
                                         <div style={{
@@ -1217,7 +1217,6 @@ const InventoryContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '600px' }}>
                         <div className="modal-header">
-                            <FileUp size={20} className="header-icon" />
                             <Dialog.Title>Wynik importu CSV</Dialog.Title>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
