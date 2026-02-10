@@ -1,8 +1,8 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import {
     Database, Plus, RefreshCw, CheckCircle2,
-    AlertCircle, Download, FileArchive, AlertTriangle,
-    ShieldCheck, Clock, HardDrive
+    AlertCircle, Download, AlertTriangle,
+    ShieldCheck, Clock
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { getBackupHistory, createBackup, downloadBackup, restoreBackup } from '@/api/axios';
@@ -153,7 +153,7 @@ const BackupsContent = () => {
                             <Clock size={18} className="text-accent" />
                             <h2>Snapshot History</h2>
                         </div>
-                        <button className="btn-refresh-icon" onClick={fetchHistory} disabled={historyLoading}>
+                        <button className="btn-icon" onClick={fetchHistory} disabled={historyLoading}>
                             <RefreshCw size={16} className={historyLoading ? "animate-spin" : ""} />
                         </button>
                     </div>

@@ -217,3 +217,17 @@
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
   }
 }
+.btn-icon {
+  background: rgba(var(--bg-input-rgb), 0.5);
+  border: 1px solid var(--border-input);
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: 0.2s;
+
+  &:hover {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+}
