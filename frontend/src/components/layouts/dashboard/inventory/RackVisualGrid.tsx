@@ -42,7 +42,7 @@ export const RackVisualGrid = memo(({ rack, inventory, onSlotClick }: { rack: Ra
                                             <>
                                                 <p className="name">{item.productName}</p>
                                                 <span className="status">Waga: {item.productWeightKg}kg</span>
-                                                <div className="hint">Kliknij, aby zobaczyć szczegóły</div>
+                                                {/*<div className="hint">Kliknij, aby zobaczyć szczegóły</div>*/}
                                             </>
                                         ) : (
                                             <p className="name empty-text">Wolne miejsce</p>
