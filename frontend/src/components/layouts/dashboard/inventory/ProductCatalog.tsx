@@ -1,6 +1,7 @@
 import { Package, Weight, Thermometer, AlertTriangle, CheckCircle2, Trash2, Pencil } from "lucide-react";
 import type { Product } from "./InventoryContent.types";
 import { SkeletonGrid, ProductListSkeleton } from "./InventorySkeletons";
+import "./ProductCatalog.scss";
 
 interface ProductCatalogProps {
     products: Product[];
@@ -12,67 +13,36 @@ interface ProductCatalogProps {
 
 export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProduct, isLoading = false }: ProductCatalogProps) => {
 
-    // Widok Siatki (Grid)
     if (viewMode === 'grid') {
         return (
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+            <div className="product-grid-view">
                 {products.map((p) => (
-                    <div className="glass-card fade-in-up" key={p.id} style={{ padding: '1.2rem', display: 'flex', gap: '1.2rem', alignItems: 'center', position: 'relative' }}>
-                        <div style={{ width: '50px', height: '50px', background: 'var(--bg-input)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {p.isHazardous ? (
-                                <AlertTriangle size={28} style={{ color: '#ff4d4d' }} />
-                            ) : (
-                                <Package size={28} style={{ color: 'var(--accent-primary)' }} />
-                            )}
+                    <div className="product-card glass-card fade-in-up" key={p.id}>
+                        <div className={`product-icon-box ${p.isHazardous ? 'hazardous' : ''}`}>
+                            {p.isHazardous ? <AlertTriangle size={24} /> : <Package size={24} />}
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', fontFamily: 'monospace' }}>{p.scanCode || p.id}</span>
-                            <h3 style={{ margin: '2px 0', fontSize: '1.1rem' }}>{p.name}</h3>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '10px' }}>
+
+                        <div className="product-info">
+                            <span className="product-sku">{p.scanCode || p.id}</span>
+                            <h3 className="product-name">{p.name}</h3>
+                            <div className="product-meta">
                                 <span><Weight size={12} /> {p.weightKg} kg</span>
                                 <span><Thermometer size={12} /> {p.tempRequired}°C</span>
                             </div>
                         </div>
 
-                        {/* Akcje w widoku siatki */}
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                            <button
-                                onClick={() => onEditProduct(p)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    padding: '5px',
-                                    transition: 'color 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-secondary)'}
-                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                title="Edytuj"
-                            >
+                        <div className="product-actions">
+                            <button className="action-btn edit" onClick={() => onEditProduct(p)} title="Edytuj">
                                 <Pencil size={18} />
                             </button>
-                            <button
-                                onClick={() => onDeleteProduct(p.id)}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    padding: '5px',
-                                    transition: 'color 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.color = '#ff4d4d'}
-                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                title="Usuń"
-                            >
+                            <button className="action-btn delete" onClick={() => onDeleteProduct(p.id)} title="Usuń">
                                 <Trash2 size={18} />
                             </button>
                         </div>
 
                         {p.isHazardous && (
-                            <div style={{ position: 'absolute', top: '10px', right: '80px' }}>
-                                <AlertTriangle size={14} color="#ff4d4d" />
+                            <div className="hazard-indicator" title="Materiał niebezpieczny">
+                                <AlertTriangle size={12} />
                             </div>
                         )}
                     </div>
@@ -82,13 +52,12 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
         );
     }
 
-    // Widok Listy (Table)
     return (
         <div className="glass-table-wrapper">
             <table className="ht-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>ID / SKU</th>
                     <th>Nazwa</th>
                     <th>Masa</th>
                     <th>Wymiary</th>
@@ -102,68 +71,29 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
                     <tr key={p.id} className="fade-in-up">
                         <td className="id-col">{p.scanCode || p.id}</td>
                         <td className="name-col">{p.name}</td>
-                        <td>{p.weightKg} kg</td>
-                        <td>{p.widthMm}x{p.heightMm}x{p.depthMm}</td>
+                        <td><div className="cell-with-icon"><Weight size={12}/> {p.weightKg} kg</div></td>
+                        <td>{p.widthMm}x{p.heightMm}x{p.depthMm} mm</td>
                         <td>{p.tempRequired}°C</td>
                         <td>
                             {p.isHazardous ? (
-                                <span style={{
-                                    color: '#ff4d4d',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 800,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(255, 77, 77, 0.1)',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px'
-                                }}>
-                                        <AlertTriangle size={14} strokeWidth={2.5} />
-                                        ADR
+                                <span className="badge-adr">
+                                        <AlertTriangle size={12} strokeWidth={3} /> ADR
                                     </span>
                             ) : (
-                                <span style={{
-                                    color: 'var(--text-muted)',
-                                    fontSize: '0.75rem',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    opacity: 0.7
-                                }}>
-                                        <CheckCircle2 size={14} />
-                                        OK
+                                <span className="badge-ok">
+                                        <CheckCircle2 size={12} /> OK
                                     </span>
                             )}
                         </td>
                         <td className="text-right">
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
-                                <button
-                                    onClick={() => onEditProduct(p)}
-                                    className="btn-action-ht"
-                                    style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                                    title="Edytuj produkt"
-                                >
-                                    <Pencil size={16} />
-                                </button>
-                                <button
-                                    onClick={() => onDeleteProduct(p.id)}
-                                    className="btn-action-ht"
-                                    style={{ color: '#ff4d4d', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                                    title="Usuń produkt"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                            <div className="table-actions">
+                                <button className="btn-icon edit" onClick={() => onEditProduct(p)}><Pencil size={16} /></button>
+                                <button className="btn-icon delete" onClick={() => onDeleteProduct(p.id)}><Trash2 size={16} /></button>
                             </div>
                         </td>
                     </tr>
                 ))}
-                {isLoading && (
-                    <>
-                        <ProductListSkeleton />
-                        <ProductListSkeleton />
-                        <ProductListSkeleton />
-                    </>
-                )}
+                {isLoading && <><ProductListSkeleton /><ProductListSkeleton /></>}
                 </tbody>
             </table>
         </div>
