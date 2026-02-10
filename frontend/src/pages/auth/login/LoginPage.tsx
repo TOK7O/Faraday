@@ -64,14 +64,35 @@ const LoginPage = () => {
       navigate("/dashboard");
 
     } catch (err: any) {
+      // 1. Obsługa 2FA (kod 428)
       if (err.response && err.response.status === 428) {
         setStatus({ isLoading: false, error: null, requires2FA: true });
-        return; // Stop execution, UI will update to show 2FA input
+        return;
       }
 
       console.error("Login Error:", err);
 
-      const errorMessage = err.response?.data?.message || err.message || "Unable to connect to server.";
+      // 2. Obsługa błędu logowania (kod 400) i innych
+      let errorMessage = "Unable to connect to server.";
+
+      if (err.response) {
+        // Sprawdź czy backend zwrócił obiekt z polem 'message', czy czysty tekst
+        const responseData = err.response.data;
+
+        if (typeof responseData === 'string') {
+          // Backend zwrócił np. BadRequest("Incorrect login or password")
+          errorMessage = responseData;
+        } else if (responseData && responseData.message) {
+          // Backend zwrócił obiekt JSON { message: "..." }
+          errorMessage = responseData.message;
+        } else {
+          // Fallback dla innych statusów (np. 500)
+          errorMessage = `Server Error (${err.response.status})`;
+        }
+      } else if (err.message) {
+        // Błąd sieciowy (brak response)
+        errorMessage = err.message;
+      }
 
       setStatus((prev) => ({
         ...prev,
