@@ -32,5 +32,8 @@ namespace Faraday.API.Services.Interfaces
         Task ForgotPasswordAsync(string email);
         Task ResetPasswordAsync(ResetPasswordDto dto);
         Task<bool> GetTwoFactorEnabledStatusAsync(int userId);
+        
+        // Refreshes JWT token for authenticated user to extend session.
+        Task<LoginResponseDto> RefreshTokenAsync(int userId);
     }
 }

@@ -472,11 +472,49 @@ namespace Faraday.API.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1), // Token valid time
+                expires: DateTime.UtcNow.AddHours(1), // Token valid for 1h
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        
+        /// <summary>
+        /// Refreshes the JWT token for an authenticated user.
+        /// Generates a new token with extended expiration time.
+        /// </summary>
+        /// <param name="userId">ID of the authenticated user requesting token refresh</param>
+        /// <returns>New JWT token with user information</returns>
+        public async Task<LoginResponseDto> RefreshTokenAsync(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+    
+            if (user == null)
+            {
+                _logger.LogWarning("Token refresh attempted for non-existent user ID: {UserId}", userId);
+                throw new Exception("User not found.");
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("Token refresh attempted for inactive user: {Username}", user.Username);
+                throw new Exception("Account is disabled.");
+            }
+
+            // Update last activity timestamp
+            user.LastLoginDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Token refreshed for user: {Username} (ID: {UserId})", user.Username, userId);
+
+            var token = GenerateJwtToken(user);
+
+            return new LoginResponseDto
+            {
+                Token = token,
+                Username = user.Username,
+                Role = user.Role.ToString()
+            };
         }
 
         public async Task<bool> GetTwoFactorEnabledStatusAsync(int userId)

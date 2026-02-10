@@ -127,7 +127,31 @@ namespace Faraday.API.Controllers
             var isEnabled = await _authService.GetTwoFactorEnabledStatusAsync(userId);
             return Ok(new { IsEnabled = isEnabled });
         }
-
+        
+        /// <summary>
+        /// Refreshes the JWT token to extend the user's session.
+        /// Requires valid authentication token. Returns new token valid for 1 hour.
+        /// </summary>
+        [Authorize]
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<LoginResponseDto>> RefreshToken()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("id")!.Value);
+                _logger.LogInformation("Token refresh requested by user ID: {UserId}", userId);
+        
+                var response = await _authService.RefreshTokenAsync(userId);
+        
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Token refresh failed");
+                return BadRequest(ex.Message);
+            }
+        }
+        
         /// <summary>
         /// Get list of all users in the system (including inactive).
         /// Only accessible by Administrators.
