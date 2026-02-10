@@ -5,7 +5,7 @@ interface LoginFieldProps {
     name?: string;
 }
 
-export const LoginField = ({ data, name = "username" }: LoginFieldProps) => (
+export const SignInLoginField = ({ data, name = "username" }: LoginFieldProps) => (
     <Form.Field className="input-group" name={name}>
         <div className="label-row">
             <Form.Label className="ht-label">{data?.label || "Username"}</Form.Label>

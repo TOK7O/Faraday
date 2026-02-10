@@ -1,0 +1,308 @@
+﻿// --- LOCAL VARIABLES ---
+$transition-base: all 0.2s ease-in-out;
+$radius-input: 10px;
+$radius-modal: 24px;
+
+// --- ANIMATIONS ---
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentShow {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+// --- OVERLAY ---
+.dialog-overlay-ht {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+// --- MODAL CONTAINER ---
+.dialog-content-ht {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 520px;
+
+  // Background & Border
+  background: var(--bg-form, #121212);
+  border: 1px solid var(--border-input, #333);
+  border-radius: $radius-modal;
+
+  padding: 3.5rem;
+  z-index: 1001;
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+
+  // Glassmorphism
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+
+  // Typography
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--text-main);
+  animation: modalContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Decorative Line
+  .modal-accent-line {
+    position: absolute;
+    top: 0; left: 20%; right: 20%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+  }
+
+  // --- HEADER ---
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2.5rem;
+
+    h2 {
+      margin: 0;
+      font-size: 2.2rem;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: -1px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1;
+
+      .icon-accent {
+        color: var(--accent-primary);
+        filter: drop-shadow(0 0 8px rgba(var(--accent-primary-rgb), 0.5));
+      }
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 5px;
+      transition: $transition-base;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        color: var(--text-main);
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  // --- FORM ---
+  .ht-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+
+    // --- INPUT GROUP (WRAPPER) ---
+    .input-group,
+    .FormField { // Added .FormField to match Radix UI structure if used
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      position: relative;
+      margin-bottom: 0 !important; // Override component margins
+
+      // LABELS & ERRORS
+      label, .ht-label, .FormLabel {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between; // Push error to right
+        width: 100%;
+        margin-bottom: 0;
+      }
+
+      // ERROR MESSAGES
+      .error-text, .FormMessage {
+        color: var(--error-color, #ef4444);
+        text-transform: none;
+        font-weight: 500;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      // --- UNIFIED INPUT STYLES ---
+      // Targets standard inputs, selects, and specific classes
+      input:not([type="checkbox"]):not([type="radio"]),
+      select,
+      .ht-input,
+      .Input {
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        height: 2.8rem;
+        padding: 0 1rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: var(--text-main);
+
+        // Visuals
+        background-color: var(--bg-input);
+        border: 1px solid var(--border-input);
+        border-radius: $radius-input;
+
+        outline: none;
+        transition: all 0.2s ease-in-out;
+        -webkit-appearance: none; // Remove browser defaults
+
+        &::placeholder {
+          color: var(--text-muted);
+          opacity: 0.5;
+        }
+
+        &:hover {
+          border-color: color-mix(in srgb, var(--accent-primary), transparent 50%);
+        }
+
+        &:focus {
+          border-color: var(--accent-primary);
+          background-color: var(--bg-form);
+          box-shadow: 0 0 0 4px var(--focus-ring, rgba(0, 242, 255, 0.15));
+        }
+
+        // Auto-fill style fix
+        &:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0 30px #1e1e20 inset !important;
+          -webkit-text-fill-color: var(--text-main) !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      }
+
+      // --- SELECT SPECIFIC ---
+      select {
+        cursor: pointer;
+        padding-right: 2.5rem;
+        // Chevron Icon
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.2em;
+
+        option {
+          background-color: var(--bg-form);
+          color: var(--text-main);
+        }
+      }
+
+      // --- PASSWORD WRAPPER FIXES ---
+      // Handles Radix/Custom wrappers for password eyes
+      div[style*="position: relative"],
+      .PasswordInputContainer {
+        width: 100%;
+        position: relative;
+
+        input {
+          width: 100%;
+          padding-right: 3rem; // Space for eye icon
+        }
+
+        // Eye Button
+        button[type="button"], .PasswordToggleBtn {
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 100%;
+          width: 3rem;
+          background: transparent;
+          border: none;
+          color: var(--text-muted) !important;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          &:hover { color: var(--text-main) !important; }
+          &:focus { outline: none; }
+        }
+      }
+
+      // Fix for Radix Label row layout
+      .FormLabelRow {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .FormMessageContainer {
+        display: flex;
+        gap: 8px;
+      }
+    }
+
+    // --- GLOBAL ERROR BANNER ---
+    .error-banner {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 0.75rem;
+      border-radius: $radius-input;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+
+      svg { color: #ef4444; }
+    }
+
+    // --- SUBMIT BUTTON ---
+    .btn-submit-ht {
+      margin-top: 1rem;
+      height: 3.2rem;
+      width: 100%;
+      // Using hex fallback for darken()
+      background: var(--btn-grad-1, linear-gradient(135deg, var(--accent-primary) 0%, #008cb3 100%));
+      color: var(--btn-text, #000);
+      border: none;
+      border-radius: $radius-input;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: $transition-base;
+      box-shadow: 0 4px 15px var(--shadow-btn, rgba(0, 242, 255, 0.2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+
+      &:hover:not(:disabled) {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--shadow-btn, rgba(0, 242, 255, 0.4));
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+    }
+  }
+}

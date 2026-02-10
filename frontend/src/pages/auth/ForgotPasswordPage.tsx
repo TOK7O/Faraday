@@ -2,7 +2,7 @@
 import * as Form from "@radix-ui/react-form";
 import { Link } from "react-router-dom";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
-import { LoginField } from "@components/ui/SignInLoginField";
+import { SignInLoginField } from "@components/ui/SignInLoginField";
 import { forgotPassword } from '@/api/axios';
 import "./login/LoginPage.scss";
 
@@ -57,7 +57,7 @@ const ForgotPasswordPage = () => {
                     </div>
                 ) : (
                     <Form.Root className="actual-form" onSubmit={handleSubmit}>
-                        <LoginField 
+                        <SignInLoginField
                             data={{ label: "Email Address", placeholder: "name@company.com", validation: { required: "Email is required" } }}
                             name="email"
                         />

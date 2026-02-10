@@ -3,10 +3,10 @@ import * as Form from "@radix-ui/react-form";
 import { Loader2, CheckCircle, AlertCircle, Save } from "lucide-react";
 
 // Import the Simple component for "Old Password"
-import { PasswordField as SignInPasswordField } from "@/components/ui/SignInPasswordField";
+import { SignInPasswordField as SignInPasswordField } from "@/components/ui/SignInPasswordField";
 
 // Import the Complex component for "New Password" & "Confirm"
-import { PasswordField as RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
+import { RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
 
 import { changePassword } from '@/api/axios';
 

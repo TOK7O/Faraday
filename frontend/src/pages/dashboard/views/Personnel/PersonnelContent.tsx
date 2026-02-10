@@ -1,22 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     Users, Plus, Search, MoreVertical, Ban, CheckCircle,
-    Shield, User, Loader2, X, UserPlus, Mail
+    Shield, User, Loader2, Mail
 } from "lucide-react";
-import { getAllUsers, registerUser, updateUser } from "@/api/axios";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { getAllUsers, updateUser } from "@/api/axios";
 import "./PersonnelContent.scss";
 import "@/styles/_components-ui.scss";
 
+// Importujemy Twój dopracowany komponent
+import { AddUserModal } from "@/components/layouts/dashboard/personnel/AddUserModal";
+
 // --- 1. DEFINICJE TYPÓW DANYCH ---
-
-const UserRole = {
-    Administrator: 0,
-    WarehouseWorker: 1
-} as const;
-
-type UserRole = typeof UserRole[keyof typeof UserRole];
 
 // Format danych z API
 interface UserListDto {
@@ -32,8 +27,8 @@ interface UserListDto {
 
 // Format danych dla widoku (Tabeli)
 interface StaffMember {
-    id: string;        // Wyświetlane ID (np. USR-001)
-    realId: number;    // ID do API
+    id: string;
+    realId: number;
     name: string;
     email: string;
     role: string;
@@ -49,21 +44,11 @@ const PersonnelContent = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Stan Modala Dodawania
+    // Stan otwarcia modala
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [modalError, setModalError] = useState<string | null>(null);
-    const [newUserForm, setNewUserForm] = useState<{
-        username: string;
-        email: string;
-        password: string;
-        role: UserRole;
-    }>({
-        username: "",
-        email: "",
-        password: "",
-        role: UserRole.WarehouseWorker
-    });
+
+    // UWAGA: Usunąłem stany formularza (newUserForm, isSubmitting, modalError)
+    // oraz funkcję handleCreateUser, ponieważ teraz zarządza nimi AddUserModal wewnątrz siebie.
 
     // Sprawdzenie uprawnień (z LocalStorage)
     const isAdmin = localStorage.getItem("role") === "Administrator";
@@ -76,7 +61,6 @@ const PersonnelContent = () => {
         try {
             const usersData: UserListDto[] = await getAllUsers();
 
-            // Mapowanie danych z API na format tabeli
             const mappedStaff: StaffMember[] = usersData.map(user => ({
                 id: `USR-${user.id.toString().padStart(3, '0')}`,
                 realId: user.id,
@@ -102,29 +86,10 @@ const PersonnelContent = () => {
 
         try {
             await updateUser(userId, { isActive: !isCurrentlyActive });
-            await fetchStaff(); // Odśwież listę po zmianie
+            await fetchStaff();
         } catch (error) {
             alert("Failed to update status.");
             console.error(error);
-        }
-    };
-
-    // Dodawanie nowego użytkownika
-    const handleCreateUser = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        setModalError(null);
-
-        try {
-            await registerUser(newUserForm);
-            setIsModalOpen(false); // Zamknij modal
-            setNewUserForm({ username: "", email: "", password: "", role: UserRole.WarehouseWorker }); // Reset
-            await fetchStaff(); // Odśwież listę
-        } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || "Failed to create user.";
-            setModalError(typeof msg === 'string' ? msg : JSON.stringify(msg));
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -248,7 +213,7 @@ const PersonnelContent = () => {
                                                 }}
                                             >
                                                 {person.role === 'Administrator' ? <Shield size={12} /> : <User size={12} />}
-                                                {/* Dodaje space między Warehouse a Worker */}
+                                                {/* Dodaje spację przed wielką literą */}
                                                 {person.role.replace(/([a-z])([A-Z])/g, '$1 $2')}
                                             </span>
                                     </td>
@@ -305,87 +270,13 @@ const PersonnelContent = () => {
                 </div>
             )}
 
-            {/* 4. MODAL DODAWANIA UŻYTKOWNIKA */}
-            <Dialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="dialog-overlay-ht" />
-                    <Dialog.Content className="dialog-content-ht">
-                        <div className="modal-header">
-                            <h2><UserPlus size={28} style={{ marginRight: 10, marginBottom: -4 }} /> New User</h2>
-                            <button className="btn-close" onClick={() => setIsModalOpen(false)}>
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleCreateUser} className="ht-form">
-                            <div className="input-group">
-                                <label>Username</label>
-                                <input
-                                    required
-                                    value={newUserForm.username}
-                                    onChange={e => setNewUserForm({ ...newUserForm, username: e.target.value })}
-                                    placeholder="e.g. j.doe"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label>Email</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={newUserForm.email}
-                                    onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                                    placeholder="user@faraday.systems"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label>Password</label>
-                                <input
-                                    type="password"
-                                    required
-                                    minLength={6}
-                                    value={newUserForm.password}
-                                    onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                                    placeholder="Minimum 6 characters"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label>Role</label>
-                                <select
-                                    className="ht-input"
-                                    style={{
-                                        padding: '0 1rem',
-                                        height: '2.8rem',
-                                        borderRadius: '10px',
-                                        background: 'var(--bg-input)',
-                                        border: '1px solid var(--border-input)',
-                                        color: 'var(--text-main)',
-                                        width: '100%'
-                                    }}
-                                    value={newUserForm.role}
-                                    onChange={e =>
-                                        setNewUserForm({
-                                            ...newUserForm,
-                                            role: Number(e.target.value) as UserRole
-                                        })
-                                    }                                >
-                                    <option value={UserRole.WarehouseWorker}>Warehouse Worker</option>
-                                    <option value={UserRole.Administrator}>Administrator</option>
-                                </select>
-                            </div>
-
-                            {modalError && (
-                                <div style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                                    {modalError}
-                                </div>
-                            )}
-
-                            <button type="submit" className="btn-submit-ht" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : "CREATE ACCOUNT"}
-                            </button>
-                        </form>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            {/* 4. UŻYCIE KOMPONENTU MODALA */}
+            {/* Zamiast Dialog.Root i form, po prostu wstawiamy Twój gotowy komponent */}
+            <AddUserModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                onSuccess={fetchStaff} // Odśwież tabelę po dodaniu usera
+            />
         </div>
     );
 };

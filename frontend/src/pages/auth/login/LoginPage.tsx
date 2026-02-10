@@ -3,8 +3,8 @@ import * as Form from "@radix-ui/react-form";
 import { useTranslation } from "@/context/LanguageContext";
 import { Link, useNavigate } from "react-router-dom";
 import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
-import { LoginField } from "@components/ui/SignInLoginField";
-import { PasswordField } from "@components/ui/SignInPasswordField";
+import { SignInLoginField } from "@components/ui/SignInLoginField";
+import { SignInPasswordField } from "@components/ui/SignInPasswordField";
 import { login } from '@/api/axios';
 import "./LoginPage.scss";
 
@@ -155,12 +155,12 @@ const LoginPage = () => {
                 /* --- STEP 1: Standard Login --- */
                 <>
                   {/* LoginField & PasswordField render .input-group divs directly */}
-                  <LoginField
+                  <SignInLoginField
                       data={loginStrings.fields.email}
                       name="username"
                   />
 
-                  <PasswordField
+                  <SignInPasswordField
                       data={loginStrings.fields.password}
                       name="password"
                       forgotPasswordLabel={loginStrings.buttons.forgotPassword}

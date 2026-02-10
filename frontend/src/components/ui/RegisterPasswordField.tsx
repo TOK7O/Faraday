@@ -9,7 +9,7 @@ interface PasswordFieldProps {
   onPasswordChange?: (value: string) => void;
 }
 
-export const PasswordField = ({
+export const RegisterPasswordField = ({
   data,
   forgotPasswordLabel,
   name = "password",

@@ -9,7 +9,7 @@ interface PasswordFieldProps {
     name?: string;
 }
 
-export const PasswordField = ({
+export const SignInPasswordField = ({
                                   data,
                                   forgotPasswordLabel,
                                   name = "password",

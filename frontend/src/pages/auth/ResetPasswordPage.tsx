@@ -2,7 +2,7 @@
 import * as Form from "@radix-ui/react-form";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
-import { PasswordField } from "@/components/ui/RegisterPasswordField";
+import { RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
 import { resetPassword } from '@/api/axios';
 import "./login/LoginPage.scss";
 
@@ -71,13 +71,13 @@ const ResetPasswordPage = () => {
                 )}
 
                 <Form.Root className="actual-form" onSubmit={handleSubmit}>
-                    <PasswordField
+                    <RegisterPasswordField
                         data={{ label: "New Password", placeholder: "Enter new password", validation: { required: "Required", tooShort: "Min 8 chars", noNumber: "Need number", noSpecialChar: "Need special char" } }}
                         name="newPassword"
                         onPasswordChange={setNewPasswordValue}
                     />
 
-                    <PasswordField
+                    <RegisterPasswordField
                         data={{ label: "Confirm Password", placeholder: "Confirm password", validation: { required: "Required", mismatch: "Passwords do not match" } }}
                         name="confirmPassword"
                         matchPasswordValue={newPasswordValue}
