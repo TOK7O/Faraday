@@ -9,6 +9,11 @@ using CsvHelper.Configuration;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Manages the catalog of product definitions.
+    /// Handles creation, updates with physical validation against active inventory, 
+    /// soft-deletion logic, and bulk CSV imports.
+    /// </summary>
     public class ProductService : IProductService
     {
         private readonly FaradayDbContext _context;
@@ -78,6 +83,7 @@ namespace Faraday.API.Services
 
         public async Task<ProductDto> CreateProductAsync(ProductCreateDto dto)
         {
+            // Enforce uniqueness on ScanCode/Barcode to prevent collisions.
             if (await _context.Products.AnyAsync(p => p.ScanCode == dto.ScanCode))
             {
                 throw new InvalidOperationException($"Product with scanCode {dto.ScanCode} already exists.");
@@ -95,13 +101,14 @@ namespace Faraday.API.Services
                 HeightMm = dto.HeightMm,
                 DepthMm = dto.DepthMm,
                 IsHazardous = dto.IsHazardous,
-                HazardClassification = dto.HazardClassification, // Default from DTO
+                HazardClassification = dto.HazardClassification, 
                 ValidityDays = dto.ValidityDays,
                 Comment = dto.Comment,
                 IsActive = true
             };
 
             // Compliance logic: if IsHazardous=true, and HazardClassification is set to None, Other is set.
+            // This ensures we don't have dangerous items floating around without a classification tag.
             if (product.IsHazardous && product.HazardClassification == HazardType.None)
             {
                 product.HazardClassification = HazardType.Other;
@@ -114,6 +121,11 @@ namespace Faraday.API.Services
             return MapToDto(product);
         }
         
+        /// <summary>
+        /// Updates an existing product definition.
+        /// Performs critical validation to ensure that changing physical properties (Weight, Dim, Temp)
+        /// does not violate the constraints of racks where this product is currently stored.
+        /// </summary>
         public async Task<ProductDto> UpdateProductAsync(int id, ProductUpdateDto dto)
         {
             var product = await _context.Products.FindAsync(id);
@@ -123,6 +135,7 @@ namespace Faraday.API.Services
             }
 
             // Retrieve all active inventory items of this product to validate against their racks
+            // We need to check every single instance of this product in the warehouse.
             var itemsInStock = await _context.InventoryItems
                 .Include(i => i.Slot)
                 .ThenInclude(s => s.Rack)
@@ -138,6 +151,7 @@ namespace Faraday.API.Services
 
                     // Temperature validation - rack must be able to maintain new product requirements
                     // The rack's range must be a subset of the product's temperature range.
+                    // Example: If product needs 2-8°C, a rack operating at 0-10°C is invalid.
                     if (rack.MinTemperature < dto.RequiredMinTemp || 
                         rack.MaxTemperature > dto.RequiredMaxTemp)
                     {
@@ -147,6 +161,7 @@ namespace Faraday.API.Services
                     }
 
                     // Dimension validation - a new size must fit in current rack slots
+                    // Prevents defining a product as larger than the physical slot it currently occupies.
                     if (dto.WidthMm > rack.MaxItemWidthMm || 
                         dto.HeightMm > rack.MaxItemHeightMm || 
                         dto.DepthMm > rack.MaxItemDepthMm)
@@ -157,6 +172,7 @@ namespace Faraday.API.Services
                     }
 
                     // Weight validation - rack must handle new weight without exceeding total capacity
+                    // We recalculate the total rack weight
                     var otherItemsWeight = rack.Slots
                         .Where(s => s.CurrentItem != null && s.CurrentItem.Id != item.Id)
                         .Sum(s => s.CurrentItem!.Product.WeightKg);
@@ -172,7 +188,7 @@ namespace Faraday.API.Services
                 }
             }
 
-            // Compliance validation - hazardous products must have classification
+            // Hazardous products must have classification
             if (dto.IsHazardous && dto.HazardClassification == HazardType.None)
             {
                 dto.HazardClassification = HazardType.Other;
@@ -199,9 +215,14 @@ namespace Faraday.API.Services
             return MapToDto(product);
         }
         
+        /// <summary>
+        /// Performs a soft delete on a product.
+        /// Renames the ScanCode to allow re-using the original barcode for a new product later.
+        /// </summary>
         public async Task DeleteProductAsync(int id)
         {
             // Check if there are any active items of this product in stock
+            // We cannot delete a definition if physical items still exist in the warehouse.
             bool hasActiveStock = await _context.InventoryItems
                 .AnyAsync(i => i.Product.Id == id && i.Status == ItemStatus.InStock);
 
@@ -225,6 +246,7 @@ namespace Faraday.API.Services
                 product.IsActive = false;
 
                 // Rename ScanCode to avoid Unique Constraint violation on re-import
+                // If we didn't do this, we couldn't create a new product with the same barcode later.
                 string originalScanCode = product.ScanCode;
                 string newScanCode = $"ARCHIVED: {originalScanCode}";
                 int counter = 1;
@@ -246,6 +268,10 @@ namespace Faraday.API.Services
             }
         }
         
+        /// <summary>
+        /// Reads a CSV stream and imports products.
+        /// Handles duplicate detection both within the file and against existing database records.
+        /// </summary>
         public async Task<(int successCount, int errorCount, List<string> errors)> ImportProductsFromCsvAsync(Stream fileStream)
         {
             var errors = new List<string>();
@@ -260,7 +286,7 @@ namespace Faraday.API.Services
                 Delimiter = ";",
                 Comment = '#',
                 AllowComments = true,
-                HasHeaderRecord = false, // # serves as a header, so we skip this
+                HasHeaderRecord = false,
                 MissingFieldFound = null
             };
 
@@ -309,7 +335,7 @@ namespace Faraday.API.Services
                 errorCount += removedCount;
             }
 
-            // Check against database
+            // Check against database to avoid Unique Constraint violations
             var newScanCodes = distinctDtos.Select(d => d.ScanCode).ToList();
             var existingScanCodes = await _context.Products
                 .Where(p => newScanCodes.Contains(p.ScanCode))
@@ -382,15 +408,16 @@ namespace Faraday.API.Services
                 Map(m => m.DepthMm).Index(8);
                 Map(m => m.Comment).Index(9);
                 
-                // Automatically handles nullable uint parsing
                 Map(m => m.ValidityDays).Index(10);
                 
                 // Handles boolean text values like "TRUE", "FALSE", "True", "False"
+                // Essential for CSVs generated by different locales or software.
                 Map(m => m.IsHazardous).Index(11)
                     .TypeConverterOption.BooleanValues(true, true, "TRUE", "True", "true")
                     .TypeConverterOption.BooleanValues(false, true, "FALSE", "False", "false");
 
-                // HazardClassification is not present in the CSV, so we ignore it during mapping
+                // HazardClassification is not present in the CSV (as it's an additional feature
+                // that we implemented, so we ignore it during mapping
                 Map(m => m.HazardClassification).Ignore();
             }
         }        
