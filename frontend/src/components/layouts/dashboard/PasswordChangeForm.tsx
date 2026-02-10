@@ -3,10 +3,10 @@ import * as Form from "@radix-ui/react-form";
 import { Loader2, CheckCircle, AlertCircle, Save } from "lucide-react";
 
 // Import the Simple component for "Old Password"
-import { SignInPasswordField as SignInPasswordField } from "@/components/ui/SignInPasswordField";
+import { SignInPasswordField } from "@/components/ui/SignInPasswordField";
 
-// Import the Complex component for "New Password" & "Confirm"
-import { RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
+// Import the Pair component for "New Password" & "Confirm"
+import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
 
 import { changePassword } from '@/api/axios';
 
@@ -15,9 +15,6 @@ import "./PasswordChangeForm.scss";
 export const ChangePasswordForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-    // State to handle real-time matching for the Register components
-    const [newPasswordValue, setNewPasswordValue] = useState("");
 
     // Configuration for the fields
     const fieldConfig = {
@@ -51,22 +48,29 @@ export const ChangePasswordForm = () => {
         const form = event.currentTarget;
         setMessage(null);
         setIsLoading(true);
+
         const formData = new FormData(form);
         const oldPassword = formData.get("oldPassword") as string;
-        const newPassword = formData.get("newPassword") as string;
+
+        // UWAGA: Komponent RegisterPasswordFieldPair używa nazwy "password" dla pierwszego pola
+        const newPassword = formData.get("password") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
+
         if (newPassword !== confirmPassword) {
             setMessage({ type: 'error', text: "New passwords do not match." });
             setIsLoading(false);
             return;
         }
+
         try {
             await changePassword(oldPassword, newPassword);
             setMessage({ type: 'success', text: "Password changed successfully." });
+
+            // Reset form logic
             form.reset();
-            setNewPasswordValue("");
         } catch (err: any) {
-            setMessage({ type: 'error', text: err.message });
+            const errorMsg = err.response?.data?.message || err.message || "Failed to update password";
+            setMessage({ type: 'error', text: errorMsg });
         } finally {
             setIsLoading(false);
         }
@@ -89,18 +93,10 @@ export const ChangePasswordForm = () => {
 
                 <div className="form-divider" />
 
-                {/* New Password: Uses RegisterPasswordField (Complexity checks) */}
-                <RegisterPasswordField
-                    data={fieldConfig.newPassword}
-                    name="newPassword"
-                    onPasswordChange={setNewPasswordValue} // Track value for matching
-                />
-
-                {/* Confirm Password: Uses RegisterPasswordField (Match check) */}
-                <RegisterPasswordField
-                    data={fieldConfig.confirmPassword}
-                    name="confirmPassword"
-                    matchPasswordValue={newPasswordValue} // Pass value to check match
+                {/* New Password Pair: Handles both new password and confirmation with validation */}
+                <RegisterPasswordFieldPair
+                    passwordData={fieldConfig.newPassword}
+                    confirmData={fieldConfig.confirmPassword}
                 />
 
                 {/* Status Messages */}
@@ -113,19 +109,21 @@ export const ChangePasswordForm = () => {
 
                 {/* Submit Button */}
                 <div className="form-actions">
-                    <button type="submit" className="save-btn" disabled={isLoading}>
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="animate-spin" size={18} />
-                                <span>Updating...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Save size={18} />
-                                <span>Update Password</span>
-                            </>
-                        )}
-                    </button>
+                    <Form.Submit asChild>
+                        <button type="submit" className="save-btn" disabled={isLoading}>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={18} />
+                                    <span>Updating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={18} />
+                                    <span>Update Password</span>
+                                </>
+                            )}
+                        </button>
+                    </Form.Submit>
                 </div>
             </Form.Root>
         </div>
