@@ -93,6 +93,8 @@ namespace Faraday.API.Services
             using var cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
             
             process.Start();
+            
+            _logger.LogDebug("pg_dump process started for backup: {FileName}", fileName);
 
             // Copy pg_dump Output -> Encryptor -> File
             await process.StandardOutput.BaseStream.CopyToAsync(cryptoStream);
@@ -128,9 +130,12 @@ namespace Faraday.API.Services
 
         public FileStream GetBackupFileStream(string fileName)
         {
+            _logger.LogInformation("Backup file stream requested: {FileName}", fileName);
+            
             var path = Path.Combine(_backupFolder, fileName);
             if (!File.Exists(path))
             {
+                _logger.LogWarning("Backup file not found for download: {FileName}", fileName);
                 throw new FileNotFoundException("Backup file not found.");
             }
             return new FileStream(path, FileMode.Open, FileAccess.Read);
@@ -138,6 +143,7 @@ namespace Faraday.API.Services
 
         public IEnumerable<BackupHistoryDto> GetBackupHistory()
         {
+            _logger.LogInformation("Retrieving backup history");
             if (!Directory.Exists(_backupFolder))
             {
                 return Enumerable.Empty<BackupHistoryDto>();
@@ -204,7 +210,8 @@ namespace Faraday.API.Services
 
             // Create a temporary path for the decrypted dump file
             var tempDecryptedPath = Path.Combine(_backupFolder, $"temp_decrypt_{Guid.NewGuid()}.dump");
-
+            
+            _logger.LogInformation("Starting decryption of backup file: {FileName}", fileName);
             try
             {
                 // Decrypt the backup file
@@ -217,6 +224,7 @@ namespace Faraday.API.Services
 
                     using var cryptoStream = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
                     await cryptoStream.CopyToAsync(decryptedStream);
+                    _logger.LogDebug("Backup file decrypted successfully. Size: {Size} bytes", new FileInfo(tempDecryptedPath).Length);
                 }
 
                 _logger.LogInformation("Backup decrypted successfully to temporary file.");
@@ -286,11 +294,13 @@ namespace Faraday.API.Services
             finally
             {
                 // Cleanup Security Risk
+                _logger.LogDebug("Cleanup: Checking for temporary decrypted file");
                 if (File.Exists(tempDecryptedPath))
                 {
                     File.Delete(tempDecryptedPath);
                     _logger.LogInformation("Temporary decrypted file removed.");
                 }
+                else _logger.LogInformation("Temporary decrypted file not found, proceeding.");
             }
         }
         

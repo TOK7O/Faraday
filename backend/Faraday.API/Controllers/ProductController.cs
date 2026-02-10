@@ -11,15 +11,20 @@ namespace Faraday.API.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly ILogger<ProductController> _logger;
 
-        public ProductController(IProductService productService)
+        public ProductController(
+            IProductService productService, 
+            ILogger<ProductController> logger)
         {
             _productService = productService;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll()
         {
+            _logger.LogInformation("Retrieving all products");
             var products = await _productService.GetAllProductsAsync();
             return Ok(products);
         }
@@ -27,6 +32,7 @@ namespace Faraday.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetById(int id)
         {
+            _logger.LogInformation("Retrieving product by ID: {ProductId}", id);
             var product = await _productService.GetProductByIdAsync(id);
             if (product == null)
             {
@@ -38,6 +44,7 @@ namespace Faraday.API.Controllers
         [HttpGet("scanCode/{scanCode}")]
         public async Task<ActionResult<ProductDto>> GetScanCode(string scanCode)
         {
+            _logger.LogInformation("Retrieving product by scan code: {ScanCode}", scanCode);
             var product = await _productService.GetProductByScanCodeAsync(scanCode);
             if (product == null)
             {
@@ -52,7 +59,11 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Product creation initiated: {ProductName}", dto.Name);
                 var createdProduct = await _productService.CreateProductAsync(dto);
+                _logger.LogInformation("Product created successfully: " +
+                                       "{ProductName} (ID: {ProductId})", 
+                                        createdProduct.Name, createdProduct.Id);
                 return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
             }
             catch (InvalidOperationException ex)
@@ -67,6 +78,7 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Product update initiated for ID: {ProductId}", id);
                 var updatedProduct = await _productService.UpdateProductAsync(id, dto);
                 return Ok(updatedProduct);
             }
@@ -85,7 +97,9 @@ namespace Faraday.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
+            _logger.LogInformation("Product deletion initiated for ID: {ProductId}", id);
             await _productService.DeleteProductAsync(id);
+            _logger.LogInformation("Product soft-deleted successfully. ID: {ProductId}", id);
             return NoContent();
         }
 
@@ -102,10 +116,12 @@ namespace Faraday.API.Controllers
             {
                 return BadRequest("File must be a CSV.");
             }
-
+            _logger.LogInformation("Product CSV import initiated. Filename: {FileName}", file.FileName);
             using var stream = file.OpenReadStream();
             var result = await _productService.ImportProductsFromCsvAsync(stream);
-
+            _logger.LogInformation("Product CSV import completed. Success: " +
+                                   "{SuccessCount}, Errors: {ErrorCount}", 
+                                    result.successCount, result.errorCount);
             return Ok(new
             {
                 Message = "Import completed",

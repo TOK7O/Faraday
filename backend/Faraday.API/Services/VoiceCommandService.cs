@@ -155,6 +155,7 @@ namespace Faraday.API.Services
 
         private async Task<VoiceCommandResponseDto> ExecutePlanAsync(VoiceExecutionPlanDto plan, int userId)
         {
+            _logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
             var context = new VoiceExecutionContextDto();
             context.Variables["userId"] = userId;
 
@@ -241,6 +242,7 @@ namespace Faraday.API.Services
 
             var controller = parts[1].ToLower();
             var action = parts.Length > 2 ? parts[2].ToLower() : "";
+            _logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
 
             switch (controller)
             {

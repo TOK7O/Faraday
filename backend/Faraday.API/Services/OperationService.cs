@@ -278,6 +278,7 @@ namespace Faraday.API.Services
 
         public async Task<IEnumerable<OperationLogDto>> GetOperationHistoryAsync(int? limit = null)
         {
+            _logger.LogDebug("Fetching operation history with limit: {Limit}", limit ?? -1);
             var query = _context.OperationLogs
                 .Include(l => l.User)
                 .OrderByDescending(l => l.Timestamp)
@@ -289,6 +290,7 @@ namespace Faraday.API.Services
             }
 
             var logs = await query.ToListAsync();
+            _logger.LogDebug("Retrieved {Count} operation log entries", logs.Count);
             return logs.Select(l => new OperationLogDto
             {
                 Id = l.Id,
