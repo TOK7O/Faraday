@@ -9,52 +9,42 @@ namespace Faraday.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "Administrator")]
-    public class SimulationController : ControllerBase
+    public class SimulationController(
+        IMonitoringService monitoringService,
+        FaradayDbContext context,
+        ILogger<SimulationController> logger)
+        : ControllerBase
     {
-        private readonly IMonitoringService _monitoringService;
-        private readonly FaradayDbContext _context;
-        private readonly ILogger<SimulationController> _logger;
-
-        public SimulationController(
-            IMonitoringService monitoringService, 
-            FaradayDbContext context, 
-            ILogger<SimulationController> logger)
-        {
-            _monitoringService = monitoringService;
-            _context = context;
-            _logger = logger;
-        }
-        
         // Manually triggers a critical temperature failure on a specific rack.
-        // made for the purpose of demonstrating alert generation during presentations.
+        // made to demonstrate alert generation during presentations.
         [HttpPost("trigger-temp-failure/{rackId}")]
         public async Task<IActionResult> TriggerTempFailure(int rackId)
         {
-            _logger.LogWarning("Manual temperature failure simulation triggered for rack ID: {RackId}", rackId);
-            var rack = await _context.Racks.FindAsync(rackId);
+            logger.LogWarning("Manual temperature failure simulation triggered for rack ID: {RackId}", rackId);
+            var rack = await context.Racks.FindAsync(rackId);
             if (rack == null) return NotFound("Rack not found");
             
-            // Simulation: temperature rises 15 degrees above the maximum limit
+            // Simulation: the temperature rises 15 degrees above the maximum limit
             decimal disasterTemp = rack.MaxTemperature + 15.0m;
             
             // Keep the weight as is (or 0 if null) to isolate the temperature anomaly
             decimal currentWeight = rack.CurrentTotalWeightKg ?? 0;
 
             // Send the simulated data to the Monitoring Service
-            await _monitoringService.ProcessRackReadingAsync(rackId, disasterTemp, currentWeight);
+            await monitoringService.ProcessRackReadingAsync(rackId, disasterTemp, currentWeight);
             
-            _logger.LogInformation("Temperature disaster simulation executed for rack: {RackCode}. Temperature: {Temperature}°C", rack.Code, disasterTemp);
+            logger.LogInformation("Temperature disaster simulation executed for rack: {RackCode}. Temperature: {Temperature}°C", rack.Code, disasterTemp);
             return Ok(new { message = $"Disaster triggered! Rack {rack.Code} temperature set to {disasterTemp:F1}°C (Max allowed: {rack.MaxTemperature}°C)." });
         }
         
         // Manually triggers a weight discrepancy (theft) on a specific rack.
-        // made for the purpose of demonstrating alert generation during presentations.
+        // made for demonstrating alert generation during presentations.
         [HttpPost("trigger-theft/{rackId}")]
         public async Task<IActionResult> TriggerTheft(int rackId)
         {
-            _logger.LogWarning("Manual theft simulation triggered for rack ID: {RackId}", rackId);
+            logger.LogWarning("Manual theft simulation triggered for rack ID: {RackId}", rackId);
             // We need to include slots and products to calculate the expected weight
-            var rack = await _context.Racks
+            var rack = await context.Racks
                 .Include(r => r.Slots)
                 .ThenInclude(s => s.CurrentItem)
                 .ThenInclude(i => i!.Product)
@@ -70,16 +60,16 @@ namespace Faraday.API.Controllers
             if (expectedWeight < 1) 
                 return BadRequest("Rack is empty or too light, cannot simulate theft effectively.");
 
-            // Simulate theft: sensor reads 5kg less than expected (or 0 if total is small)
+            // Simulate theft: the sensor reads 5kg less than expected (or 0 if the total is small)
             decimal stolenWeight = Math.Max(0, expectedWeight - 5.0m);
             
             // Keep temperature stable (average value) to isolate the weight anomaly
             decimal currentTemp = rack.CurrentTemperature ?? (rack.MinTemperature + rack.MaxTemperature) / 2;
 
             // Send the simulated data to the Monitoring Service
-            await _monitoringService.ProcessRackReadingAsync(rackId, currentTemp, stolenWeight);
+            await monitoringService.ProcessRackReadingAsync(rackId, currentTemp, stolenWeight);
 
-            _logger.LogInformation("Theft simulation executed for rack: {RackCode}. Simulated weight: {Weight}kg (Expected: {Expected}kg)", rack.Code, stolenWeight, expectedWeight);
+            logger.LogInformation("Theft simulation executed for rack: {RackCode}. Simulated weight: {Weight}kg (Expected: {Expected}kg)", rack.Code, stolenWeight, expectedWeight);
             return Ok(new { message = $"Theft triggered! Rack {rack.Code} weight dropped to {stolenWeight:F2}kg (Expected from DB: {expectedWeight:F2}kg)." });
         }
     }

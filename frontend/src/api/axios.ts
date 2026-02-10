@@ -1,6 +1,6 @@
 ﻿import axios from 'axios';
 
-// Create an Axios instance
+// 1. Create an Axios instance
 const instance = axios.create({
     // Use environment variable or fallback to localhost
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
@@ -9,7 +9,7 @@ const instance = axios.create({
     },
 });
 
-// --- 1. Request Interceptor ---
+// --- 2. Request Interceptor ---
 // Automatically adds the JWT Token to every request
 instance.interceptors.request.use(
     (config) => {
@@ -24,7 +24,7 @@ instance.interceptors.request.use(
     }
 );
 
-// --- 2. Response Interceptor ---
+// --- 3. Response Interceptor ---
 // Automatically logs the user out if the API says "401 Unauthorized"
 instance.interceptors.response.use(
     (response) => response,
@@ -43,183 +43,69 @@ instance.interceptors.response.use(
 
 // --- API ENDPOINTS ---
 
-// 1. Report Endpoints (przeniesione z reportService)
-export const getDashboardStats = async () => {
-    const response = await instance.get("/api/report/dashboard-stats");
-    return response.data;
-};
-export const getInventorySummary = async () => {
-    const response = await instance.get("/api/report/inventory-summary");
-    return response.data;
-};
-export const getFullInventory = async () => {
-    const response = await instance.get("/api/report/full-inventory");
-    return response.data;
-};
-export const getExpiringItems = async (days = 7) => {
-    const response = await instance.get("/api/report/expiring-items", { params: { days } });
-    return response.data;
-};
-export const getRackUtilization = async () => {
-    const response = await instance.get("/api/report/rack-utilization");
-    return response.data;
-};
-export const getTemperatureHistory = async (params: Record<string, any>) => {
-    const response = await instance.get("/api/report/temperature-history", { params });
-    return response.data;
-};
-export const getWeightHistory = async (params: Record<string, any>) => {
-    const response = await instance.get("/api/report/weight-history", { params });
-    return response.data;
-};
-export const getAlertHistory = async (params: Record<string, any>) => {
-    const response = await instance.get("/api/report/alert-history", { params });
-    return response.data;
-};
-export const getActiveAlerts = async () => {
-    const response = await instance.get("/api/report/active-alerts");
-    return response.data;
-};
-export const getRackTemperatureViolations = async (params: Record<string, any>) => {
-    const response = await instance.get("/api/report/rack-temperature-violations", { params });
-    return response.data;
-};
-export const getItemTemperatureViolations = async (params: Record<string, any>) => {
-    const response = await instance.get("/api/report/item-temperature-violations", { params });
-    return response.data;
-};
+// 1. Report Endpoints
+export const getDashboardStats = async () => (await instance.get("/api/report/dashboard-stats")).data;
+export const getInventorySummary = async () => (await instance.get("/api/report/inventory-summary")).data;
+export const getFullInventory = async () => (await instance.get("/api/report/full-inventory")).data;
+export const getExpiringItems = async (days = 7) => (await instance.get("/api/report/expiring-items", { params: { days } })).data;
+export const getRackUtilization = async () => (await instance.get("/api/report/rack-utilization")).data;
+export const getTemperatureHistory = async (params: Record<string, any>) => (await instance.get("/api/report/temperature-history", { params })).data;
+export const getWeightHistory = async (params: Record<string, any>) => (await instance.get("/api/report/weight-history", { params })).data;
+export const getAlertHistory = async (params: Record<string, any>) => (await instance.get("/api/report/alert-history", { params })).data;
+export const getActiveAlerts = async () => (await instance.get("/api/report/active-alerts")).data;
+export const getRackTemperatureViolations = async (params: Record<string, any>) => (await instance.get("/api/report/rack-temperature-violations", { params })).data;
+export const getItemTemperatureViolations = async (params: Record<string, any>) => (await instance.get("/api/report/item-temperature-violations", { params })).data;
 
 // 2. Preferences/2FA Endpoints
-export const get2faStatus = async () => {
-    const response = await instance.get("/api/Auth/2fa/status");
-    return response.data;
-};
-export const setup2fa = async () => {
-    const response = await instance.post("/api/Auth/2fa/setup");
-    return response.data;
-};
-export const enable2fa = async (code: string) => {
-    const response = await instance.post("/api/Auth/2fa/enable", { code });
-    return response.data;
-};
-export const disable2fa = async () => {
-    const response = await instance.post("/api/Auth/2fa/disable");
-    return response.data;
-};
+export const get2faStatus = async () => (await instance.get("/api/Auth/2fa/status")).data;
+export const setup2fa = async () => (await instance.post("/api/Auth/2fa/setup")).data;
+export const enable2fa = async (code: string) => (await instance.post("/api/Auth/2fa/enable", { code })).data;
+export const disable2fa = async () => (await instance.post("/api/Auth/2fa/disable")).data;
 
 // 3. Inventory Endpoints (Rack, Product, Operation)
-export const getRacks = async () => {
-    const response = await instance.get("/api/Rack");
-    return response.data;
-};
-export const getProducts = async () => {
-    const response = await instance.get("/api/Product");
-    return response.data;
-};
-export const getFullInventoryList = async () => {
-    const response = await instance.get("/api/Report/full-inventory");
-    return response.data;
-};
-export const createRack = async (dto: Record<string, any>) => {
-    const response = await instance.post("/api/Rack", dto);
-    return response.data;
-};
-export const updateRack = async (id: number | string, dto: Record<string, any>) => {
-    const response = await instance.put(`/api/Rack/${id}`, dto);
-    return response.data;
-};
-export const deleteRack = async (id: number | string) => {
-    const response = await instance.delete(`/api/Rack/${id}`);
-    return response.data;
-};
-export const createProduct = async (dto: Record<string, any>) => {
-    const response = await instance.post("/api/Product", dto);
-    return response.data;
-};
-export const updateProduct = async (id: number | string, dto: Record<string, any>) => {
-    const response = await instance.put(`/api/Product/${id}`, dto);
-    return response.data;
-};
-export const deleteProduct = async (id: number | string) => {
-    const response = await instance.delete(`/api/Product/${id}`);
-    return response.data;
-};
+export const getRacks = async () => (await instance.get("/api/Rack")).data;
+export const getProducts = async () => (await instance.get("/api/Product")).data;
+export const getFullInventoryList = async () => (await instance.get("/api/Report/full-inventory")).data;
+export const createRack = async (dto: Record<string, any>) => (await instance.post("/api/Rack", dto)).data;
+export const updateRack = async (id: number | string, dto: Record<string, any>) => (await instance.put(`/api/Rack/${id}`, dto)).data;
+export const deleteRack = async (id: number | string) => (await instance.delete(`/api/Rack/${id}`)).data;
+export const createProduct = async (dto: Record<string, any>) => (await instance.post("/api/Product", dto)).data;
+export const updateProduct = async (id: number | string, dto: Record<string, any>) => (await instance.put(`/api/Product/${id}`, dto)).data;
+export const deleteProduct = async (id: number | string) => (await instance.delete(`/api/Product/${id}`)).data;
+
 // Operacje magazynowe
-export const inboundOperation = async (barcode: string) => {
-    const response = await instance.post("/api/Operation/inbound", { barcode });
-    return response.data;
-};
-export const outboundOperation = async (barcode: string) => {
-    const response = await instance.post("/api/Operation/outbound", { barcode });
-    return response.data;
-};
-export const moveOperation = async (dto: Record<string, any>) => {
-    const response = await instance.post("/api/Operation/move", dto);
-    return response.data;
-};
+export const inboundOperation = async (barcode: string) => (await instance.post("/api/Operation/inbound", { barcode })).data;
+export const outboundOperation = async (barcode: string) => (await instance.post("/api/Operation/outbound", { barcode })).data;
+export const moveOperation = async (dto: Record<string, any>) => (await instance.post("/api/Operation/move", dto)).data;
 
-// Importy CSV (Rack/Product) - POST/PUT
-export const importRack = async (dto: Record<string, any>) => {
-    const response = await instance.post("/api/Rack", dto);
-    return response.data;
-};
-export const updateRackImport = async (id: number | string, dto: Record<string, any>) => {
-    const response = await instance.put(`/api/Rack/${id}`, dto);
-    return response.data;
-};
-export const importProduct = async (dto: Record<string, any>) => {
-    const response = await instance.post("/api/Product", dto);
-    return response.data;
-};
-export const updateProductImport = async (id: number | string, dto: Record<string, any>) => {
-    const response = await instance.put(`/api/Product/${id}`, dto);
-    return response.data;
-};
+// Importy CSV
+export const importRack = async (dto: Record<string, any>) => (await instance.post("/api/Rack", dto)).data;
+export const updateRackImport = async (id: number | string, dto: Record<string, any>) => (await instance.put(`/api/Rack/${id}`, dto)).data;
+export const importProduct = async (dto: Record<string, any>) => (await instance.post("/api/Product", dto)).data;
+export const updateProductImport = async (id: number | string, dto: Record<string, any>) => (await instance.put(`/api/Product/${id}`, dto)).data;
+
 // Operacje historyczne
-export const getOperationHistory = async (limit: number = 50) => {
-    const response = await instance.get(`/api/Operation/history?limit=${limit}`);
-    return response.data;
-};
+export const getOperationHistory = async (limit: number = 50) => (await instance.get(`/api/Operation/history?limit=${limit}`)).data;
+
 // Zmiana hasła
-export const changePassword = async (oldPassword: string, newPassword: string) => {
-    const response = await instance.post("/api/Auth/change-password", { oldPassword, newPassword });
-    return response.data;
-};
+export const changePassword = async (oldPassword: string, newPassword: string) => (await instance.post("/api/Auth/change-password", { oldPassword, newPassword })).data;
 
-// --- Auth ---
-export const login = async (username: string, password: string, twoFactorCode: string = "") => {
-    const response = await instance.post("/api/Auth/login", { username, password, twoFactorCode });
-    return response;
-};
+// Auth
+export const login = async (username: string, password: string, twoFactorCode: string = "") => await instance.post("/api/Auth/login", { username, password, twoFactorCode });
+export const register = async (username: string, email: string, password: string) => await instance.post("/api/Auth/register", { username, email, password });
 
-// --- Register ---
-export const register = async (username: string, email: string, password: string) => {
-    const response = await instance.post("/api/Auth/register", { username, email, password });
-    return response;
-};
+// Backups
+export const getBackupHistory = async () => (await instance.get("/api/Backup/history")).data;
+export const createBackup = async () => (await instance.post("/api/Backup/create")).data;
+export const downloadBackup = async (fileName: string) => (await instance.get(`/api/Backup/download/${fileName}`, { responseType: 'blob' })).data;
+export const restoreBackup = async (fileName: string) => (await instance.post(`/api/Backup/restore/${fileName}`)).data;
 
-// --- Backups ---
-export const getBackupHistory = async () => {
-    const response = await instance.get("/api/Backup/history");
-    return response.data;
-};
-export const createBackup = async () => {
-    const response = await instance.post("/api/Backup/create");
-    return response.data;
-};
-export const downloadBackup = async (fileName: string) => {
-    const response = await instance.get(`/api/Backup/download/${fileName}`, { responseType: 'blob' });
-    return response.data;
-};
-export const restoreBackup = async (fileName: string) => {
-    const response = await instance.post(`/api/Backup/restore/${fileName}`);
-    return response.data;
-};
+// Password Reset
+export const forgotPassword = async (email: string) => await instance.post("/api/Auth/forgot-password", { email });
+export const resetPassword = async (token: string, newPassword: string) => await instance.post("/api/Auth/reset-password", { token, newPassword });
 
-// --- Password Reset ---
-export const forgotPassword = async (email: string) => {
-    return await instance.post("/api/Auth/forgot-password", { email });
-};
-export const resetPassword = async (token: string, newPassword: string) => {
-    return await instance.post("/api/Auth/reset-password", { token, newPassword });
-};
+// --- LOGS (System Logs) ---
+export const getRecentLogs = async (count: number = 500) => (await instance.get("/api/Logs/recent", { params: { count } })).data;
+export const clearLogs = async () => (await instance.delete("/api/Logs/clear")).data;
+
+export default instance;

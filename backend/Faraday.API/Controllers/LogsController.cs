@@ -20,7 +20,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Get recent logs from in-memory buffer (max 1000).
+        /// Get recent logs from the in-memory buffer (max 1000).
         /// </summary>
         [HttpGet("recent")]
         public ActionResult<List<LogEntry>> GetRecentLogs([FromQuery] int count = 500)

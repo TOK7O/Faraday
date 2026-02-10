@@ -11,19 +11,11 @@ namespace Faraday.API.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(
+        IAuthService authService,
+        ILogger<AuthController> logger)
+        : ControllerBase
     {
-        private readonly IAuthService _authService;
-        private readonly ILogger<AuthController> _logger;
-
-        public AuthController(
-            IAuthService authService,
-            ILogger<AuthController> logger) 
-        {
-            _authService = authService;
-            _logger = logger;
-        }
-
         /// <summary>
         /// Registers a new user in the system.
         /// Restricted to Administrators to prevent unauthorized public sign-ups.
@@ -34,12 +26,12 @@ namespace Faraday.API.Controllers
         {
             try
             {
-                await _authService.RegisterAsync(request);
+                await authService.RegisterAsync(request);
                 return Ok("Registered successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Registration endpoint error for username: {Username}", request.Username);
+                logger.LogError(ex, "Registration endpoint error for username: {Username}", request.Username);
                 return BadRequest(ex.Message);
             }
         }
@@ -54,7 +46,7 @@ namespace Faraday.API.Controllers
         {
             try
             {
-                var response = await _authService.LoginAsync(request);
+                var response = await authService.LoginAsync(request);
                 return Ok(response);
             }
             // We use 428 Precondition Required to signal the frontend that 2FA code is missing.
@@ -65,7 +57,7 @@ namespace Faraday.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Login endpoint error for user: {Username}", request.Username);
+                logger.LogError(ex, "Login endpoint error for user: {Username}", request.Username);
                 return BadRequest(ex.Message);
             }
         }
@@ -81,9 +73,9 @@ namespace Faraday.API.Controllers
             {
                 // Extract user ID securely from the JWT claims
                 var userId = int.Parse(User.FindFirst("id")!.Value);
-                _logger.LogInformation("2FA setup initiated for user ID: {UserId}", userId);
+                logger.LogInformation("2FA setup initiated for user ID: {UserId}", userId);
                 
-                var result = await _authService.InitiateTwoFactorSetupAsync(userId);
+                var result = await authService.InitiateTwoFactorSetupAsync(userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -102,12 +94,12 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
-                await _authService.ChangePasswordAsync(userId, request);
+                await authService.ChangePasswordAsync(userId, request);
                 return Ok(new { Message = "Password changed successfully." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Change password endpoint error");
+                logger.LogError(ex, "Change password endpoint error");
                 return BadRequest(ex.Message);
             }
         }
@@ -122,9 +114,9 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
-                _logger.LogInformation("2FA enable request for user ID: {UserId}", userId);
+                logger.LogInformation("2FA enable request for user ID: {UserId}", userId);
                 
-                await _authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
+                await authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
                 return Ok(new { Message = "2FA has been enabled." });
             }
             catch (Exception ex)
@@ -141,9 +133,9 @@ namespace Faraday.API.Controllers
         public async Task<IActionResult> DisableTwoFactor()
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            _logger.LogInformation("2FA disable request for user ID: {UserId}", userId);
+            logger.LogInformation("2FA disable request for user ID: {UserId}", userId);
             
-            await _authService.DisableTwoFactorAsync(userId);
+            await authService.DisableTwoFactorAsync(userId);
             return Ok(new { Message = "2FA disabled." });
         }
 
@@ -152,9 +144,9 @@ namespace Faraday.API.Controllers
         public async Task<IActionResult> GetTwoFactorStatus()
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            _logger.LogInformation("2FA status check for user ID: {UserId}", userId);
+            logger.LogInformation("2FA status check for user ID: {UserId}", userId);
             
-            var isEnabled = await _authService.GetTwoFactorEnabledStatusAsync(userId);
+            var isEnabled = await authService.GetTwoFactorEnabledStatusAsync(userId);
             return Ok(new { IsEnabled = isEnabled });
         }
         
@@ -169,28 +161,28 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
-                _logger.LogInformation("Token refresh requested by user ID: {UserId}", userId);
+                logger.LogInformation("Token refresh requested by user ID: {UserId}", userId);
                 
-                var response = await _authService.RefreshTokenAsync(userId);
+                var response = await authService.RefreshTokenAsync(userId);
         
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Token refresh failed");
+                logger.LogError(ex, "Token refresh failed");
                 return BadRequest(ex.Message);
             }
         }
         
         /// <summary>
-        /// Get list of all users in the system (including inactive).
+        /// Get a list of all users in the system (including inactive).
         /// Only accessible by Administrators.
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet("users")]
         public async Task<ActionResult<List<UserListDto>>> GetAllUsers()
         {
-            var users = await _authService.GetAllUsersAsync();
+            var users = await authService.GetAllUsersAsync();
             return Ok(users);
         }
 
@@ -206,7 +198,7 @@ namespace Faraday.API.Controllers
             {
                 // We pass the admin's own ID to ensure they don't lock themselves out or edit their own permissions improperly.
                 var adminId = int.Parse(User.FindFirst("id")!.Value);
-                var updatedUser = await _authService.UpdateUserAsync(targetUserId, adminId, dto);
+                var updatedUser = await authService.UpdateUserAsync(targetUserId, adminId, dto);
                 return Ok(updatedUser);
             }
             catch (KeyNotFoundException ex)
@@ -220,7 +212,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Admin can reset user's password (e.g., when user forgot it).
+        /// Admin can reset the user's password (e.g., when the user forgot it).
         /// Admin cannot reset their own password this way; they must use the standard flow.
         /// </summary>
         [Authorize(Roles = "Administrator")]
@@ -230,7 +222,7 @@ namespace Faraday.API.Controllers
             try
             {
                 var adminId = int.Parse(User.FindFirst("id")!.Value);
-                await _authService.ResetUserPasswordAsync(targetUserId, adminId, dto.NewPassword);
+                await authService.ResetUserPasswordAsync(targetUserId, adminId, dto.NewPassword);
                 return Ok(new { Message = "Password reset successfully." });
             }
             catch (KeyNotFoundException ex)
@@ -244,17 +236,17 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Admin can reset user's 2FA (e.g., when user lost their phone).
+        /// Admin can reset a user's 2FA (e.g., when a user lost their phone).
         /// This disables 2FA and removes the secret key to allow the user to log in and set it up again.
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost("users/{targetUserId}/reset-2fa")]
-        public async Task<IActionResult> ResetUser2FA(int targetUserId)
+        public async Task<IActionResult> ResetUser2Fa(int targetUserId)
         {
             try
             {
                 var adminId = int.Parse(User.FindFirst("id")!.Value);
-                await _authService.ResetUser2FAAsync(targetUserId, adminId);
+                await authService.ResetUser2FAAsync(targetUserId, adminId);
                 return Ok(new { Message = "2FA has been reset for the user." });
             }
             catch (KeyNotFoundException ex)
@@ -276,13 +268,13 @@ namespace Faraday.API.Controllers
         {
             try
             {
-                await _authService.ForgotPasswordAsync(request.Email);
+                await authService.ForgotPasswordAsync(request.Email);
                 // Return a generic success message to prevent email enumeration attacks.
                 return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Forgot password endpoint error");
+                logger.LogError(ex, "Forgot password endpoint error");
                 // Always return OK here, even if the email address is invalid or service failed, to maintain security ambiguity.
                 return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
             }
@@ -297,7 +289,7 @@ namespace Faraday.API.Controllers
         {
             try
             {
-                await _authService.ResetPasswordAsync(request);
+                await authService.ResetPasswordAsync(request);
                 return Ok(new { Message = "Password has been reset successfully." });
             }
             catch (Exception ex)
