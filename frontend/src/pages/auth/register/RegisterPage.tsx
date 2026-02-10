@@ -1,4 +1,4 @@
-import { register } from '@/api/axios';
+import { registerUser } from '@/api/axios';
 import { useTranslation } from "@/context/LanguageContext.tsx";
 import AuthForm from "@components/layouts/auth/AuthForm.tsx";
 import { EmailField } from "@components/ui/RegisterEmailField.tsx";
@@ -32,7 +32,7 @@ const RegisterPage = () => {
     }
     try {
       const username = email;
-      const response = await register(username, email, password);
+      const response = await registerUser(username, email, password);
       if (response.status >= 200 && response.status < 300) {
         setStatus({ isLoading: false, error: null, success: true });
       } else {
