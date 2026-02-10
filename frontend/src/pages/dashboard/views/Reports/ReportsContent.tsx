@@ -147,7 +147,7 @@ const ReportsContent = () => {
 
             {/* Expiring Items Table */}
             <div className="table-container" style={{marginBottom: '2rem'}}>
-                <h3>⚠️ Items Expiring Soon</h3>
+                <h3>Items Expiring Soon</h3>
                 <table className="data-table">
                     <thead>
                         <tr>
@@ -175,7 +175,7 @@ const ReportsContent = () => {
 
             {/* Full Inventory Table */}
             <div className="table-container">
-                <h3>📦 Full Inventory List</h3>
+                <h3>Full Inventory List</h3>
                 <table className="data-table">
                     <thead>
                         <tr>
@@ -215,7 +215,7 @@ const ReportsContent = () => {
     const renderUtilizationView = () => (
         <div className="view-container">
             <div className="table-container">
-                <h3>📊 Rack Utilization</h3>
+                <h3>Rack Utilization</h3>
                 <table className="data-table">
                     <thead>
                         <tr>
@@ -254,7 +254,7 @@ const ReportsContent = () => {
         <div className="view-container">
             {/* Violations */}
             <div className="table-container" style={{marginBottom: '2rem', border: '1px solid #7f1d1d'}}>
-                <h3 style={{background: 'rgba(127, 29, 29, 0.2)', color: '#fca5a5'}}>🔥 Temperature Violations</h3>
+                <h3 style={{background: 'rgba(127, 29, 29, 0.2)', color: '#fca5a5'}}>Temperature Violations</h3>
                 <table className="data-table">
                     <thead>
                         <tr>
@@ -333,7 +333,7 @@ const ReportsContent = () => {
     const renderAlertsView = () => (
         <div className="view-container">
             <div className="table-container" style={{marginBottom: '2rem'}}>
-                <h3>🚨 Active Alerts</h3>
+                <h3>Active Alerts</h3>
                 <table className="data-table">
                     <thead><tr><th>Severity</th><th>Rack</th><th>Message</th><th>Duration</th></tr></thead>
                     <tbody>
@@ -351,7 +351,7 @@ const ReportsContent = () => {
             </div>
 
             <div className="table-container">
-                <h3>📜 Alert History</h3>
+                <h3>Alert History</h3>
                 <table className="data-table">
                     <thead><tr><th>Status</th><th>Rack</th><th>Message</th><th>Created At</th><th>Resolved At</th></tr></thead>
                     <tbody>
@@ -372,8 +372,9 @@ const ReportsContent = () => {
 
     return (
         <div className="reports-view">
+            <div className="bg-grid-overlay" />
             <div className="header">
-                <h2>{t.dashboardPage.content.reports.title || "System Reports"}</h2>
+                <h1>{t.dashboardPage.content.reports.title || "System Reports"}</h1>
             </div>
 
             {/* Dashboard Stats (Always Visible) */}
