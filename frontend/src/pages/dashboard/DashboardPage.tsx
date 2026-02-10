@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"; // Dodano useEffect
+import { useState, useEffect } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import "./DashboardPage.scss";
-import { Link, useNavigate } from "react-router-dom"; // Dodano useNavigate
+import { Link, useNavigate } from "react-router-dom";
 
 // Views
 import OverviewContent from "./views/OverviewContent";

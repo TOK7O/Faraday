@@ -1,6 +1,5 @@
 ﻿using Faraday.API.Services.Interfaces;
 using Faraday.API.DTOs;
-using Faraday.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -88,7 +87,7 @@ namespace Faraday.API.Controllers
         
         /// <summary>
         /// Restores the database from a selected backup file.
-        /// WATCH OUT: This will overwrite current database state.
+        /// WATCH OUT: This will overwrite the current database state.
         /// </summary>
         [HttpPost("restore/{fileName}")]
         public async Task<IActionResult> RestoreBackup(string fileName)

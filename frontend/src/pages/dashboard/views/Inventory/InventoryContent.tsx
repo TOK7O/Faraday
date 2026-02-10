@@ -790,79 +790,77 @@ const InventoryContent = () => {
                     </Tabs.Content>
 
                     <Tabs.Content value="operations">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', padding: '1rem' }}>
+                        <div className="operations-grid">
                             {/* Przyjęcia */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <PackagePlus size={20} color="var(--accent-primary)" />
+                            <div className="glass-card inbound">
+                                <div className="card-header">
+                                    <h2>
+                                        <PackagePlus size={20} className="icon-accent" />
                                         Przyjęcia
                                     </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Automatyczna alokacja miejsca.
-                                    </p>
+                                    <p className="text-muted">Automatyczna alokacja miejsca.</p>
                                 </div>
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
                                     <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div className="input-wrapper">
                                             <input
                                                 value={inboundBarcode}
                                                 onChange={(e) => setInboundBarcode(e.target.value)}
                                                 placeholder="Kod produktu..."
-                                                style={{ flex: 1 }}
                                             />
-                                            <button type="button" onClick={() => { setScannerMode('inbound'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setScannerMode('inbound'); setIsScannerOpen(true); }}
+                                                className="btn-action-ht"
+                                            >
                                                 <Camera size={18} />
                                             </button>
                                         </div>
                                     </div>
-                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}>
+                                    <button type="submit" className="btn-primary-ht btn-submit">
                                         Przyjmij towar
                                     </button>
                                 </form>
 
                                 {inboundResult && (
-                                    <div className={`operation-result-mini ${inboundResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {inboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{inboundResult.success ? "Przyjęto" : "Błąd"}</span>
+                                    <div className={`operation-result-mini ${inboundResult.success ? 'success' : 'error'}`}>
+                                        <div className="result-status">
+                                            {inboundResult.success ?
+                                                <CheckCircle2 size={16} className="icon-success" /> :
+                                                <AlertTriangle size={16} className="icon-error" />
+                                            }
+                                            <span>{inboundResult.success ? "Przyjęto" : "Błąd"}</span>
                                         </div>
-                                        {inboundResult.success ? (
-                                            <div style={{ fontSize: '0.8rem' }}>
-                                                <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]</div>
-                                            </div>
-                                        ) : (
-                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{prettifyBackendError(inboundResult.message)}</div>
-                                        )}
+                                        <div className="result-details">
+                                            {inboundResult.success ? (
+                                                <span className="location-badge">
+                {inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]
+              </span>
+                                            ) : (
+                                                <span className="error-text">{prettifyBackendError(inboundResult.message)}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
                             {/* Przesunięcia */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <Move size={20} color="var(--accent-primary)" />
+                            <div className="glass-card move">
+                                <div className="card-header">
+                                    <h2>
+                                        <Move size={20} className="icon-accent" />
                                         Przesunięcia
                                     </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Relokacja między regałami.
-                                    </p>
+                                    <p className="text-muted">Relokacja między regałami.</p>
                                 </div>
 
                                 <div className="ht-form">
                                     <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div className="input-wrapper">
                                             <input
                                                 type="text"
-                                                placeholder="Kod produktu do przesunięcia..."
+                                                placeholder="Kod produktu..."
                                                 value={moveBarcode}
                                                 onChange={(e) => setMoveBarcode(e.target.value)}
                                                 onKeyDown={(e) => {
@@ -877,17 +875,19 @@ const InventoryContent = () => {
                                                         }
                                                     }
                                                 }}
-                                                style={{ flex: 1 }}
                                             />
-                                            <button type="button" onClick={() => { setScannerMode('move'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setScannerMode('move'); setIsScannerOpen(true); }}
+                                                className="btn-action-ht"
+                                            >
                                                 <Camera size={18} />
                                             </button>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
-                                        className="btn-primary-ht"
-                                        style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}
+                                        className="btn-primary-ht btn-submit"
                                         onClick={() => {
                                             const item = inventoryData.find(i => i.barcode === moveBarcode);
                                             if (item) {
@@ -904,73 +904,70 @@ const InventoryContent = () => {
                                 </div>
 
                                 {moveResult && (
-                                    <div className={`operation-result-mini ${moveResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {moveResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{moveResult.success ? "Przesunięto" : "Błąd"}</span>
+                                    <div className={`operation-result-mini ${moveResult.success ? 'success' : 'error'}`}>
+                                        <div className="result-status">
+                                            {moveResult.success ?
+                                                <CheckCircle2 size={16} className="icon-success" /> :
+                                                <AlertTriangle size={16} className="icon-error" />
+                                            }
+                                            <span>{moveResult.success ? "Przesunięto" : "Błąd"}</span>
                                         </div>
-                                        {moveResult.success ? (
-                                            <div style={{ fontSize: '0.8rem' }}>
-                                                {moveResult.productName}<br />
-                                                <span style={{ color: 'var(--accent-primary)' }}>→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span>
-                                            </div>
-                                        ) : (
-                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{moveResult.message}</div>
-                                        )}
+                                        <div className="result-details">
+                                            {moveResult.success ? (
+                                                <>
+                                                    {moveResult.productName}<br />
+                                                    <span className="location-badge">→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span>
+                                                </>
+                                            ) : (
+                                                <span className="error-text">{moveResult.message}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
                             {/* Wydania */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <PackageMinus size={20} color="#ff4d4d" />
+                            <div className="glass-card outbound">
+                                <div className="card-header">
+                                    <h2>
+                                        <PackageMinus size={20} className="icon-error" />
                                         Wydania
                                     </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Wydanie towaru zgodnie z FIFO.
-                                    </p>
+                                    <p className="text-muted">Wydanie towaru zgodnie z FIFO.</p>
                                 </div>
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleOutbound(e); }} className="ht-form">
                                     <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div className="input-wrapper">
                                             <input
                                                 value={outboundBarcode}
                                                 onChange={(e) => setOutboundBarcode(e.target.value)}
                                                 placeholder="Kod produktu..."
-                                                style={{ flex: 1 }}
                                             />
-                                            <button type="button" onClick={() => { setScannerMode('outbound'); setIsScannerOpen(true); }} className="btn-action-ht">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setScannerMode('outbound'); setIsScannerOpen(true); }}
+                                                className="btn-action-ht"
+                                            >
                                                 <Camera size={18} />
                                             </button>
                                         </div>
                                     </div>
-                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', background: '#ff4d4d', borderColor: '#ff4d4d', fontSize: '0.85rem' }}>
+                                    <button type="submit" className="btn-primary-ht btn-submit btn-danger">
                                         Wydaj towar
                                     </button>
                                 </form>
 
                                 {outboundResult && (
-                                    <div className={`operation-result-mini ${outboundResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {outboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{outboundResult.success ? "Wydano" : "Błąd"}</span>
+                                    <div className={`operation-result-mini ${outboundResult.success ? 'success' : 'error'}`}>
+                                        <div className="result-status">
+                                            {outboundResult.success ?
+                                                <CheckCircle2 size={16} className="icon-success" /> :
+                                                <AlertTriangle size={16} className="icon-error" />
+                                            }
+                                            <span>{outboundResult.success ? "Wydano" : "Błąd"}</span>
                                         </div>
-                                        <div style={{ fontSize: '0.8rem' }}>
+                                        <div className="result-details">
                                             {outboundResult.success ? "Produkt opuścił magazyn." : outboundResult.message}
                                         </div>
                                     </div>

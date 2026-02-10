@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Faraday.API.DTOs;
+﻿using Faraday.API.DTOs;
 using Faraday.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
