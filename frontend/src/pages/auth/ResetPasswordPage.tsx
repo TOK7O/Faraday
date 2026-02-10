@@ -2,8 +2,8 @@
 import * as Form from "@radix-ui/react-form";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
-import { RegisterPasswordField } from "@/components/ui/RegisterPasswordField";
-import { resetPassword } from '@/api/axios';
+import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
+import { resetPassword } from "@/api/axios";
 import "./login/LoginPage.scss";
 
 const ResetPasswordPage = () => {
@@ -13,12 +13,11 @@ const ResetPasswordPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [newPasswordValue, setNewPasswordValue] = useState("");
 
     if (!token) {
         return (
-            <div className="auth-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ color: 'white', textAlign: 'center' }}>
+            <div className="auth-container" style={{ justifyContent: "center", alignItems: "center" }}>
+                <div style={{ color: "white", textAlign: "center" }}>
                     <h2>Invalid Link</h2>
                     <p>This password reset link is invalid or missing a token.</p>
                 </div>
@@ -32,7 +31,8 @@ const ResetPasswordPage = () => {
         setIsLoading(true);
 
         const formData = new FormData(event.currentTarget);
-        const newPassword = formData.get("newPassword") as string;
+        // UWAGA: Komponent RegisterPasswordFieldPair ustawia name="password" i "confirmPassword"
+        const newPassword = formData.get("password") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
 
         if (newPassword !== confirmPassword) {
@@ -42,8 +42,7 @@ const ResetPasswordPage = () => {
         }
 
         try {
-            await resetPassword(token!, newPassword);
-
+            await resetPassword(token, newPassword);
             navigate("/login");
         } catch (err) {
             setError("Failed to reset password. The link may have expired.");
@@ -55,7 +54,9 @@ const ResetPasswordPage = () => {
     return (
         <div className="auth-container">
             <section className="auth-visual">
-                 <h1>Faraday<span>Systems</span></h1>
+                <h1>
+                    Faraday<span>Systems</span>
+                </h1>
             </section>
 
             <section className="auth-form">
@@ -65,22 +66,43 @@ const ResetPasswordPage = () => {
                 </div>
 
                 {error && (
-                    <div className="error-banner" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '20px', display: 'flex', gap: '10px' }}>
+                    <div
+                        className="error-banner"
+                        style={{
+                            background: "rgba(239, 68, 68, 0.1)",
+                            color: "#ef4444",
+                            padding: "10px",
+                            borderRadius: "8px",
+                            marginBottom: "20px",
+                            display: "flex",
+                            gap: "10px",
+                        }}
+                    >
                         <AlertCircle size={18} /> {error}
                     </div>
                 )}
 
                 <Form.Root className="actual-form" onSubmit={handleSubmit}>
-                    <RegisterPasswordField
-                        data={{ label: "New Password", placeholder: "Enter new password", validation: { required: "Required", tooShort: "Min 8 chars", noNumber: "Need number", noSpecialChar: "Need special char" } }}
-                        name="newPassword"
-                        onPasswordChange={setNewPasswordValue}
-                    />
 
-                    <RegisterPasswordField
-                        data={{ label: "Confirm Password", placeholder: "Confirm password", validation: { required: "Required", mismatch: "Passwords do not match" } }}
-                        name="confirmPassword"
-                        matchPasswordValue={newPasswordValue}
+                    <RegisterPasswordFieldPair
+                        passwordData={{
+                            label: "New Password",
+                            placeholder: "Enter new password",
+                            validation: {
+                                required: "Required",
+                                tooShort: "Min 8 chars",
+                                noNumber: "Need number",
+                                noSpecialChar: "Need symbol"
+                            }
+                        }}
+                        confirmData={{
+                            label: "Confirm Password",
+                            placeholder: "Confirm password",
+                            validation: {
+                                required: "Required",
+                                mismatch: "Passwords do not match"
+                            }
+                        }}
                     />
 
                     <Form.Submit asChild>
@@ -95,4 +117,3 @@ const ResetPasswordPage = () => {
 };
 
 export default ResetPasswordPage;
-

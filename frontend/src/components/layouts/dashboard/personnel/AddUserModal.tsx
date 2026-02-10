@@ -5,7 +5,7 @@ import { X, Loader2, UserPlus, AlertCircle } from "lucide-react";
 import { registerUser } from "@/api/axios";
 import { SignInLoginField } from "@components/ui/SignInLoginField";
 import { RegisterEmailField } from "@components/ui/RegisterEmailField";
-import { RegisterPasswordField } from "@components/ui/RegisterPasswordField";
+import { RegisterPasswordFieldPair } from "@components/ui/RegisterPasswordFieldPair";
 import "./AddUserModal.scss";
 
 
@@ -135,18 +135,13 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
                         />
 
                         {/* 3. Password Field (Główne) */}
-                        <RegisterPasswordField
-                            data={fieldsData.password}
-                            name="password"
-                            onPasswordChange={setPassword} // Aktualizujemy stan przy wpisywaniu
-                        />
-
-                        {/* 4. Confirm Password Field (Nowe) */}
-                        <RegisterPasswordField
-                            data={fieldsData.confirmPassword}
-                            name="confirmPassword"
-                            matchPasswordValue={password} // Przekazujemy wartość pierwszego hasła do porównania
-                            onPasswordChange={setConfirmPassword}
+                        <RegisterPasswordFieldPair
+                            passwordData={fieldsData.password}
+                            confirmData={fieldsData.confirmPassword}
+                            onChange={(password, confirm) => {
+                                setPassword(password);
+                                setConfirmPassword(confirm);
+                            }}
                         />
 
                         {/* 5. Role Select */}

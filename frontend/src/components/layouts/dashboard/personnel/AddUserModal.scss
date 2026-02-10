@@ -135,12 +135,13 @@ $radius-modal: 24px;
       // ERROR MESSAGES
       .error-text, .FormMessage {
         color: var(--error-color, #ef4444);
-        text-transform: none;
+        font-size: 0.85rem;
         font-weight: 500;
-        font-size: 0.75rem;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
+        text-align: right;
+        width: max-content;
       }
 
       // --- UNIFIED INPUT STYLES ---
