@@ -10,10 +10,14 @@ namespace Faraday.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService)
+        public AuthController(
+            IAuthService authService,
+            ILogger<AuthController> logger) 
         {
             _authService = authService;
+            _logger = logger;
         }
 
         [Authorize(Roles = "Administrator")]
@@ -27,6 +31,7 @@ namespace Faraday.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Registration endpoint error for username: {Username}", request.Username);
                 return BadRequest(ex.Message);
             }
         }
@@ -47,6 +52,7 @@ namespace Faraday.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Login endpoint error for user: {Username}", request.Username);
                 return BadRequest(ex.Message);
             }
         }
@@ -58,6 +64,7 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
+                _logger.LogInformation("2FA setup initiated for user ID: {UserId}", userId);
                 var result = await _authService.InitiateTwoFactorSetupAsync(userId);
                 return Ok(result);
             }
@@ -79,6 +86,7 @@ namespace Faraday.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Change password endpoint error");
                 return BadRequest(ex.Message);
             }
         }
@@ -90,6 +98,7 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
+                _logger.LogInformation("2FA enable request for user ID: {UserId}", userId);
                 await _authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
                 return Ok(new { Message = "2FA has been enabled." });
             }
@@ -104,6 +113,7 @@ namespace Faraday.API.Controllers
         public async Task<IActionResult> DisableTwoFactor()
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
+            _logger.LogInformation("2FA disable request for user ID: {UserId}", userId);
             await _authService.DisableTwoFactorAsync(userId);
             return Ok(new { Message = "2FA disabled." });
         }
@@ -113,6 +123,7 @@ namespace Faraday.API.Controllers
         public async Task<IActionResult> GetTwoFactorStatus()
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
+            _logger.LogInformation("2FA status check for user ID: {UserId}", userId);
             var isEnabled = await _authService.GetTwoFactorEnabledStatusAsync(userId);
             return Ok(new { IsEnabled = isEnabled });
         }
@@ -204,9 +215,17 @@ namespace Faraday.API.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordDto request)
         {
-            await _authService.ForgotPasswordAsync(request.Email);
-            // Always return OK
-            return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+            try
+            {
+                await _authService.ForgotPasswordAsync(request.Email);
+                return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Forgot password endpoint error");
+                // Always return OK here, even if the email address is invalid.
+                return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+            }
         }
 
         [HttpPost("reset-password")]

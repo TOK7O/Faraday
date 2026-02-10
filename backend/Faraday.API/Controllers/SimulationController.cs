@@ -13,11 +13,16 @@ namespace Faraday.API.Controllers
     {
         private readonly IMonitoringService _monitoringService;
         private readonly FaradayDbContext _context;
+        private readonly ILogger<SimulationController> _logger;
 
-        public SimulationController(IMonitoringService monitoringService, FaradayDbContext context)
+        public SimulationController(
+            IMonitoringService monitoringService, 
+            FaradayDbContext context, 
+            ILogger<SimulationController> logger)
         {
             _monitoringService = monitoringService;
             _context = context;
+            _logger = logger;
         }
         
         // Manually triggers a critical temperature failure on a specific rack.
@@ -25,9 +30,10 @@ namespace Faraday.API.Controllers
         [HttpPost("trigger-temp-failure/{rackId}")]
         public async Task<IActionResult> TriggerTempFailure(int rackId)
         {
+            _logger.LogWarning("Manual temperature failure simulation triggered for rack ID: {RackId}", rackId);
             var rack = await _context.Racks.FindAsync(rackId);
             if (rack == null) return NotFound("Rack not found");
-
+            
             // Simulation: temperature rises 15 degrees above the maximum limit
             decimal disasterTemp = rack.MaxTemperature + 15.0m;
             
@@ -36,7 +42,8 @@ namespace Faraday.API.Controllers
 
             // Send the simulated data to the Monitoring Service
             await _monitoringService.ProcessRackReadingAsync(rackId, disasterTemp, currentWeight);
-
+            
+            _logger.LogInformation("Temperature disaster simulation executed for rack: {RackCode}. Temperature: {Temperature}°C", rack.Code, disasterTemp);
             return Ok(new { message = $"Disaster triggered! Rack {rack.Code} temperature set to {disasterTemp:F1}°C (Max allowed: {rack.MaxTemperature}°C)." });
         }
         
@@ -45,6 +52,7 @@ namespace Faraday.API.Controllers
         [HttpPost("trigger-theft/{rackId}")]
         public async Task<IActionResult> TriggerTheft(int rackId)
         {
+            _logger.LogWarning("Manual theft simulation triggered for rack ID: {RackId}", rackId);
             // We need to include slots and products to calculate the expected weight
             var rack = await _context.Racks
                 .Include(r => r.Slots)
@@ -71,6 +79,7 @@ namespace Faraday.API.Controllers
             // Send the simulated data to the Monitoring Service
             await _monitoringService.ProcessRackReadingAsync(rackId, currentTemp, stolenWeight);
 
+            _logger.LogInformation("Theft simulation executed for rack: {RackCode}. Simulated weight: {Weight}kg (Expected: {Expected}kg)", rack.Code, stolenWeight, expectedWeight);
             return Ok(new { message = $"Theft triggered! Rack {rack.Code} weight dropped to {stolenWeight:F2}kg (Expected from DB: {expectedWeight:F2}kg)." });
         }
     }

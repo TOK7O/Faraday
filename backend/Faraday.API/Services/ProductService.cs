@@ -44,6 +44,7 @@ namespace Faraday.API.Services
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
+            _logger.LogInformation("Retrieving all products from database");
             var products = await _context.Products
                 .OrderBy(p => p.Name)
                 .ToListAsync();
@@ -52,13 +53,26 @@ namespace Faraday.API.Services
 
         public async Task<ProductDto?> GetProductByIdAsync(int id)
         {
+            _logger.LogInformation("Fetching product by ID: {ProductId}", id);
             var product = await _context.Products.FindAsync(id);
+    
+            if (product == null)
+            {
+                _logger.LogWarning("Product not found: {ProductId}", id);
+            }
+    
             return product == null ? null : MapToDto(product);
         }
-
         public async Task<ProductDto?> GetProductByScanCodeAsync(string scanCode)
         {
+            _logger.LogInformation("Fetching product by scan code: {ScanCode}", scanCode);
             var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == scanCode);
+    
+            if (product == null)
+            {
+                _logger.LogWarning("Product not found for scan code: {ScanCode}", scanCode);
+            }
+    
             return product == null ? null : MapToDto(product);
         }
 
@@ -123,16 +137,16 @@ namespace Faraday.API.Services
                     var rack = item.Slot.Rack;
 
                     // Temperature validation - rack must be able to maintain new product requirements
-                    if (rack.MinTemperature > dto.RequiredMinTemp || 
-                        rack.MaxTemperature < dto.RequiredMaxTemp)
+                    // The rack's range must be a subset of the product's temperature range.
+                    if (rack.MinTemperature < dto.RequiredMinTemp || 
+                        rack.MaxTemperature > dto.RequiredMaxTemp)
                     {
                         throw new InvalidOperationException(
-                            $"Cannot update product: Item in rack '{rack.Code}' requires " +
-                            $"temperature range {dto.RequiredMinTemp}°C - {dto.RequiredMaxTemp}°C, " +
-                            $"but rack only supports {rack.MinTemperature}°C - {rack.MaxTemperature}°C");
+                            $"Cannot update product: Rack '{rack.Code}' operates in range {rack.MinTemperature}°C - {rack.MaxTemperature}°C, " +
+                            $"which exceeds the product safe range of {dto.RequiredMinTemp}°C - {dto.RequiredMaxTemp}°C");
                     }
 
-                    // Dimension validation - new size must fit in current rack slots
+                    // Dimension validation - a new size must fit in current rack slots
                     if (dto.WidthMm > rack.MaxItemWidthMm || 
                         dto.HeightMm > rack.MaxItemHeightMm || 
                         dto.DepthMm > rack.MaxItemDepthMm)
@@ -342,7 +356,12 @@ namespace Faraday.API.Services
                 await _context.SaveChangesAsync();
                 
                 successCount += productsToAdd.Count;
-                _logger.LogInformation($"Imported {productsToAdd.Count} products from CSV.");
+                _logger.LogInformation("Bulk imported {Count} products from CSV. Success: {Success}, Errors: {Errors}", 
+                    productsToAdd.Count, successCount, errorCount);
+            }
+            else
+            {
+                _logger.LogWarning("No products were imported. Total errors: {ErrorCount}", errorCount);
             }
 
             return (successCount, errorCount, errors);

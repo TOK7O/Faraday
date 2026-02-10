@@ -13,16 +13,29 @@ using Faraday.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Log application startup
+var startupLogger = LoggerFactory.Create(config => 
+{
+    config.AddConsole();
+}).CreateLogger("Startup");
+
+startupLogger.LogInformation("=== Faraday WMS API Starting ===");
+startupLogger.LogInformation("Environment: {Environment}", builder.Environment.EnvironmentName);
+
 Env.TraversePath().Load();
 
 var testEnv = Environment.GetEnvironmentVariable("SMTP_SERVER");
 Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER found: {testEnv ?? "NULL"}");
+
+startupLogger.LogInformation("Environment variables loaded successfully from .env file");
 
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "faraday_db";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+startupLogger.LogInformation("Database Host: {DbHost}", dbHost);
 
 if (string.IsNullOrEmpty(dbPass))
 {
@@ -49,6 +62,11 @@ builder.Configuration["Jwt:Audience"] = Environment.GetEnvironmentVariable("JWT_
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+startupLogger.LogInformation("JWT Authentication configured. Issuer: {Issuer}, Audience: {Audience}", 
+    jwtIssuer, jwtAudience);
+
+// Gemini API key loaded
 builder.Configuration["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
 // Configure the authentication service to use JWT Bearer tokens as the default scheme.
@@ -145,11 +163,14 @@ builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only on
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
 builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
+startupLogger.LogInformation("All services registered successfully");
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
 builder.Services.AddHostedService<SimulationBackgroundWorker>();
 builder.Services.AddHostedService<ExpirationMonitoringWorker>();
+startupLogger.LogInformation("Background workers registered successfully");
+
 
 var app = builder.Build();
 
@@ -162,13 +183,14 @@ using (var scope = app.Services.CreateScope())
     // Automatically apply any pending migrations to the database.
     try
     {
+        startupLogger.LogInformation("Applying database migrations...");
         dbContext.Database.Migrate();
+        startupLogger.LogInformation("Database migrations applied successfully");
     }
     catch (Exception ex)
     {
-        // If migration fails (e.g. tables already exist), we try to EnsureCreated as a fallback
-        // for dev environments, or just log and continue if we trust the schema is there.
-        Console.WriteLine($"[WARNING] Migration failed: {ex.Message}. Attempting to continue...");
+        // Log and continue, we trust the schema is there (hopefully).
+        startupLogger.LogError(ex, "Migration failed: {Message}. Attempting to continue...", ex.Message);
     }
 
     // Seed default administrator account if the Users table is empty.
@@ -183,6 +205,7 @@ using (var scope = app.Services.CreateScope())
             IsActive = true
         });
         dbContext.SaveChanges();
+        startupLogger.LogInformation("Default administrator account seeded: admin / admin123");
     }
 }
 
@@ -214,5 +237,7 @@ app.MapHub<AlertsHub>("/hubs/alerts");
 app.MapControllers();
 
 app.UseStaticFiles();
+
+startupLogger.LogInformation("=== Faraday WMS API Started Successfully ===");
 
 app.Run();

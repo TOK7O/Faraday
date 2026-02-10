@@ -77,9 +77,14 @@ namespace Faraday.API.Services
                     return freeSlot;
                 }
             }
-
-            throw new InvalidOperationException($"No available slots found in {candidateRacks.Count} compatible racks. " +
-                                                "Racks are either full or adding this item would exceed the rack's weight limit.");
+            _logger.LogWarning("No available slots found for product '{ProductName}' (ID: {ProductId}) " +
+                               "after checking {RackCount} compatible racks. " +
+                               "All racks are either full or would exceed weight limits",
+                                product.Name, productDefinitionId, candidateRacks.Count);
+            
+            throw new InvalidOperationException($"No available slots found in {candidateRacks.Count} " +
+                                                $"compatible racks. Racks are either full or adding this " +
+                                                $"item would exceed the rack's weight limit.");
         }
     }
 }
