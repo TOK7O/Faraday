@@ -31,24 +31,19 @@ const LoginPage = () => {
     event.preventDefault();
     setStatus((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    // Extract data from the form event
     const formData = new FormData(event.currentTarget);
-
     let payload;
 
     if (status.requires2FA) {
-      // --- STEP 2: Send stored creds + entered 2FA code ---
       payload = {
         username: tempCreds.username,
         password: tempCreds.password,
         twoFactorCode: twoFactorCode
       };
     } else {
-      // --- STEP 1: Send username & password ---
       const username = formData.get("username") as string;
       const password = formData.get("password") as string;
 
-      // Save to state in case we need them for Step 2
       setTempCreds({ username, password });
 
       payload = {
@@ -61,32 +56,27 @@ const LoginPage = () => {
     try {
       const response = await login(payload.username, payload.password, payload.twoFactorCode);
 
-      // CASE: 2FA Required (Backend returns 428 Precondition Required)
-      if (response.status === 428) {
-        setStatus({ isLoading: false, error: null, requires2FA: true });
-        return;
-      }
-
-      // CASE: Error
-      if (!response.status || response.status < 200 || response.status >= 300) {
-        let errorMessage = response.data?.message || response.statusText || "Login failed";
-        throw new Error(errorMessage);
-      }
-
-      // CASE: Success
       const data = response.data;
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
       localStorage.setItem("role", data.role);
 
       navigate("/dashboard");
+
     } catch (err: any) {
+      if (err.response && err.response.status === 428) {
+        setStatus({ isLoading: false, error: null, requires2FA: true });
+        return; // Stop execution, UI will update to show 2FA input
+      }
+
       console.error("Login Error:", err);
+
+      const errorMessage = err.response?.data?.message || err.message || "Unable to connect to server.";
+
       setStatus((prev) => ({
         ...prev,
         isLoading: false,
-        error: err.message || "Unable to connect to server.",
+        error: errorMessage,
       }));
     }
   };
@@ -201,7 +191,6 @@ const LoginPage = () => {
                 </Form.Field>
             )}
 
-            {/* Direct Button child - No Form.Submit wrapper to preserve Flex gap */}
             <button
                 type="submit"
                 className="submit-btn"
