@@ -12,6 +12,10 @@ using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Handles authentication, user registration, Two-Factor Authentication (2FA) flows,
+    /// and administrative user management operations.
+    /// </summary>
     public class AuthService : IAuthService
     {
         private readonly FaradayDbContext _context;
@@ -31,12 +35,19 @@ namespace Faraday.API.Services
             _logger = logger; 
         }
 
+        /// <summary>
+        /// Authenticates a user based on username and password.
+        /// Handles the initial password check and the subsequent 2FA verification if enabled.
+        /// </summary>
         public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
             
+            // Verify password using BCrypt to compare against the stored hash.
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
+                // Log generic warning to avoid revealing which part (user or pass) was incorrect, 
+                // but keep internal logs detailed for security auditing.
                 _logger.LogWarning("Failed login attempt for user: {Username} from IP: {IP}", 
                     dto.Username, "IP_ADDRESS_HERE");
                 throw new Exception("Incorrect login or password");
@@ -48,12 +59,15 @@ namespace Faraday.API.Services
                 throw new Exception("Account is disabled.");
             }
 
-            // --- 2FA Verification Logic ---
+            // 2FA Verification Logic
             if (user.IsTwoFactorEnabled)
             {
+                // If the user has 2FA enabled but didn't send a code, we stop here.
+                // The frontend should catch this specific exception string to prompt the user for the code.
                 if (string.IsNullOrEmpty(dto.TwoFactorCode))
                 {
-                    // We throw a specific error message that the Controller will map to HTTP 428
+                    // We throw a specific error message intended for global exception
+                    // handling to map to HTTP 428 (Precondition Required).
                     throw new InvalidOperationException("2FA_REQUIRED");
                 }
 
@@ -66,7 +80,8 @@ namespace Faraday.API.Services
                 var bytes = Base32Encoding.ToBytes(user.TwoFactorSecretKey);
                 var totp = new Totp(bytes);
                 
-                // Using RfcSpecifiedNetworkDelay allows for a slight time drift (+/- 30 sec) between server and client
+                // Using RfcSpecifiedNetworkDelay allows for a slight time drift between server and client
+                // This is crucial for mobile authenticators that might not be perfectly synced with server time.
                 bool valid = totp.VerifyTotp(dto.TwoFactorCode, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
 
                 if (!valid)
@@ -116,6 +131,10 @@ namespace Faraday.API.Services
                 dto.Username, dto.Email, dto.Role);
         }
 
+        /// <summary>
+        /// Begins the 2FA setup process by generating a secret key and a QR code.
+        /// NOTE: Does not enable 2FA on the user entity yet; <see cref="FinalizeTwoFactorSetupAsync"/> must be called.
+        /// </summary>
         public async Task<TwoFactorSetupDto> InitiateTwoFactorSetupAsync(int userId)
         {
             var user = await _context.Users.FindAsync(userId);
@@ -123,18 +142,16 @@ namespace Faraday.API.Services
 
             _logger.LogInformation("2FA setup initiated for user: {Username} (ID: {UserId})", user.Username, userId);
 
-            // 1. Generate a random secret key
+            // Generate a random secret key
             var key = KeyGeneration.GenerateRandomKey(20);
             var secretBase32 = Base32Encoding.ToString(key);
 
             // Store the key, but do NOT enable 2FA yet to prevent lockout if the user fails to scan the QR.
             user.TwoFactorSecretKey = secretBase32;
             await _context.SaveChangesAsync();
-
-            // 2. Generate Google Authenticator compatible URI
+            
+            // Generate the QR image2
             string otpAuthUri = $"otpauth://totp/FaradayWMS:{user.Username}?secret={secretBase32}&issuer=FaradayWMS";
-
-            // 3. Generate QR Code image
             using var qrGenerator = new QRCodeGenerator();
             using var qrCodeData = qrGenerator.CreateQrCode(otpAuthUri, QRCodeGenerator.ECCLevel.Q);
             using var qrCode = new PngByteQRCode(qrCodeData);
@@ -148,6 +165,10 @@ namespace Faraday.API.Services
             };
         }
 
+        /// <summary>
+        /// Completes the 2FA setup by validating a code generated from the secret key created in <see cref="InitiateTwoFactorSetupAsync"/>.
+        /// This ensures the user has successfully scanned the QR code before we enforce 2FA.
+        /// </summary>
         public async Task FinalizeTwoFactorSetupAsync(int userId, string code)
         {
             var user = await _context.Users.FindAsync(userId);
@@ -181,6 +202,7 @@ namespace Faraday.API.Services
             var user = await _context.Users.FindAsync(userId);
             if (user != null)
             {
+                // Clears the key and flag to completely reset the 2FA state.
                 user.IsTwoFactorEnabled = false;
                 user.TwoFactorSecretKey = null;
                 await _context.SaveChangesAsync();
@@ -189,6 +211,10 @@ namespace Faraday.API.Services
             }
         }
         
+        /// <summary>
+        /// Allows a logged-in user to change their own password.
+        /// Requires the old password for security verification.
+        /// </summary>
         public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
         {
             var user = await _context.Users.FindAsync(userId);
@@ -209,11 +235,16 @@ namespace Faraday.API.Services
             _logger.LogInformation("Password changed successfully for user: {Username}", user.Username);
         }
         
+        /// <summary>
+        /// Retrieves all users for the admin dashboard.
+        /// Includes inactive users (IgnoreQueryFilters).
+        /// </summary>
         public async Task<List<UserListDto>> GetAllUsersAsync()
         {
             _logger.LogInformation("Retrieving all users list (admin operation)");
             
-            // IgnoreQueryFilters to include inactive users in admin panel
+            // IgnoreQueryFilters to include inactive users in the admin panel.
+            // This is necessary if global filters are applied.
             var users = await _context.Users
                 .IgnoreQueryFilters()
                 .OrderBy(u => u.Username)
@@ -233,9 +264,13 @@ namespace Faraday.API.Services
             return users;
         }
 
+        /// <summary>
+        /// Updates a user profile
+        /// Contains safeguards to prevent the system from being left without an active administrator.
+        /// </summary>
         public async Task<UserListDto> UpdateUserAsync(int targetUserId, int adminId, UserUpdateDto dto)
         {
-            // Fetch target user (including inactive ones for admin panel)
+            // Fetch target user (including inactive ones)
             var user = await _context.Users
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(u => u.Id == targetUserId);
@@ -251,6 +286,7 @@ namespace Faraday.API.Services
             if (dto.Role.HasValue || dto.IsActive.HasValue)
             {
                 // Check if this is the last active admin
+                // Counts other active admins excluding the one currently being edited.
                 bool isLastAdmin = await _context.Users
                     .CountAsync(u => u.Role == UserRole.Administrator && u.IsActive && u.Id != targetUserId) == 0;
 
@@ -312,6 +348,9 @@ namespace Faraday.API.Services
             };
         }
 
+        /// <summary>
+        /// Administrative override to reset a user's password without needing the old one.
+        /// </summary>
         public async Task ResetUserPasswordAsync(int targetUserId, int adminId, string newPassword)
         {
             var user = await _context.Users
@@ -326,6 +365,7 @@ namespace Faraday.API.Services
             }
 
             // Prevent admin from resetting their own password this way (they should use ChangePassword)
+            // Just remember this: Admin Reset is for *others*, ChangePassword is for *self*.
             if (targetUserId == adminId)
             {
                 _logger.LogWarning("Admin {AdminId} attempted to reset their own password via admin function", adminId);
@@ -342,6 +382,9 @@ namespace Faraday.API.Services
                 adminId, user.Username, targetUserId);
         }
 
+        /// <summary>
+        /// Administrative override to remove 2FA from a user's account.
+        /// </summary>
         public async Task ResetUser2FAAsync(int targetUserId, int adminId)
         {
             var user = await _context.Users
@@ -376,7 +419,7 @@ namespace Faraday.API.Services
                 return;
             }
 
-            // Token generation
+            // Token generation using cryptographically secure RNG.
             user.PasswordResetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
             user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
 
@@ -395,6 +438,7 @@ namespace Faraday.API.Services
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == dto.Token);
 
+            // Validate token existence and expiration
             if (user == null || user.ResetTokenExpires < DateTime.UtcNow)
             {
                 _logger.LogWarning("Invalid or expired password reset token used: {Token}", 
@@ -402,6 +446,7 @@ namespace Faraday.API.Services
                 throw new Exception("Invalid or expired password reset token.");
             }
             
+            // Set new password and consume the token
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             user.PasswordResetToken = null;
             user.ResetTokenExpires = null;
@@ -427,7 +472,7 @@ namespace Faraday.API.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
+                expires: DateTime.UtcNow.AddDays(1), // Token valid time
                 signingCredentials: creds
             );
 

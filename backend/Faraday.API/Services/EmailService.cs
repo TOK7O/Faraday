@@ -7,6 +7,10 @@ using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Service responsible for handling outgoing email communications.
+    /// Uses MailKit implementation.
+    /// </summary>
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _settings;
@@ -19,6 +23,13 @@ namespace Faraday.API.Services
             _settings = settings.Value;
             _logger = logger;
         }
+
+        /// <summary>
+        /// Generates and sends a password reset email containing a time-sensitive link.
+        /// </summary>
+        /// <param name="toEmail">The recipient's email address.</param>
+        /// <param name="resetLink">The full URL (including token) for the password reset action.</param>
+        /// <exception cref="Exception">Propagates SMTP or network exceptions after logging them.</exception>
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetLink)
         {
             try
@@ -29,7 +40,7 @@ namespace Faraday.API.Services
                 email.From.Add(new MailboxAddress(_settings.SMTP_NAME, _settings.SMTP_EMAIL));
                 email.To.Add(MailboxAddress.Parse(toEmail));
                 email.Subject = "Resetowanie hasła - Faraday Systems";
-
+                
                 var builder = new BodyBuilder
                 {
                     HtmlBody = $@"
@@ -46,20 +57,27 @@ namespace Faraday.API.Services
                 };
 
                 email.Body = builder.ToMessageBody();
-
+                
                 using var smtp = new SmtpClient();
+                
+                // SecureSocketOptions.StartTls upgrades the connection to TLS immediately after connecting
                 await smtp.ConnectAsync(_settings.SMTP_SERVER, _settings.SMTP_PORT, SecureSocketOptions.StartTls);
+                
                 await smtp.AuthenticateAsync(_settings.SMTP_EMAIL, _settings.SMTP_PASSWORD);
                 await smtp.SendAsync(email);
+                
+                // True indicates we are sending the QUIT command to the server
                 await smtp.DisconnectAsync(true);
                 
                 _logger.LogInformation("Password reset email sent successfully to: {Email}", toEmail);
             }
             catch (Exception ex)
             {
+                // We log the error here to capture the context (email address), 
+                // but we re-throw to ensure the controller knows the operation failed.
                 _logger.LogError(ex, "Failed to send password reset email to: {Email}. Error: {ErrorMessage}", 
                     toEmail, ex.Message);
-                throw; // Re-throw so calling code knows it failed
+                throw;
             }
         }
     }

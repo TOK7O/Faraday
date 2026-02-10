@@ -53,8 +53,7 @@ namespace Faraday.API.Workers
                 .ToListAsync();
 
             if (!racks.Any()) return;
-
-            // GLOBAL PROBABILITY CALCULATION
+            
             // 1 hour = 3600 seconds.
             // Cycles per hour = 3600 / CycleDelaySeconds (e.g., 3600 / 10 = 360 cycles).
             int cyclesPerHour = 3600 / _cycleDelaySeconds;
@@ -64,7 +63,7 @@ namespace Faraday.API.Workers
             // If ExpectedFaultsPerHour is 5, we check if Random(0..360) < 5 (0,1,2,3,4 are true).
             bool triggerAnomaly = _random.Next(0, cyclesPerHour) < _expectedFaultsPerHour;
 
-            // If anomaly triggers, pick ONE random victim rack
+            // If anomaly triggers, picks one random victim rack
             Rack? victimRack = null;
             if (triggerAnomaly)
             {
@@ -73,7 +72,7 @@ namespace Faraday.API.Workers
 
             foreach (var rack in racks)
             {
-                // 1. Calculate what the sensor should see
+                // Calculate what the sensor should see
                 decimal idealWeight = rack.Slots
                     .Where(s => s.CurrentItem != null)
                     .Sum(s => s.CurrentItem!.Product.WeightKg);
@@ -86,7 +85,6 @@ namespace Faraday.API.Workers
                 // Apply Simulation Logic
                 if (rack == victimRack)
                 {
-                    // Anomaly scenario
                     
                     // Randomly choose a failure type (0 = Temperature Failure, 1 = Theft)
                     int failureType = _random.Next(0, 2);
@@ -109,19 +107,18 @@ namespace Faraday.API.Workers
                 }
                 else
                 {
-                    // === NORMAL SCENARIO (Everyone else) ===
                     
-                    // Add slight noise to temperature (+/- 10% of range)
+                    // Add slight noise to temperature
                     decimal tempRange = rack.MaxTemperature - rack.MinTemperature;
                     decimal noise = (decimal)(_random.NextDouble() - 0.5) * (tempRange * 0.2m); 
                     simulatedTemp = safeTemp + noise;
 
-                    // Add slight noise to weight (+/- 0.02kg sensor error)
+                    // Add slight noise to weight
                     decimal weightNoise = (decimal)(_random.NextDouble() * 0.04 - 0.02);
                     simulatedWeight = Math.Max(0, idealWeight + weightNoise);
                 }
 
-                // 3. Send data to Monitoring Service
+                // Send data to Monitoring Service
                 await monitoringService.ProcessRackReadingAsync(rack.Id, simulatedTemp, simulatedWeight);
             }
         }

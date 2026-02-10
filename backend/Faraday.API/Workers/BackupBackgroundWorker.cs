@@ -35,8 +35,6 @@ namespace Faraday.API.Workers
                         
                         _logger.LogInformation($"Scheduled backup finished: {fileName}");
                         
-                        // FUTURE: Here we would upload 'fileName' to S3/Cloud
-                        //TODO
                     }
                 }
                 catch (Exception ex)

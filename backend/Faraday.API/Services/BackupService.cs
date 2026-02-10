@@ -10,6 +10,11 @@ using Npgsql;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Manages database backup and restoration processes for PostgreSQL.
+    /// Handles execution of external tools (pg_dump, pg_restore), AES-256 encryption/decryption,
+    /// and file system management for backup artifacts.
+    /// </summary>
     public class BackupService : IBackupService
     {
         private readonly FaradayDbContext _dbContext;
@@ -36,6 +41,7 @@ namespace Faraday.API.Services
                            ?? throw new InvalidOperationException("BACKUP_ENCRYPTION_IV is missing in configuration.");
 
             // Validate key lengths for AES-256
+            // Strict validation is necessary to prevent runtime cryptography errors during critical backup operations.
             if (keyString.Length != 32)
                 throw new InvalidOperationException("BACKUP_ENCRYPTION_KEY must be exactly 32 characters (256 bits).");
             
@@ -53,6 +59,10 @@ namespace Faraday.API.Services
             _logger.LogInformation("Backup encryption keys loaded successfully from environment.");
         }
 
+        /// <summary>
+        /// Creates a complete database dump, encrypts it on-the-fly, and saves it to disk.
+        /// </summary>
+        /// <returns>The filename of the created backup.</returns>
         public async Task<string> CreateFullBackupAsync()
         {
             var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
@@ -63,7 +73,7 @@ namespace Faraday.API.Services
 
             // Get connection details from Config
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
-            // Parse connection string to get user, pass, host, db (Basic implementation)
+            // Parse connection string to get user, pass, host, db
             var connParams = ParseConnectionString(connectionString!);
 
             // Setup pg_dump process
@@ -77,14 +87,14 @@ namespace Faraday.API.Services
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-
-            // Pass password as Environment Variable (secure way for pg_dump)
+            
             processInfo.EnvironmentVariables["PGPASSWORD"] = connParams.Password;
 
             using var process = new Process();
             process.StartInfo = processInfo;
             
             // Setup Encryption Streams
+            // This ensures the unencrypted SQL dump never touches the physical disk, enhancing security.
             using var fileStream = new FileStream(filePath, FileMode.Create);
             using var aes = Aes.Create();
             aes.Key = _encryptionKey;
@@ -95,8 +105,8 @@ namespace Faraday.API.Services
             process.Start();
             
             _logger.LogDebug("pg_dump process started for backup: {FileName}", fileName);
-
-            // Copy pg_dump Output -> Encryptor -> File
+            
+            // This is an async copy operation that bridges the external process output to our encryption stream.
             await process.StandardOutput.BaseStream.CopyToAsync(cryptoStream);
             
             var errors = await process.StandardError.ReadToEndAsync();
@@ -112,7 +122,7 @@ namespace Faraday.API.Services
 
             _logger.LogInformation($"Backup completed successfully. Saved to: {filePath}");
 
-            // 6. Log to Database
+            // Log to Database
             var fileInfo = new FileInfo(filePath);
             var log = new BackupLog
             {
@@ -160,6 +170,13 @@ namespace Faraday.API.Services
                 .OrderByDescending(f => f.CreatedAt);
         }
 
+        /// <summary>
+        /// Restores the database from an encrypted backup file.
+        /// <para>
+        /// WARNING: This is a destructive operation. It terminates active connections
+        /// and overwrites existing data in the target database.
+        /// </para>
+        /// </summary>
         public async Task RestoreFromBackupAsync(string fileName, int? restoredByUserId = null)
         {
             var encryptedFilePath = Path.Combine(_backupFolder, fileName);
@@ -172,6 +189,7 @@ namespace Faraday.API.Services
             _logger.LogWarning($"Starting database restore from: {fileName}. Terminating other connections...");
             
             // Clear the application's own connection pool
+            // Required because Npgsql pools connections, and we need to drop them to allow the restore.
             NpgsqlConnection.ClearAllPools();
 
             // Parse connection details
@@ -190,6 +208,7 @@ namespace Faraday.API.Services
                     using (var cmd = conn.CreateCommand())
                     {
                         // SQL: Terminate all backend processes connected to our target DB, except our own process
+                        // This forces a disconnection of all other users/services to remove locks on the DB.
                         cmd.CommandText = $@"
                             SELECT pg_terminate_backend(pg_stat_activity.pid)
                             FROM pg_stat_activity
@@ -237,7 +256,6 @@ namespace Faraday.API.Services
                     // -h, -U, -d: Connection details
                     // --clean: Drop database objects before creating them (ensures clean state)
                     // --if-exists: Prevents errors if we try to drop non-existent tables
-                    // --no-owner --role={user}: Prevents permission errors related to object ownership
                     Arguments = $"-h {connParams.Host} -U {connParams.User} -d {connParams.Db} --clean --if-exists --no-owner --role={connParams.User} {tempDecryptedPath}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -256,7 +274,7 @@ namespace Faraday.API.Services
                 var errors = await process.StandardError.ReadToEndAsync();
                 await process.WaitForExitAsync();
 
-                // C. Handle Result
+                // Handle Result
                 if (process.ExitCode != 0)
                 {
                     _logger.LogError($"pg_restore failed: {errors}");
@@ -293,7 +311,8 @@ namespace Faraday.API.Services
             }
             finally
             {
-                // Cleanup Security Risk
+                // Cleanup security risk
+                // Ensure the unencrypted dump file is deleted even if the restore fails or throws an exception.
                 _logger.LogDebug("Cleanup: Checking for temporary decrypted file");
                 if (File.Exists(tempDecryptedPath))
                 {

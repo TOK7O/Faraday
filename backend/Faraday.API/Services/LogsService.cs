@@ -118,7 +118,6 @@ namespace Faraday.API.Services
             }
             catch (Exception ex)
             {
-                // Avoid infinite loop - don't use _logger here
                 Console.WriteLine($"Failed to broadcast logs via SignalR: {ex.Message}");
             }
         }

@@ -6,6 +6,11 @@ using Faraday.API.Services.Interfaces;
 
 namespace Faraday.API.Services
 {
+    /// <summary>
+    /// Core service for physical warehouse operations. 
+    /// Handles the lifecycle of inventory items: Receiving (Inbound), Shipping (Outbound), and Internal Movements.
+    /// Ensures data consistency using database transactions.
+    /// </summary>
     public class OperationService : IOperationService
     {
         private readonly FaradayDbContext _context;
@@ -22,8 +27,16 @@ namespace Faraday.API.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Processes an incoming item (Receipt). 
+        /// Uses the allocation algorithm to determine the best storage slot and records the inventory entry.
+        /// </summary>
+        /// <param name="request">Contains the scanned barcode of the incoming product.</param>
+        /// <param name="userId">The ID of the operator performing the action.</param>
         public async Task<OperationResultDto> ProcessInboundAsync(OperationInboundDto request, int userId)
         {
+            // We use an explicit transaction to ensure that the InventoryItem creation 
+            // and the OperationLog entry are committed atomically.
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
@@ -34,6 +47,7 @@ namespace Faraday.API.Services
                     throw new KeyNotFoundException($"Product with barcode {request.Barcode} not found.");
 
                 // Algorithm
+                // Delegate the complex logic of "where should this go?" to the dedicated algorithm service.
                 var targetSlot = await _algorithm.FindBestSlotForProductAsync(product.Id);
 
                 // Create inventory item
@@ -70,6 +84,8 @@ namespace Faraday.API.Services
                 _context.OperationLogs.Add(log);
 
                 // Commit
+                // SaveChangesAsync generates the IDs for new entities
+                // (InventoryItem, Log) before the transaction commits.
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -93,6 +109,10 @@ namespace Faraday.API.Services
             }
         }
 
+        /// <summary>
+        /// Processes an outgoing item (Shipment/Picking).
+        /// Implements FIFO (First-In, First-Out) logic to ensure the oldest stock is picked first.
+        /// </summary>
         public async Task<OperationResultDto> ProcessOutboundAsync(OperationOutboundDto request, int userId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -100,6 +120,7 @@ namespace Faraday.API.Services
             try
             {
                 // FIFO
+                // We order by EntryDate ascending to pick the oldest item available.
                 var itemToRemove = await _context.InventoryItems
                     .Include(i => i.Slot)
                     .ThenInclude(s => s.Rack)
@@ -117,6 +138,7 @@ namespace Faraday.API.Services
                 var slotY = itemToRemove.Slot.Y;
 
                 // Remove
+                // Historical data is preserved in OperationLogs.
                 _context.InventoryItems.Remove(itemToRemove);
 
                 // Audit log
@@ -157,6 +179,11 @@ namespace Faraday.API.Services
             }
         }
 
+        /// <summary>
+        /// Handles the internal movement of an item from one specific slot to another.
+        /// Unlike Inbound, this bypasses the placement algorithm, but it still validates
+        /// physical constraints (dimensions, weight, temperature).
+        /// </summary>
         public async Task<OperationResultDto> ProcessMovementAsync(OperationMovementDto request, int userId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -179,6 +206,7 @@ namespace Faraday.API.Services
                     throw new KeyNotFoundException($"No item found at source location {request.SourceRackCode} [{request.SourceSlotX},{request.SourceSlotY}].");
 
                 // We check if the item matches the barcode provided - if it doesn't throw error at the user.
+                // This acts as a safety check to ensure the operator picked up the correct item.
                 if (itemToMove.Product.ScanCode != request.Barcode)
                 {
                     throw new InvalidOperationException($"Mismatch. Slot contains '{itemToMove.Product.Name}' ({itemToMove.Product.ScanCode}), but you scanned '{request.Barcode}'.");
@@ -194,6 +222,7 @@ namespace Faraday.API.Services
                 if (targetRack == null)
                     throw new KeyNotFoundException($"Target rack {request.TargetRackCode} not found.");
 
+                // Locate the specific coordinate in the target rack
                 var targetSlot = targetRack.Slots.FirstOrDefault(s => s.X == request.TargetSlotX && s.Y == request.TargetSlotY);
 
                 if (targetSlot == null)
@@ -206,6 +235,10 @@ namespace Faraday.API.Services
                     throw new InvalidOperationException("Target slot is unavailable.");
                 
                 var product = itemToMove.Product;
+
+                // Validation Block
+                // Since we are moving manually, we must re-validate all physical constraints 
+                // that the Algorithm usually handles during Inbound.
 
                 // Temperature check
                 if (targetRack.MinTemperature > product.RequiredMinTemp || targetRack.MaxTemperature < product.RequiredMaxTemp)
@@ -225,6 +258,7 @@ namespace Faraday.API.Services
                 }
 
                 // Weight check
+                // We sum up existing items in the target rack + the new item.
                 var currentLoad = targetRack.Slots
                     .Where(s => s.CurrentItem != null)
                     .Sum(s => s.CurrentItem!.Product.WeightKg);
