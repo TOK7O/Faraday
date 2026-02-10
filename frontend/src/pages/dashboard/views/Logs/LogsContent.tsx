@@ -5,7 +5,7 @@ import { useTranslation } from "@/context/LanguageContext";
 import {
     Terminal, Trash2, PauseCircle, PlayCircle,
     Search, Filter, Wifi, WifiOff, RefreshCw,
-    ChevronLeft, ChevronRight, Activity
+    ChevronLeft, ChevronRight, Activity, ListOrdered
 } from 'lucide-react';
 import "./LogsContent.scss";
 
@@ -74,6 +74,7 @@ const LogsContent = () => {
         return () => { connectionRef.current?.stop(); };
     }, [initSignalR]);
 
+    // Resetuj stronę przy zmianie filtrów lub limitu
     useEffect(() => { setCurrentPage(1); }, [filterLevel, searchText, itemsPerPage]);
 
     const getLevelClass = (level: string) => {
@@ -150,6 +151,15 @@ const LogsContent = () => {
                             <option value="Error">Errors Only</option>
                         </select>
                     </div>
+                    <div className="filter-wrapper limit-selector">
+                        <ListOrdered size={16} />
+                        <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
+                            <option value={20}>20 per page</option>
+                            <option value={50}>50 per page</option>
+                            <option value={100}>100 per page</option>
+                            <option value={200}>200 per page</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="button-group glass-card">
@@ -157,7 +167,9 @@ const LogsContent = () => {
                         {isPaused ? <PlayCircle size={18}/> : <PauseCircle size={18}/>}
                         <span>{isPaused ? "Resume" : "Pause"}</span>
                     </button>
-                    <button className="btn-ht" onClick={() => initSignalR()}><RefreshCw size={18} /></button>
+                    <button className="btn-ht" onClick={() => initSignalR()} title="Reconnect Hub">
+                        <RefreshCw size={18} />
+                    </button>
                     <button className="btn-ht danger" onClick={async () => { if(confirm("Clear logs?")) { await clearLogs(); setLogs([]); } }}>
                         <Trash2 size={18} />
                     </button>
@@ -167,14 +179,14 @@ const LogsContent = () => {
             <main className="logs-main-wrapper glass-table-wrapper">
                 <div className="pagination-header">
                     <div className="page-info">
-                        Showing <strong>{currentLogs.length}</strong> entries on this page
+                        Showing <strong>{currentLogs.length}</strong> of {filteredLogs.length} entries
                     </div>
                     <div className="pagination-controls">
-                        <button className={"btn-ht"} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                        <button className="btn-ht" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                             <ChevronLeft size={18} />
                         </button>
-                        <span className="current-page">Page {currentPage} / {totalPages || 1}</span>
-                        <button className={"btn-ht"} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+                        <span className="current-page">P. {currentPage} / {totalPages || 1}</span>
+                        <button className="btn-ht" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages || totalPages === 0}>
                             <ChevronRight size={18} />
                         </button>
                     </div>
@@ -189,13 +201,13 @@ const LogsContent = () => {
                     ) : (
                         <div className="log-rows">
                             {currentLogs.map((log, index) => (
-                                <div key={index} className={`log-row ${getLevelClass(log.level)}`}>
+                                <div key={`${log.timestamp}-${index}`} className={`log-row ${getLevelClass(log.level)}`}>
                                     <div className="row-meta">
                                         <span className="time">{formatTime(log.timestamp)}</span>
                                         <span className="level-badge">{log.level}</span>
                                     </div>
                                     <div className="row-content">
-                                        <span className="cat">{log.category?.split('.').pop()}</span>
+                                        <span className="cat">{log.category?.split('.').pop() || "System"}</span>
                                         <p className="msg">{log.message}</p>
                                         {log.exception && (
                                             <div className="trace-box"><code>{log.exception}</code></div>
