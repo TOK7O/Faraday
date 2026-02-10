@@ -92,7 +92,6 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
 
 // Auth
 export const login = async (username: string, password: string, twoFactorCode: string = "") => await instance.post("/api/Auth/login", { username, password, twoFactorCode });
-export const register = async (username: string, email: string, password: string) => await instance.post("/api/Auth/register", { username, email, password });
 
 // Backups
 export const getBackupHistory = async () => (await instance.get("/api/Backup/history")).data;
@@ -108,4 +107,15 @@ export const resetPassword = async (token: string, newPassword: string) => await
 export const getRecentLogs = async (count: number = 500) => (await instance.get("/api/Logs/recent", { params: { count } })).data;
 export const clearLogs = async () => (await instance.delete("/api/Logs/clear")).data;
 
+// --- ADMIN: User Management ---
+
+export const getAllUsers = async () => (await instance.get("/api/Auth/users")).data;
+export const registerUser = async (dto: Record<string, any>) => (await instance.post("/api/Auth/register", dto)).data;
+export const updateUser = async (targetUserId: number, dto: Record<string, any>) => (await instance.put(`/api/Auth/users/${targetUserId}`, dto)).data;
+
+// Reset hasła przez administratora
+export const resetUserPassword = async (targetUserId: number, newPassword: string) => (await instance.post(`/api/Auth/users/${targetUserId}/reset-password`, { newPassword })).data;
+
+// Reset 2FA przez administratora
+export const resetUser2FA = async (targetUserId: number) => (await instance.post(`/api/Auth/users/${targetUserId}/reset-2fa`)).data;
 export default instance;
