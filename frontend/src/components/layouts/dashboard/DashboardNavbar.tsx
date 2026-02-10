@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import NotificationsPopover from "./NotificationsPopover";
 import "./Dashboardnavbar.scss";
@@ -20,11 +19,6 @@ const DashboardNavbar = ({ activeTab }: NavbarProps) => {
             </div>
 
             <div className="navbar-actions">
-                <div className="search-wrapper desktop-only">
-                    <Search size={16} />
-                    <input type="text" placeholder={t.dashboardPage.navbar.searchPlaceholder} />
-                </div>
-
                 <NotificationsPopover />
 
                 <div className="user-tag">
