@@ -1,0 +1,184 @@
+﻿// Animacje wejścia
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentShow {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.dialog-overlay-ht {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.dialog-content-ht {
+  background: #18181b; // Ciemne tło (fallback)
+  background: linear-gradient(145deg, rgba(24, 24, 27, 0.95) 0%, rgba(9, 9, 11, 0.98) 100%);
+  border: 1px solid var(--border-input, #3f3f46);
+  border-radius: 16px;
+  box-shadow:
+          0 25px 50px -12px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 450px;
+  padding: 2rem;
+  z-index: 1001;
+  animation: modalContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-main, #e4e4e7);
+
+  // --- NAGŁÓWEK ---
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -0.5px;
+
+      .icon-accent {
+        color: var(--accent-primary, #3b82f6);
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+      }
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted, #71717a);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+    }
+  }
+
+  // --- FORMULARZ ---
+  .ht-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted, #a1a1aa);
+      }
+
+      .ht-input {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-input, #3f3f46);
+        border-radius: 8px;
+        padding: 0 1rem;
+        height: 2.75rem;
+        color: #fff;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+
+        &:focus {
+          outline: none;
+          border-color: var(--accent-primary, #3b82f6);
+          background: rgba(0, 0, 0, 0.4);
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.2);
+        }
+      }
+
+      select.ht-input {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+        padding-right: 2.5rem;
+      }
+    }
+
+    // --- ERROR BANNER ---
+    .error-banner {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+    }
+
+    // --- BUTTON ---
+    .btn-submit-ht {
+      margin-top: 0.5rem;
+      background: var(--accent-primary, #3b82f6);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      height: 3rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      &:hover:not(:disabled) {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        filter: grayscale(0.5);
+      }
+    }
+  }
+}
