@@ -11,15 +11,19 @@ namespace Faraday.API.Controllers
     public class RackController : ControllerBase
     {
         private readonly IRackService _rackService;
-
-        public RackController(IRackService rackService)
+        private readonly ILogger<RackController> _logger;
+        public RackController(
+            IRackService rackService, 
+            ILogger<RackController> logger)
         {
             _rackService = rackService;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RackDto>>> GetAll()
         {
+            _logger.LogInformation("Retrieving all racks");
             var racks = await _rackService.GetAllRacksAsync();
             return Ok(racks);
         }
@@ -27,6 +31,7 @@ namespace Faraday.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RackDto>> GetById(int id)
         {
+            _logger.LogInformation("Retrieving rack by ID: {RackId}", id);
             var rack = await _rackService.GetRackByIdAsync(id);
             if (rack == null)
             {
@@ -39,9 +44,11 @@ namespace Faraday.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<RackDto>> Create(RackCreateDto dto)
         {
+            _logger.LogInformation("Rack creation initiated: {RackCode}", dto.Code);
             try
             {
                 var createdRack = await _rackService.CreateRackAsync(dto);
+                _logger.LogInformation("Rack created successfully: {RackCode} (ID: {RackId})", createdRack.Code, createdRack.Id);
                 return CreatedAtAction(nameof(GetById), new { id = createdRack.Id }, createdRack);
             }
             catch (InvalidOperationException ex)
@@ -57,7 +64,9 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Rack update initiated for ID: {RackId}", id);
                 var updatedRack = await _rackService.UpdateRackAsync(id, dto);
+                _logger.LogInformation("Rack updated successfully: {RackCode} (ID: {RackId})", updatedRack.Code, id);
                 return Ok(updatedRack);
             }
             catch (KeyNotFoundException ex)
@@ -75,7 +84,9 @@ namespace Faraday.API.Controllers
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int id)
         {
+            _logger.LogInformation("Rack deletion initiated for ID: {RackId}", id);
             await _rackService.DeleteRackAsync(id);
+            _logger.LogInformation("Rack soft-deleted successfully. ID: {RackId}", id);
             return NoContent();
         }
 
@@ -92,10 +103,12 @@ namespace Faraday.API.Controllers
             {
                 return BadRequest("File must be a CSV.");
             }
-
+            _logger.LogInformation("Rack CSV import initiated. Filename: {FileName}", file.FileName);
             using var stream = file.OpenReadStream();
             var result = await _rackService.ImportRacksFromCsvAsync(stream);
-
+            _logger.LogInformation("Rack CSV import completed. " +
+                                   "Success: {SuccessCount}, Errors: {ErrorCount}", 
+                                    result.successCount, result.errorCount);
             return Ok(new
             {
                 Message = "Import completed",

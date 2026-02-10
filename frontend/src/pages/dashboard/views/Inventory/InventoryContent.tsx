@@ -10,9 +10,9 @@ import { getRacks, getProducts, getFullInventoryList, inboundOperation, outbound
 import type { Rack, Product, FullInventoryItem } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
 import { RackCard } from "@/components/layouts/dashboard/inventory/RackCard";
 import { ProductCatalog } from "@/components/layouts/dashboard/inventory/ProductCatalog";
-import { RackModal } from "@/components/layouts/dashboard/inventory/RackModal";
-import { ProductModal } from "@/components/layouts/dashboard/inventory/ProductModal";
-import { MoveModal } from "@/components/layouts/dashboard/inventory/MoveModal";
+import { RackModal } from "@/components/layouts/dashboard/inventory/modals/RackModal";
+import { ProductModal } from "@/components/layouts/dashboard/inventory/modals/ProductModal";
+import { MoveModal } from "@/components/layouts/dashboard/inventory/modals/MoveModal";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
 
@@ -1069,67 +1069,67 @@ const InventoryContent = () => {
                                         <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                                             <table className="import-table">
                                                 <thead>
-                                                    <tr>
-                                                        <th>Status</th>
-                                                        <th>Kod / Identyfikator</th>
-                                                        <th>Decyzja</th>
-                                                        <th>Działanie</th>
-                                                    </tr>
+                                                <tr>
+                                                    <th>Status</th>
+                                                    <th>Kod / Identyfikator</th>
+                                                    <th>Decyzja</th>
+                                                    <th>Działanie</th>
+                                                </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {importPreviewData.map((item, idx) => (
-                                                        <tr key={idx} style={{
-                                                            background: selectedPreviewItem === item ? 'rgba(var(--accent-primary-rgb), 0.08)' : 'transparent'
-                                                        }}>
-                                                            <td>
+                                                {importPreviewData.map((item, idx) => (
+                                                    <tr key={idx} style={{
+                                                        background: selectedPreviewItem === item ? 'rgba(var(--accent-primary-rgb), 0.08)' : 'transparent'
+                                                    }}>
+                                                        <td>
                                                                 <span className={`status-badge ${item.status === 'conflict' ? 'conflict' : 'new'}`}>
                                                                     {item.status === 'conflict' ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
                                                                     {item.status === 'conflict' ? 'Konflikt' : 'Nowy'}
                                                                 </span>
-                                                            </td>
-                                                            <td style={{ fontWeight: 700, fontFamily: 'Space Grotesk' }}>{item.data.code || item.data.scanCode}</td>
-                                                            <td>
-                                                                <select
-                                                                    value={item.action}
-                                                                    onChange={(e) => {
-                                                                        const newData = [...importPreviewData];
-                                                                        newData[idx].action = e.target.value;
-                                                                        setImportPreviewData(newData);
-                                                                    }}
-                                                                    style={{
-                                                                        background: 'rgba(255,255,255,0.05)',
-                                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                                        borderRadius: '8px',
-                                                                        padding: '4px 8px',
-                                                                        color: 'white',
-                                                                        fontSize: '0.8rem',
-                                                                        outline: 'none'
-                                                                    }}
-                                                                >
-                                                                    {item.status === 'conflict' ? (
-                                                                        <>
-                                                                            <option value="skip">Pomiń (Zachowaj obecny)</option>
-                                                                            <option value="update">Zaktualizuj (Nadpisz)</option>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <option value="create">Utwórz nowy</option>
-                                                                            <option value="skip">Anuluj ten wiersz</option>
-                                                                        </>
-                                                                    )}
-                                                                </select>
-                                                            </td>
-                                                            <td>
-                                                                <button
-                                                                    className={`btn-action-ht ${selectedPreviewItem === item ? 'active' : ''}`}
-                                                                    onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
-                                                                    title="Pokaż różnice"
-                                                                >
-                                                                    {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                        </td>
+                                                        <td style={{ fontWeight: 700, fontFamily: 'Space Grotesk' }}>{item.data.code || item.data.scanCode}</td>
+                                                        <td>
+                                                            <select
+                                                                value={item.action}
+                                                                onChange={(e) => {
+                                                                    const newData = [...importPreviewData];
+                                                                    newData[idx].action = e.target.value;
+                                                                    setImportPreviewData(newData);
+                                                                }}
+                                                                style={{
+                                                                    background: 'rgba(255,255,255,0.05)',
+                                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                                    borderRadius: '8px',
+                                                                    padding: '4px 8px',
+                                                                    color: 'white',
+                                                                    fontSize: '0.8rem',
+                                                                    outline: 'none'
+                                                                }}
+                                                            >
+                                                                {item.status === 'conflict' ? (
+                                                                    <>
+                                                                        <option value="skip">Pomiń (Zachowaj obecny)</option>
+                                                                        <option value="update">Zaktualizuj (Nadpisz)</option>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <option value="create">Utwórz nowy</option>
+                                                                        <option value="skip">Anuluj ten wiersz</option>
+                                                                    </>
+                                                                )}
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <button
+                                                                className={`btn-action-ht ${selectedPreviewItem === item ? 'active' : ''}`}
+                                                                onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
+                                                                title="Pokaż różnice"
+                                                            >
+                                                                {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                                 </tbody>
                                             </table>
                                         </div>

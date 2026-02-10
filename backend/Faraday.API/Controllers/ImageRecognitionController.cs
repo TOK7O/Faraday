@@ -11,10 +11,14 @@ namespace Faraday.API.Controllers
     public class ImageRecognitionController : ControllerBase
     {
         private readonly IImageRecognitionService _imageRecognitionService;
+        private readonly ILogger<ImageRecognitionController> _logger;
 
-        public ImageRecognitionController(IImageRecognitionService imageRecognitionService)
+        public ImageRecognitionController(
+            IImageRecognitionService imageRecognitionService, 
+            ILogger<ImageRecognitionController> logger)
         {
             _imageRecognitionService = imageRecognitionService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -27,11 +31,19 @@ namespace Faraday.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirst("id")!.Value);
+                _logger.LogInformation("Reference image upload initiated for product: {ScanCode} by user {UserId}", dto.ScanCode, userId);
                 var result = await _imageRecognitionService.UploadReferenceImagesAsync(
                     dto.ScanCode, 
                     dto.Images, 
                     userId);
 
+                if (result.Success)
+                    _logger.LogInformation("Reference images uploaded successfully for product: " +
+                                           "{ScanCode}. Count: {Count}", dto.ScanCode, result.UploadedCount);
+                else
+                    _logger.LogWarning("Reference image upload failed for product: " +
+                                       "{ScanCode}. Reason: {Message}", dto.ScanCode, result.Message);
+                
                 return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
@@ -53,16 +65,18 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Product recognition request received");
                 var result = await _imageRecognitionService.RecognizeProductAsync(dto.Image);
                 
                 if (result.Success)
                 {
+                    _logger.LogInformation("Product recognized successfully: " +
+                                           "{ProductName} with confidence {Confidence:P1}", 
+                                            result.Product?.Name, result.ConfidenceScore);
                     return Ok(result);
                 }
-                else
-                {
-                    return NotFound(result);
-                }
+                _logger.LogWarning("Product recognition failed: {Message}", result.Message);
+                return NotFound(result);
             }
             catch (Exception ex)
             {
@@ -82,6 +96,7 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Retrieving reference images for product ID: {ProductId}", productId);
                 var images = await _imageRecognitionService.GetReferenceImagesByProductIdAsync(productId);
                 return Ok(images);
             }
@@ -99,6 +114,7 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Retrieving reference images for product scan code: {ScanCode}", scanCode);
                 var images = await _imageRecognitionService.GetReferenceImagesByScanCodeAsync(scanCode);
                 return Ok(images);
             }
@@ -127,7 +143,9 @@ namespace Faraday.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Reference image deletion requested. Image ID: {ImageId}", imageId);
                 await _imageRecognitionService.DeleteReferenceImageAsync(imageId);
+                _logger.LogInformation("Reference image deleted successfully. Image ID: {ImageId}", imageId);
                 return Ok(new { Message = "Reference image deleted successfully." });
             }
             catch (KeyNotFoundException ex)

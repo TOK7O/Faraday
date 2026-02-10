@@ -43,6 +43,7 @@ namespace Faraday.API.Services
 
         public async Task<IEnumerable<RackDto>> GetAllRacksAsync()
         {
+            _logger.LogInformation("Retrieving all racks from database");
             var racks = await _context.Racks
                 .Include(r => r.Slots)
                 .OrderBy(r => r.Code)
@@ -53,9 +54,15 @@ namespace Faraday.API.Services
 
         public async Task<RackDto?> GetRackByIdAsync(int id)
         {
+            _logger.LogInformation("Fetching rack by ID: {RackId}", id);
             var rack = await _context.Racks
                 .Include(r => r.Slots)
                 .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (rack == null)
+            {
+                _logger.LogWarning("Rack not found: {RackId}", id);
+            }
 
             return rack == null ? null : MapToDto(rack);
         }
@@ -346,9 +353,13 @@ namespace Faraday.API.Services
                 await _context.SaveChangesAsync();
 
                 successCount += racksToAdd.Count;
-                _logger.LogInformation($"Bulk imported {racksToAdd.Count} racks from CSV.");
+                _logger.LogInformation("Bulk imported {Count} racks from CSV. Success: {Success}, Errors: {Errors}", 
+                    racksToAdd.Count, successCount, errorCount);
             }
-
+            else
+            {
+                _logger.LogWarning("No racks were imported. Total errors: {ErrorCount}", errorCount);
+            }
             return (successCount, errorCount, errors);
         }
         

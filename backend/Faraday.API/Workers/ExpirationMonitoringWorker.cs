@@ -6,16 +6,20 @@ namespace Faraday.API.Workers
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ExpirationMonitoringWorker> _logger;
-        
-        // Run expiration check every 1 hour
-        private readonly TimeSpan _period = TimeSpan.FromHours(1);
+
+        // Read from config instead of hardcoded
+        private readonly TimeSpan _period;
 
         public ExpirationMonitoringWorker(
             IServiceProvider serviceProvider, 
-            ILogger<ExpirationMonitoringWorker> logger)
+            ILogger<ExpirationMonitoringWorker> logger,
+            IConfiguration configuration)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+
+            var intervalHours = configuration.GetValue("Monitoring:ExpirationCheckIntervalHours", 1);
+            _period = TimeSpan.FromHours(intervalHours);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

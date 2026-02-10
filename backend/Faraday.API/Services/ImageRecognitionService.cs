@@ -277,6 +277,8 @@ namespace Faraday.API.Services
 
         public async Task<List<ProductImageDto>> GetReferenceImagesByProductIdAsync(int productId)
         {
+            _logger.LogInformation("Fetching reference images for product ID: {ProductId}", productId);
+            
             var images = await _context.Set<ProductImage>()
                 .Include(pi => pi.Product)
                 .Include(pi => pi.UploadedByUser)
@@ -299,10 +301,15 @@ namespace Faraday.API.Services
         public async Task<List<ProductImageDto>> GetReferenceImagesByScanCodeAsync(string scanCode)
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == scanCode);
+            
             if (product == null)
             {
+                _logger.LogWarning("Cannot fetch reference images - product not found: {ScanCode}", scanCode);
                 throw new KeyNotFoundException($"Product with scan code '{scanCode}' not found.");
             }
+
+            _logger.LogInformation("Fetching reference images for product: " +
+                                   "{ProductName} (ScanCode: {ScanCode})", product.Name, scanCode);
 
             return await GetReferenceImagesByProductIdAsync(product.Id);
         }
@@ -332,6 +339,7 @@ namespace Faraday.API.Services
 
         public async Task<int> GetReferenceImageCountAsync(int productId)
         {
+            _logger.LogInformation("Retrieving reference image count for product ID: {ProductId}", productId);
             return await _context.Set<ProductImage>()
                 .CountAsync(pi => pi.ProductDefinitionId == productId);
         }
@@ -346,8 +354,10 @@ namespace Faraday.API.Services
 
             if (image == null)
             {
+                _logger.LogWarning("Image not found for GUID: {ImageGuid}", imageGuid);
                 throw new KeyNotFoundException($"Image with GUID {imageGuid} not found.");
             }
+            _logger.LogInformation("Serving image file: {ImagePath}", image.ImagePath);
 
             // Build full path to the image file
             var filePath = Path.Combine(_environment.ContentRootPath, "wwwroot", "product-images", image.ImagePath);
