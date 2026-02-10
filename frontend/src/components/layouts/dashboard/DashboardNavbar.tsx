@@ -9,6 +9,10 @@ interface NavbarProps {
 const DashboardNavbar = ({ activeTab }: NavbarProps) => {
     const { t } = useTranslation();
 
+    const username = localStorage.getItem("username") || "User";
+    const userRole = localStorage.getItem("role") || "";
+    const isAdmin = userRole === "Administrator";
+
     return (
         <header className="dashboard-navbar">
             <div className="navbar-left">
@@ -22,8 +26,8 @@ const DashboardNavbar = ({ activeTab }: NavbarProps) => {
                 <NotificationsPopover />
 
                 <div className="user-tag">
-                    <span className="role">ADM</span>
-                    <span className="name">Jan Nowak</span>
+                    {isAdmin && <span className="role">Adm</span>}
+                    <span className="name">{username}</span>
                 </div>
             </div>
         </header>

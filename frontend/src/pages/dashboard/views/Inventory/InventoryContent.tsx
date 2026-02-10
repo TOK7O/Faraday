@@ -73,6 +73,9 @@ const InventoryContent = () => {
     const { t } = useTranslation();
     const invT = t.dashboardPage.content.inventory;
 
+    const userRole = localStorage.getItem("role");
+    const isAdmin = userRole === "Administrator";
+
     const [racks, setRacks] = useState<Rack[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [inventoryData, setInventoryData] = useState<FullInventoryItem[]>([]);
@@ -664,6 +667,7 @@ const InventoryContent = () => {
                     </header>
 
                     <Tabs.Content value="racks">
+                        {isAdmin && (
                         <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
                             <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
                             <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
@@ -671,12 +675,14 @@ const InventoryContent = () => {
                                 <Plus size={18} /><span>{invT.addRack}</span>
                             </button>
                         </div>
+                            )}
                         <div className="stats-grid">
                             {racks.map(r => (
                                 <RackCard
                                     key={r.id}
                                     rack={r}
                                     inventory={inventoryData.filter(i => i.rackCode === r.code)}
+                                    isAdmin={isAdmin}
                                     onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
                                     onDelete={() => handleDeleteRack(r.id)}
                                     onSlotClick={handleSlotClick}

@@ -8,12 +8,13 @@ import "./RackCard.scss";
 interface RackCardProps {
     rack: Rack;
     inventory: FullInventoryItem[];
+    isAdmin: boolean;
     onEdit: (rack: Rack) => void;
     onDelete: (id: number) => void;
     onSlotClick: (productName: string) => void;
 }
 
-export const RackCard = ({ rack, inventory, onEdit, onDelete, onSlotClick }: RackCardProps) => {
+export const RackCard = ({ rack, inventory, isAdmin, onEdit, onDelete, onSlotClick }: RackCardProps) => {
     const { t } = useTranslation();
     const invT = t.dashboardPage.content.inventory;
 
@@ -25,23 +26,25 @@ export const RackCard = ({ rack, inventory, onEdit, onDelete, onSlotClick }: Rac
                     <span className="rack-comment">{rack.comment}</span>
                 </div>
 
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button className="btn-action-ht">
-                            <MoreVertical size={18} />
-                        </button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content className="dropdown-ht" align="end">
-                            <DropdownMenu.Item className="dd-item" onClick={() => onEdit(rack)}>
-                                <Edit2 size={14} /> {invT.edit}
-                            </DropdownMenu.Item>
-                            <DropdownMenu.Item className="dd-item danger" onClick={() => onDelete(rack.id)}>
-                                <Trash2 size={14} /> {invT.delete}
-                            </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                </DropdownMenu.Root>
+                {isAdmin && (
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button className="btn-action-ht">
+                                <MoreVertical size={18} />
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content className="dropdown-ht" align="end">
+                                <DropdownMenu.Item className="dd-item" onClick={() => onEdit(rack)}>
+                                    <Edit2 size={14} /> {invT.edit}
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item className="dd-item danger" onClick={() => onDelete(rack.id)}>
+                                    <Trash2 size={14} /> {invT.delete}
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                )}
             </div>
 
             <div className="stats-mini-grid">
