@@ -7,10 +7,10 @@ SUBJECT="/CN=faraday-db"
 # Sprawdzanie czy to Windows (Git Bash / MinGW)
 # uname na Git Bashu zwraca np. MINGW64_NT-10.0
 if [[ "$(uname)" == *"MINGW"* ]] || [[ "$(uname)" == *"MSYS"* ]]; then
-    echo "Wykryto Windows (Git Bash) - stosowanie hacka ze ścieżką..."
+    echo "Windows detected (Git Bash)"
     SUBJECT="//CN=faraday-db"
 else
-    echo "Wykryto system Unix (Mac/Linux) - standardowa ścieżka..."
+    echo "Unix detected (Mac/Linux)"
 fi
 
 openssl req -new -x509 -days 36500 -nodes -text -out ssl/server.crt -keyout ssl/server.key -subj "$SUBJECT"
