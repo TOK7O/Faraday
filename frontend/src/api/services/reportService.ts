@@ -1,6 +1,4 @@
-﻿// Usunięto całą logikę requestów, przenieś importy typów do axios.ts
-
-// --- Interfaces matching C# DTOs ---
+﻿// --- Interfaces matching C# DTOs ---
 
 export interface DashboardStatsDto {
     totalSlots: number;

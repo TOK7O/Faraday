@@ -4,8 +4,6 @@ import { useTranslation } from "@/context/LanguageContext";
 import { getBackupHistory, createBackup, downloadBackup, restoreBackup } from '@/api/axios';
 import "./BackupsContent.scss"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
 interface BackupHistoryItem {
     fileName: string;
     sizeBytes: number;
