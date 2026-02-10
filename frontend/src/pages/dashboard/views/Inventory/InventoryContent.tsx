@@ -2,18 +2,20 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Move, PackageMinus, X } from "lucide-react";
+import { Grid3X3, FileUp, AlertTriangle, Search, LayoutGrid, List, RefreshCw, Camera, CheckCircle2, MapPin, PackagePlus, Box, Move, PackageMinus, X } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
 import type { Rack, Product, FullInventoryItem } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
-import { RackCard } from "@/components/layouts/dashboard/inventory/RackCard";
-import { ProductCatalog } from "@/components/layouts/dashboard/inventory/ProductCatalog";
+import { RacksTab } from "./RacksTab";
+import { ProductsTab } from "./ProductsTab.tsx";
+import { StockTab } from "./StackTab.tsx";
+import { OperationsTab } from "./OperationsTab";
+
 import { RackModal } from "@/components/layouts/dashboard/inventory/RackModal";
 import { ProductModal } from "@/components/layouts/dashboard/inventory/ProductModal";
 import { MoveModal } from "@/components/layouts/dashboard/inventory/MoveModal";
 import { Spinner } from "@/components/ui/Spinner";
-import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
 
 import "./InventoryContent.scss";
 
@@ -909,320 +911,78 @@ const InventoryContent = () => {
                     </header>
 
                     <Tabs.Content value="racks">
-                        <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
-                            <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
-                            <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
-                            <button className="btn-primary-ht" onClick={() => { setEditingRack(null); setIsModalOpen(true); }}>
-                                <Plus size={18} /><span>{invT.addRack}</span>
-                            </button>
-                        </div>
-                        <div className="stats-grid">
-                            {racks.map(r => (
-                                <RackCard
-                                    key={r.id}
-                                    rack={r}
-                                    inventory={inventoryData.filter(i => i.rackCode === r.code)}
-                                    onEdit={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
-                                    onDelete={() => handleDeleteRack(r.id)}
-                                    onSlotClick={handleSlotClick}
-                                />
-                            ))}
-                            {isLoading && <SkeletonGrid count={6} type="rack" />}
-                        </div>
+                        <RacksTab
+                            invT={invT}
+                            isLoading={isLoading}
+                            racks={racks}
+                            inventoryData={inventoryData}
+                            fileInputRef={fileInputRef}
+                            handleCSVImport={handleCSVImport}
+                            onAddRack={() => { setEditingRack(null); setIsModalOpen(true); }}
+                            onEditRack={(rack) => { setEditingRack(rack); setIsModalOpen(true); }}
+                            onDeleteRack={handleDeleteRack}
+                            onSlotClick={handleSlotClick}
+                        />
                     </Tabs.Content>
 
                     <Tabs.Content value="products">
-                        <div className="action-bar">
-                            <div className="search-container">
-                                <Search size={18} className="search-icon" />
-                                <input type="text" placeholder={invT.searchProduct} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                                <div className="view-mode-toggle">
-                                    <button className={`toggle-btn ${productViewMode === 'grid' ? 'active' : ''}`} onClick={() => setProductViewMode('grid')}><LayoutGrid size={18} /></button>
-                                    <button className={`toggle-btn ${productViewMode === 'list' ? 'active' : ''}`} onClick={() => setProductViewMode('list')}><List size={18} /></button>
-                                </div>
-                            </div>
-                            <input type="file" accept=".csv" ref={productFileInputRef} hidden onChange={handleProductCSVImport} />
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button className="btn-primary-ht" onClick={() => productFileInputRef.current?.click()}>
-                                    <FileUp size={18} /><span>Importuj CSV</span>
-                                </button>
-                                <button className="btn-primary-ht" onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}>
-                                    <Plus size={18} /><span>{invT.defineProduct}</span>
-                                </button>
-                            </div>
-                        </div>
-                        {(products.length > 0 || isLoading) ? (
-                            <ProductCatalog
-                                products={products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))}
-                                viewMode={productViewMode}
-                                onDeleteProduct={handleDeleteProduct}
-                                onEditProduct={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }}
-                                isLoading={isLoading}
-                            />
-                        ) : <div className="empty-state-ht">Brak produktów.</div>}
+                        <ProductsTab
+                            invT={invT}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            productViewMode={productViewMode}
+                            setProductViewMode={setProductViewMode}
+                            products={products}
+                            isLoading={isLoading}
+                            productFileInputRef={productFileInputRef}
+                            handleProductCSVImport={handleProductCSVImport}
+                            onAddProduct={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
+                            onEditProduct={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }}
+                            onDeleteProduct={handleDeleteProduct}
+                        />
                     </Tabs.Content>
 
                     <Tabs.Content value="stock">
-                        <div className="action-bar">
-                            <div className="search-container">
-                                <Search size={18} className="search-icon" />
-                                <input type="text" placeholder="Szukaj w magazynie (nazwa, kod, regał)..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                            </div>
-                        </div>
-                        <div className="stock-grid">
-                            {inventoryData
-                                .filter(item =>
-                                    item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    item.barcode.includes(searchQuery) ||
-                                    item.rackCode.toLowerCase().includes(searchQuery.toLowerCase())
-                                )
-                                .map(item => (
-                                    <div key={item.itemId} className={`glass-card stock-item-card ${item.barcode === searchQuery ? 'highlight' : ''}`}>
-                                        <div className="stock-item-header">
-                                            <div className="product-info">
-                                                <div className="barcode-tag">{item.barcode}</div>
-                                                <h3>{item.productName}</h3>
-                                            </div>
-                                            <div className="location-badge">
-                                                <MapPin size={14} /> {item.locationCode}
-                                            </div>
-                                        </div>
-
-                                        <div className="stock-item-details">
-                                            <div className="detail-row">
-                                                <span className="label">Status:</span>
-                                                <span className={`status-tag ${item.status.toLowerCase()}`}>{item.status}</span>
-                                            </div>
-                                            <div className="detail-row">
-                                                <span className="label">Data przyjęcia:</span>
-                                                <span>{new Date(item.entryDate).toLocaleDateString()}</span>
-                                            </div>
-                                            {item.expirationDate && (
-                                                <div className="detail-row">
-                                                    <span className="label">Data ważności:</span>
-                                                    <span className={item.daysUntilExpiration && item.daysUntilExpiration < 5 ? 'text-danger' : ''}>
-                                                        {new Date(item.expirationDate).toLocaleDateString()}
-                                                        {item.daysUntilExpiration !== undefined && ` (${item.daysUntilExpiration} dni)`}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="stock-item-footer">
-                                            <div className="storage-info">
-                                                <div className="info-chip">
-                                                    <Box size={12} /> {item.productWeightKg}kg
-                                                </div>
-                                                <div className="info-chip">
-                                                    <RefreshCw size={12} /> {item.currentRackTemperature}°C
-                                                </div>
-                                            </div>
-                                            <div className="received-by">
-                                                Przyjął: <strong>{item.receivedByUsername}</strong>
-                                            </div>
-                                            <button
-                                                className="btn-action-ht"
-                                                onClick={() => { setMovingItem(item); setIsMoveModalOpen(true); }}
-                                                title="Przesuń towar"
-                                                style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
-                                            >
-                                                <Move size={14} /> <span>Przesuń</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            {inventoryData.length === 0 && !isLoading && <div className="empty-state-ht">Magazyn jest obecnie pusty.</div>}
-                        </div>
+                        <StockTab
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            inventoryData={inventoryData}
+                            isLoading={isLoading}
+                            onMoveItem={(item) => {
+                                setMovingItem(item);
+                                setIsMoveModalOpen(true);
+                            }}
+                        />
                     </Tabs.Content>
 
                     <Tabs.Content value="operations">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', padding: '1rem' }}>
-                            {/* Przyjęcia */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <PackagePlus size={20} color="var(--accent-primary)" />
-                                        Przyjęcia
-                                    </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Automatyczna alokacja miejsca.
-                                    </p>
-                                </div>
+                        <OperationsTab
+                            // Przyjęcia
+                            inboundBarcode={inboundBarcode}
+                            setInboundBarcode={setInboundBarcode}
+                            handleInbound={handleInbound}
+                            inboundResult={inboundResult}
 
-                                <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
-                                    <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <input
-                                                value={inboundBarcode}
-                                                onChange={(e) => setInboundBarcode(e.target.value)}
-                                                placeholder="Kod produktu..."
-                                                style={{ flex: 1 }}
-                                            />
-                                            <button type="button" onClick={() => { setScannerMode('inbound'); setIsScannerOpen(true); }} className="btn-action-ht">
-                                                <Camera size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}>
-                                        Przyjmij towar
-                                    </button>
-                                </form>
+                            // Przesunięcia
+                            moveBarcode={moveBarcode}
+                            setMoveBarcode={setMoveBarcode}
+                            moveResult={moveResult}
+                            setMoveResult={setMoveResult}
+                            inventoryData={inventoryData}
+                            setMovingItem={setMovingItem}
+                            setIsMoveModalOpen={setIsMoveModalOpen}
 
-                                {inboundResult && (
-                                    <div className={`operation-result-mini ${inboundResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${inboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {inboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{inboundResult.success ? "Przyjęto" : "Błąd"}</span>
-                                        </div>
-                                        {inboundResult.success ? (
-                                            <div style={{ fontSize: '0.8rem' }}>
-                                                <div style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]</div>
-                                            </div>
-                                        ) : (
-                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{prettifyBackendError(inboundResult.message)}</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            // Wydania
+                            outboundBarcode={outboundBarcode}
+                            setOutboundBarcode={setOutboundBarcode}
+                            handleOutbound={handleOutbound}
+                            outboundResult={outboundResult}
 
-                            {/* Przesunięcia */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(var(--accent-primary-rgb), 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <Move size={20} color="var(--accent-primary)" />
-                                        Przesunięcia
-                                    </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Relokacja między regałami.
-                                    </p>
-                                </div>
-
-                                <div className="ht-form">
-                                    <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Kod produktu do przesunięcia..."
-                                                value={moveBarcode}
-                                                onChange={(e) => setMoveBarcode(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        const item = inventoryData.find(i => i.barcode === moveBarcode);
-                                                        if (item) {
-                                                            setMovingItem(item);
-                                                            setIsMoveModalOpen(true);
-                                                            setMoveBarcode("");
-                                                        } else {
-                                                            setMoveResult({ success: false, message: "Nie znaleziono produktu." });
-                                                        }
-                                                    }
-                                                }}
-                                                style={{ flex: 1 }}
-                                            />
-                                            <button type="button" onClick={() => { setScannerMode('move'); setIsScannerOpen(true); }} className="btn-action-ht">
-                                                <Camera size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="btn-primary-ht"
-                                        style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.85rem' }}
-                                        onClick={() => {
-                                            const item = inventoryData.find(i => i.barcode === moveBarcode);
-                                            if (item) {
-                                                setMovingItem(item);
-                                                setIsMoveModalOpen(true);
-                                                setMoveBarcode("");
-                                            } else {
-                                                setMoveResult({ success: false, message: "Nie znaleziono produktu." });
-                                            }
-                                        }}
-                                    >
-                                        Inicjuj przesunięcie
-                                    </button>
-                                </div>
-
-                                {moveResult && (
-                                    <div className={`operation-result-mini ${moveResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${moveResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {moveResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{moveResult.success ? "Przesunięto" : "Błąd"}</span>
-                                        </div>
-                                        {moveResult.success ? (
-                                            <div style={{ fontSize: '0.8rem' }}>
-                                                {moveResult.productName}<br />
-                                                <span style={{ color: 'var(--accent-primary)' }}>→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span>
-                                            </div>
-                                        ) : (
-                                            <div style={{ fontSize: '0.75rem', color: '#ff4d4d' }}>{moveResult.message}</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Wydania */}
-                            <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(255, 77, 77, 0.1)' }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-                                        <PackageMinus size={20} color="#ff4d4d" />
-                                        Wydania
-                                    </h2>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        Wydanie towaru zgodnie z FIFO.
-                                    </p>
-                                </div>
-
-                                <form onSubmit={(e) => { e.preventDefault(); handleOutbound(e); }} className="ht-form">
-                                    <div className="input-group">
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <input
-                                                value={outboundBarcode}
-                                                onChange={(e) => setOutboundBarcode(e.target.value)}
-                                                placeholder="Kod produktu..."
-                                                style={{ flex: 1 }}
-                                            />
-                                            <button type="button" onClick={() => { setScannerMode('outbound'); setIsScannerOpen(true); }} className="btn-action-ht">
-                                                <Camera size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button type="submit" className="btn-primary-ht" style={{ marginTop: '0.75rem', width: '100%', background: '#ff4d4d', borderColor: '#ff4d4d', fontSize: '0.85rem' }}>
-                                        Wydaj towar
-                                    </button>
-                                </form>
-
-                                {outboundResult && (
-                                    <div className={`operation-result-mini ${outboundResult.success ? 'success' : 'error'}`} style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
-                                        background: outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.05)' : 'rgba(255, 77, 77, 0.05)',
-                                        border: `1px solid ${outboundResult.success ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'rgba(255, 77, 77, 0.2)'}`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                            {outboundResult.success ? <CheckCircle2 size={16} color="var(--accent-primary)" /> : <AlertTriangle size={16} color="#ff4d4d" />}
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{outboundResult.success ? "Wydano" : "Błąd"}</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem' }}>
-                                            {outboundResult.success ? "Produkt opuścił magazyn." : outboundResult.message}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                            // Wspólne
+                            setScannerMode={setScannerMode}
+                            setIsScannerOpen={setIsScannerOpen}
+                            prettifyBackendError={prettifyBackendError}
+                        />
                     </Tabs.Content>
                 </Tabs.Root>
             </div>
