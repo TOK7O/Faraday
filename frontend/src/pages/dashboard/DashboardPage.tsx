@@ -8,7 +8,7 @@ import OverviewContent from "./views/OverviewContent";
 import InventoryContent from "./views/Inventory/InventoryContent";
 import PersonnelContent from "./views/Personnel/PersonnelContent";
 import OperationsHistory from "./views/OperationsHistory/OperationsHistory";
-import ReportsContent from "./views/ReportsContent";
+import ReportsContent from "./views/Reports/ReportsContent";
 import BackupsContent from "./views/Backups/BackupsContent";
 import PreferencesContent from "./views/Preferences/PreferencesContent";
 
