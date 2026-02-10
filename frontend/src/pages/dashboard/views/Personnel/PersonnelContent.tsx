@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { getAllUsers, registerUser, updateUser } from "@/api/axios";
 import "./PersonnelContent.scss";
+import "@/components/layouts/dashboard/personnel/PersonnelActionBar.scss";
+import "@/components/layouts/dashboard/personnel/StaffTable.scss";
+import "@/components/layouts/dashboard/personnel/PersonnelStats.scss";
 
 // --- 1. DEFINICJE TYPÓW DANYCH ---
 
