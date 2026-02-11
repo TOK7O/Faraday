@@ -55,7 +55,6 @@ System Faraday realizuje:
 ### 1.5 Referencje
 | Zasób | Odnośnik |
 |---|---|
-| Repozytorium | `github.com/Faraday` |
 | React 18 | https://reactjs.org/ |
 | .NET 8 | https://dotnet.microsoft.com/ |
 | SignalR | https://learn.microsoft.com/aspnet/core/signalr/ |
