@@ -24,7 +24,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/docs" element={<Documentation />} />
+        {/*<Route path="/docs" element={<Documentation />} />*/}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
