@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Faraday.API.Data;
 using Faraday.API.DTOs;
 using Faraday.API.Models;
@@ -24,7 +23,7 @@ namespace Faraday.API.Services
         private readonly string _backupFolder = Path.Combine(Directory.GetCurrentDirectory(), "Backups");
         
         // Encryption keys loaded from environment variables (.env file)
-        // AES-256 requires 32-byte key and 16-byte IV
+        // AES-256 requires a 32-byte key and 16-byte IV
         private readonly byte[] _encryptionKey;
         private readonly byte[] _iv;
 
@@ -34,7 +33,7 @@ namespace Faraday.API.Services
             _configuration = configuration;
             _logger = logger;
 
-            // Load encryption keys from configuration (.env)
+            // Load encryption keys from the configuration (.env)
             var keyString = _configuration["BACKUP_ENCRYPTION_KEY"] 
                             ?? throw new InvalidOperationException("BACKUP_ENCRYPTION_KEY is missing in configuration.");
             var ivString = _configuration["BACKUP_ENCRYPTION_IV"] 
@@ -85,22 +84,24 @@ namespace Faraday.API.Services
                 RedirectStandardOutput = true,
                 RedirectStandardError = true, // Capture errors if pg_dump fails
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                EnvironmentVariables =
+                {
+                    ["PGPASSWORD"] = connParams.Password
+                }
             };
-            
-            processInfo.EnvironmentVariables["PGPASSWORD"] = connParams.Password;
 
             using var process = new Process();
             process.StartInfo = processInfo;
             
-            // Setup Encryption Streams
+            // Set up Encryption Streams
             // This ensures the unencrypted SQL dump never touches the physical disk, enhancing security.
-            using var fileStream = new FileStream(filePath, FileMode.Create);
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
             using var aes = Aes.Create();
             aes.Key = _encryptionKey;
             aes.IV = _iv;
-            
-            using var cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+
+            await using var cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
             
             process.Start();
             
@@ -202,10 +203,10 @@ namespace Faraday.API.Services
 
             try 
             {
-                using (var conn = new NpgsqlConnection(masterConnString))
+                await using (var conn = new NpgsqlConnection(masterConnString))
                 {
                     await conn.OpenAsync();
-                    using (var cmd = conn.CreateCommand())
+                    await using (var cmd = conn.CreateCommand())
                     {
                         // SQL: Terminate all backend processes connected to our target DB, except our own process
                         // This forces a disconnection of all other users/services to remove locks on the DB.
@@ -234,14 +235,14 @@ namespace Faraday.API.Services
             try
             {
                 // Decrypt the backup file
-                using (var encryptedStream = new FileStream(encryptedFilePath, FileMode.Open, FileAccess.Read))
-                using (var decryptedStream = new FileStream(tempDecryptedPath, FileMode.Create, FileAccess.Write))
+                await using (var encryptedStream = new FileStream(encryptedFilePath, FileMode.Open, FileAccess.Read))
+                await using (var decryptedStream = new FileStream(tempDecryptedPath, FileMode.Create, FileAccess.Write))
                 {
                     using var aes = Aes.Create();
                     aes.Key = _encryptionKey;
                     aes.IV = _iv;
 
-                    using var cryptoStream = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
+                    await using var cryptoStream = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
                     await cryptoStream.CopyToAsync(decryptedStream);
                     _logger.LogDebug("Backup file decrypted successfully. Size: {Size} bytes", new FileInfo(tempDecryptedPath).Length);
                 }
@@ -260,11 +261,13 @@ namespace Faraday.API.Services
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    EnvironmentVariables =
+                    {
+                        // Pass password securely via environment variable
+                        ["PGPASSWORD"] = connParams.Password
+                    }
                 };
-
-                // Pass password securely via environment variable
-                processInfo.EnvironmentVariables["PGPASSWORD"] = connParams.Password;
 
                 using var process = new Process();
                 process.StartInfo = processInfo;
@@ -323,7 +326,7 @@ namespace Faraday.API.Services
             }
         }
         
-        // Helper to extract credentials from connection string
+        // Helper to extract credentials from the connection string
         private (string Host, string User, string Password, string Db) ParseConnectionString(string connString)
         {
             var dict = connString.Split(';')
@@ -341,10 +344,10 @@ namespace Faraday.API.Services
             }
 
             return (
-                Host: GetValue(new[] { "host", "server", "data source" }, "db"),
-                User: GetValue(new[] { "username", "user id", "uid", "user" }, "postgres"),
-                Password: GetValue(new[] { "password", "pwd" }, "postgres"),
-                Db: GetValue(new[] { "database", "initial catalog" }, "faraday_db")
+                Host: GetValue(["host", "server", "data source"], "db"),
+                User: GetValue(["username", "user id", "uid", "user"], "postgres"),
+                Password: GetValue(["password", "pwd"], "postgres"),
+                Db: GetValue(["database", "initial catalog"], "faraday_db")
             );
         }
     }

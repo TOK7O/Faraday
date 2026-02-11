@@ -24,7 +24,6 @@ namespace Faraday.API.Services
         private const double SimilarityThreshold = 0.70;
         private const double ExcellentMatchThreshold = 0.85;
         private const int ImageSize = 224; // ResNet50 input size
-        private const int FeatureVectorSize = 2048; // ResNet50 output dimension
         private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10MB
 
         public ImageRecognitionService(
@@ -61,7 +60,7 @@ namespace Faraday.API.Services
                 return result;
             }
 
-            // Check current reference image count
+            // Check the current reference image count
             var currentCount = await _context.Set<ProductImage>()
                 .CountAsync(pi => pi.ProductDefinitionId == product.Id);
 
@@ -93,7 +92,7 @@ namespace Faraday.API.Services
             {
                 try
                 {
-                    // Validate file
+                    // Validate the file
                     if (image.Length > MaxImageSizeBytes)
                     {
                         result.Errors.Add($"Image {image.FileName} exceeds maximum size of 10MB.");
@@ -113,7 +112,7 @@ namespace Faraday.API.Services
                     var filePath = Path.Combine(uploadDir, fileName);
 
                     // Save image to disk
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    await using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await image.CopyToAsync(stream);
                     }
@@ -122,7 +121,7 @@ namespace Faraday.API.Services
                     var featureVector = await ExtractFeatureVectorAsync(filePath);
                     var featureVectorJson = JsonSerializer.Serialize(featureVector);
 
-                    // Save to database
+                    // Save to the database
                     var productImage = new ProductImage
                     {
                         ProductDefinitionId = product.Id,
@@ -179,12 +178,12 @@ namespace Faraday.API.Services
                 
                 try
                 {
-                    using (var stream = new FileStream(tempPath, FileMode.Create))
+                    await using (var stream = new FileStream(tempPath, FileMode.Create))
                     {
                         await image.CopyToAsync(stream);
                     }
 
-                    // Extract feature vector from uploaded image
+                    // Extract a feature vector from an uploaded image
                     var uploadedFeatures = await ExtractFeatureVectorAsync(tempPath);
 
                     // Get all reference images with their products
@@ -200,7 +199,7 @@ namespace Faraday.API.Services
                         return result;
                     }
 
-                    // Find best match
+                    // Find the best match
                     double bestSimilarity = 0;
                     ProductImage? bestMatch = null;
 
@@ -323,7 +322,7 @@ namespace Faraday.API.Services
                 throw new KeyNotFoundException($"Reference image with ID {imageId} not found.");
             }
 
-            // Delete physical file
+            // Delete the physical file
             var filePath = Path.Combine(_environment.ContentRootPath, "wwwroot", "product-images", image.ImagePath);
             if (File.Exists(filePath))
             {
@@ -359,7 +358,7 @@ namespace Faraday.API.Services
             }
             _logger.LogInformation("Serving image file: {ImagePath}", image.ImagePath);
 
-            // Build full path to the image file
+            // Build a full path to the image file
             var filePath = Path.Combine(_environment.ContentRootPath, "wwwroot", "product-images", image.ImagePath);
 
             if (!File.Exists(filePath))
@@ -367,7 +366,7 @@ namespace Faraday.API.Services
                 throw new FileNotFoundException($"Image file '{image.ImagePath}' not found on disk.");
             }
 
-            // Determine content type based on file extension
+            // Determine the content type based on file extension
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             var contentType = extension switch
             {
@@ -376,12 +375,12 @@ namespace Faraday.API.Services
                 _ => "application/octet-stream"
             };
 
-            // Open file stream
+            // Open a file stream
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             return (fileStream, contentType, image.ImagePath);
         }
-        // Extract feature vector from image using ResNet50
+        // Extract the feature vector from the image using ResNet50
         private async Task<float[]> ExtractFeatureVectorAsync(string imagePath)
         {
             using var image = await Image.LoadAsync<Rgb24>(imagePath);
@@ -394,7 +393,7 @@ namespace Faraday.API.Services
             }));
 
             // Convert to tensor (NCHW format: batch, channels, height, width)
-            var tensor = new DenseTensor<float>(new[] { 1, 3, ImageSize, ImageSize });
+            var tensor = new DenseTensor<float>([1, 3, ImageSize, ImageSize]);
             
             for (int y = 0; y < ImageSize; y++)
             {

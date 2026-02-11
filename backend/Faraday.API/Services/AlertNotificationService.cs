@@ -9,19 +9,11 @@ namespace Faraday.API.Services
     /// Service responsible for broadcasting real-time alert notifications to connected clients.
     /// Uses SignalR to push updates immediately when anomalies are detected.
     /// </summary>
-    public class AlertNotificationService : IAlertNotificationService
+    public class AlertNotificationService(
+        IHubContext<AlertsHub> hubContext,
+        ILogger<AlertNotificationService> logger)
+        : IAlertNotificationService
     {
-        private readonly IHubContext<AlertsHub> _hubContext;
-        private readonly ILogger<AlertNotificationService> _logger;
-
-        public AlertNotificationService(
-            IHubContext<AlertsHub> hubContext,
-            ILogger<AlertNotificationService> logger)
-        {
-            _hubContext = hubContext;
-            _logger = logger;
-        }
-
         /// <summary>
         /// Pushes a new alert to all connected SignalR clients.
         /// </summary>
@@ -42,13 +34,13 @@ namespace Faraday.API.Services
 
                 // Broadcast to all connected clients
                 // "NewAlertCreated" is the event name the frontend client must listen for.
-                await _hubContext.Clients.All.SendAsync("NewAlertCreated", alertDto);
+                await hubContext.Clients.All.SendAsync("NewAlertCreated", alertDto);
                 
-                _logger.LogInformation($"Alert notification sent via SignalR: {alert.Type} - {alert.Message}");
+                logger.LogInformation($"Alert notification sent via SignalR: {alert.Type} - {alert.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send SignalR notification for alert {alert.Id}");
+                logger.LogError(ex, $"Failed to send SignalR notification for alert {alert.Id}");
             }
         }
     }
