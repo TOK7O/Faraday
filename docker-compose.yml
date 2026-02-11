@@ -8,7 +8,6 @@ services:
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
-    # This is a bit hacky, but it works.
     command: >
       /bin/sh -c "
       cp /etc/ssl/private/server.key.temp /etc/ssl/private/server.key &&

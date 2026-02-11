@@ -17,6 +17,7 @@ export const ReferenceImageManager = ({ productId, scanCode }: ReferenceImageMan
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Pobieranie istniejących obrazów referencyjnych dla tego produktu
     const fetchImages = async () => {
         if (!productId) return;
         setLoading(true);
@@ -34,15 +35,16 @@ export const ReferenceImageManager = ({ productId, scanCode }: ReferenceImageMan
         fetchImages();
     }, [productId]);
 
+    // Obsługa przesyłania nowych zdjęć (Trening AI)
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
         setUploading(true);
         try {
-            // API expects a list of files
+            // Wywołanie endpointu /upload-reference
             await uploadReferenceImages(scanCode, Array.from(files));
-            await fetchImages();
+            await fetchImages(); // Odśwież listę po udanym uploadzie
         } catch (error) {
             console.error("Upload failed", error);
             alert("Failed to upload images. Ensure files are valid images and under 10MB.");
@@ -52,8 +54,9 @@ export const ReferenceImageManager = ({ productId, scanCode }: ReferenceImageMan
         }
     };
 
+    // Usuwanie błędnych wzorców
     const handleDelete = async (imageId: number) => {
-        if (!confirm("Are you sure you want to delete this reference image?")) return;
+        if (!confirm("Are you sure you want to delete this reference image? This will affect AI accuracy.")) return;
         try {
             await deleteReferenceImage(imageId);
             setImages(images.filter(img => img.id !== imageId));
@@ -64,63 +67,101 @@ export const ReferenceImageManager = ({ productId, scanCode }: ReferenceImageMan
     };
 
     return (
-        <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border-input)", paddingTop: "1.5rem" }}>
+        <div style={{ width: '100%' }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <h4 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                <h4 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "1rem" }}>
                     <ImageIcon size={18} className="icon-accent" />
-                    AI Reference Images
+                    Reference Images
                 </h4>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                    {images.length} / 10 images
+                    {images.length} / 10 max
                 </div>
             </div>
 
+            {/* Siatka zdjęć */}
             <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-                gap: "10px",
+                gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                gap: "12px",
                 marginBottom: "1rem"
             }}>
-                {images.map(img => (
-                    <div key={img.id} style={{ position: "relative", aspectRatio: "1", borderRadius: "8px", overflow: "hidden", border: "1px solid var(--border-input)" }}>
-                        {/* Używamy baseURL z axiosa, bo ścieżka z bazy jest relatywna */}
-                        <img
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${img.imageUrl}`}
-                            alt="Ref"
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                        <button
-                            onClick={() => handleDelete(img.id)}
-                            style={{
-                                position: "absolute", top: 2, right: 2,
-                                background: "rgba(0,0,0,0.6)", color: "#ef4444",
-                                border: "none", borderRadius: "4px",
-                                padding: "4px", cursor: "pointer"
-                            }}
-                        >
-                            <Trash2 size={12} />
-                        </button>
+                {loading ? (
+                    <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "1rem", color: "var(--text-muted)" }}>
+                        <Loader2 className="animate-spin" style={{ margin: "0 auto" }} />
                     </div>
-                ))}
+                ) : (
+                    <>
+                        {images.map(img => (
+                            <div key={img.id} style={{
+                                position: "relative",
+                                aspectRatio: "1",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                                border: "1px solid var(--border-input)",
+                                background: "#000"
+                            }}>
+                                <img
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${img.imageUrl}`}
+                                    alt="Ref"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                                <div style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)",
+                                    opacity: 0,
+                                    transition: "opacity 0.2s",
+                                    display: "flex",
+                                    alignItems: "flex-end",
+                                    justifyContent: "flex-end",
+                                    padding: "4px"
+                                }}
+                                     onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                                     onMouseLeave={e => e.currentTarget.style.opacity = "0"}
+                                >
+                                    <button
+                                        onClick={() => handleDelete(img.id)}
+                                        style={{
+                                            background: "#ef4444",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            padding: "4px",
+                                            cursor: "pointer",
+                                            display: "flex"
+                                        }}
+                                        title="Remove Reference"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
 
-                {images.length < 10 && (
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        style={{
-                            aspectRatio: "1",
-                            background: "rgba(255,255,255,0.05)",
-                            border: "1px dashed var(--border-input)",
-                            borderRadius: "8px",
-                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                            cursor: uploading ? "not-allowed" : "pointer",
-                            color: "var(--text-muted)",
-                            transition: "all 0.2s"
-                        }}
-                    >
-                        {uploading ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
-                        <span style={{ fontSize: "0.7rem", marginTop: "4px" }}>Add</span>
-                    </button>
+                        {/* Przycisk dodawania */}
+                        {images.length < 10 && (
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                                style={{
+                                    aspectRatio: "1",
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "2px dashed var(--border-input)",
+                                    borderRadius: "8px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: uploading ? "not-allowed" : "pointer",
+                                    color: "var(--accent-primary)",
+                                    transition: "all 0.2s"
+                                }}
+                            >
+                                {uploading ? <Loader2 size={24} className="animate-spin" /> : <Upload size={24} />}
+                                <span style={{ fontSize: "0.75rem", marginTop: "8px", fontWeight: 600 }}>Add Photo</span>
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
 
@@ -133,9 +174,11 @@ export const ReferenceImageManager = ({ productId, scanCode }: ReferenceImageMan
                 onChange={handleUpload}
             />
 
-            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>
-                Upload photos of this product from different angles to enable AI recognition.
-            </p>
+            <div style={{ background: "rgba(234, 179, 8, 0.1)", borderLeft: "3px solid #eab308", padding: "10px", borderRadius: "0 4px 4px 0" }}>
+                <p style={{ fontSize: "0.8rem", color: "#fef08a", margin: 0 }}>
+                    <strong>Training Tip:</strong> Upload photos of the product from different angles and lighting conditions. These files are sent to the server to build the AI model <em>before</em> recognition can be performed.
+                </p>
+            </div>
         </div>
     );
 };
