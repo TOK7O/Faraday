@@ -200,26 +200,6 @@ startupLogger.LogInformation("Background workers registered successfully");
 
 var app = builder.Build();
 
-// Automatic database migration on startup (Production environment)
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<FaradayDbContext>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        
-        logger.LogInformation("Applying database migrations...");
-        context.Database.Migrate();
-        logger.LogInformation("Database migrations applied successfully.");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
-        throw;
-    }
-}
 
 // Register SignalR Logger Provider
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
