@@ -10,7 +10,6 @@ $radius-card: 16px;
 $radius-modal: 24px;
 
 .personnel-view-container {
-  //padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
   font-family: "Space Grotesk", sans-serif;
@@ -424,7 +423,6 @@ $radius-modal: 24px;
   color: var(--text-main);
   animation: fadeIn 0.4s ease-out;
 
-  // --- 1. HEADER SEKCJI ---
   .content-header {
     display: flex;
     justify-content: space-between;
@@ -472,7 +470,6 @@ $radius-modal: 24px;
     }
   }
 
-  // --- 2. PASEK AKCJI ---
   .action-bar {
     .ht-input {
       background: var(--bg-input);
@@ -513,7 +510,6 @@ $radius-modal: 24px;
     }
   }
 
-  // --- 3. TABELA (Glass Style) ---
   .table-container {
     background: rgba(var(--bg-input-rgb), 0.3);
     backdrop-filter: blur(20px);
@@ -568,7 +564,6 @@ $radius-modal: 24px;
     }
   }
 
-  // --- 4. DROPDOWN MENU ---
   .dropdown-ht {
     min-width: 200px;
     background: var(--bg-form);

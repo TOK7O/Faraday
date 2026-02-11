@@ -136,8 +136,6 @@
       font-family: inherit;
       outline: none;
       transition: border-color 0.2s;
-      //background-color: var(--text-main) !important;
-      //color: var(--bg-form);
 
       &:hover {
         border-color: var(--accent-primary);
@@ -145,7 +143,6 @@
     }
   }
 
-  /* --- TABLE STYLES (GLASS DESIGN) --- */
   .glass-table-wrapper {
     position: relative;
     z-index: 1;

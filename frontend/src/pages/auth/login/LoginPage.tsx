@@ -104,7 +104,6 @@ const LoginPage = () => {
 
   return (
       <div className="auth-container">
-        {/* --- Visual Section --- */}
         <section className="auth-visual">
           <Link to="/">
             <h1>
@@ -117,7 +116,6 @@ const LoginPage = () => {
           </div>
         </section>
 
-        {/* --- Form Section --- */}
         <section className="auth-form">
           <div className="form-header">
             <h1>
@@ -130,7 +128,6 @@ const LoginPage = () => {
             </p>
           </div>
 
-          {/* Global Error Banner */}
           {status.error && (
               <div className="error-banner" style={{
                 background: 'rgba(239, 68, 68, 0.1)',
@@ -149,12 +146,9 @@ const LoginPage = () => {
               </div>
           )}
 
-          {/* Form Root with "actual-form" class ensures gap works correctly */}
           <Form.Root className="actual-form" onSubmit={handleSubmit}>
             {!status.requires2FA ? (
-                /* --- STEP 1: Standard Login --- */
                 <>
-                  {/* LoginField & PasswordField render .input-group divs directly */}
                   <SignInLoginField
                       data={loginStrings.fields.email}
                       name="username"
@@ -176,7 +170,6 @@ const LoginPage = () => {
                     </Form.Label>
                   </div>
 
-                  {/* Wrapper div outside Form.Control for correct layout */}
                   <div className="password-wrapper" style={{ position: 'relative' }}>
                     <ShieldCheck
                         size={20}

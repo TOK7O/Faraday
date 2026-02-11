@@ -207,7 +207,6 @@ const BackupsContent = () => {
                 </section>
             </main>
 
-            {/* --- MODAL PRZYWRACANIA --- */}
             {restoreModalOpen && (
                 <div className="dialog-overlay-ht" onClick={() => !isRestoring && setRestoreModalOpen(false)}>
                     <div className="dialog-content-ht danger-theme" onClick={e => e.stopPropagation()}>

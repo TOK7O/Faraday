@@ -17,16 +17,12 @@ const HomePage = () => {
           </span>
         </div>
         <div className="nav-actions">
-          {/* some elements in navigation are only temporary, for easier accesibility*/}
           <Link to="/docs">
             <button className={"btn-ht"}>{t.homePage.nav.documentation}</button>
           </Link>
           <Link to="/dashboard">
             <button className={"btn-ht"}>{t.homePage.nav.dashboard}</button>
           </Link>
-          {/*<Link to="/login">*/}
-          {/*  <button>{t.homePage.nav.login}</button>*/}
-          {/*</Link>*/}
         </div>
       </header>
 

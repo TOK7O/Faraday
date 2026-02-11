@@ -88,21 +88,17 @@ export const ChangePasswordForm = () => {
 
             <Form.Root className="settings-form" onSubmit={handleSubmit}>
 
-                {/* Old Password: Uses SignInPasswordField (Simple, no checks) */}
                 <SignInPasswordField
                     data={fieldConfig.oldPassword}
                     name="oldPassword"
                 />
 
                 <div className="form-divider" />
-
-                {/* New Password Pair: Handles both new password and confirmation with validation */}
                 <RegisterPasswordFieldPair
                     passwordData={fieldConfig.newPassword}
                     confirmData={fieldConfig.confirmPassword}
                 />
 
-                {/* Status Messages */}
                 {message && (
                     <div className={`status-banner ${message.type}`}>
                         {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
@@ -110,7 +106,6 @@ export const ChangePasswordForm = () => {
                     </div>
                 )}
 
-                {/* Submit Button */}
                 <div className="form-actions">
                     <Form.Submit asChild>
                         <button type="submit" className="save-btn" disabled={isLoading}>

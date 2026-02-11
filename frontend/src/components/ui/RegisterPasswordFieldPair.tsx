@@ -31,7 +31,6 @@ export const RegisterPasswordFieldPair = ({
 
     return (
         <>
-            {/* PASSWORD */}
             <Form.Field className="FormField" name="password">
                 <div className="FormLabelRow">
                     <Form.Label className="FormLabel">
@@ -81,7 +80,6 @@ export const RegisterPasswordFieldPair = ({
                 </Password.Root>
             </Form.Field>
 
-            {/* CONFIRM PASSWORD */}
             <Form.Field className="FormField" name="confirmPassword">
                 <div className="FormLabelRow">
                     <Form.Label className="FormLabel">

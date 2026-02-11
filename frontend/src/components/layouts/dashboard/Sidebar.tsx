@@ -114,8 +114,6 @@ const Sidebar = () => {
     return (
         <div className="sidebar-container">
             <Tabs.List className="sidebar-nav">
-                {/* ... (Reszta JSX bez zmian) ... */}
-                {/* Grupa 1 */}
                 <div className="nav-group">
                     <span className="group-label">{t.dashboardPage.sidebar.groups.terminal}</span>
                     <Tabs.Trigger className="nav-item" value="overview">
@@ -126,7 +124,6 @@ const Sidebar = () => {
                     </Tabs.Trigger>
                 </div>
 
-                {/* Grupa 2 */}
                 <div className="nav-group">
                     <span className="group-label">{t.dashboardPage.sidebar.groups.securityLogs}</span>
                     {isAdmin && (
@@ -150,7 +147,6 @@ const Sidebar = () => {
                     )}
                 </div>
 
-                {/* Grupa 3 */}
                 <div className="nav-group">
                     <span className="group-label">{t.dashboardPage.sidebar.groups.settings}</span>
                     <Tabs.Trigger className="nav-item" value="settings">

@@ -39,7 +39,6 @@ const OperationsHistory = () => {
         fetchHistory();
     }, [limit]);
 
-    // Visual helpers
     const getOpConfig = (type: string) => {
         switch (type) {
             case "Inbound": return { color: "#10b981", icon: <ArrowRight size={14} />, label: opT.types.accepted };
