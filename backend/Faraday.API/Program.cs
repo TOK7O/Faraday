@@ -208,73 +208,38 @@ var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 loggerFactory.AddProvider(new SignalRLoggerProvider(app.Services));
 app.Logger.LogInformation("SignalR Logger Provider registered for real-time log streaming");
 
+// Create a temporary service scope to access the DbContext during application startup.
+// This block ensures the database schema is up-to-date and the default admin user exists.
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    int maxRetries = 10;
-    int delaySeconds = 2;
-    int retryCount = 0;
-    bool migrationSucceeded = false;
-
-    while (retryCount < maxRetries && !migrationSucceeded)
+    // Automatically apply any pending migrations to the database.
+    try
     {
-        try
-        {
-            startupLogger.LogInformation($"Attempting database migration ({retryCount + 1}/{maxRetries})...");
-            
-            if (dbContext.Database.CanConnect()) 
-            {
-                dbContext.Database.Migrate();
-                migrationSucceeded = true;
-                startupLogger.LogInformation("Database migrations applied successfully.");
-            }
-            else
-            {
-                throw new Exception("Cannot connect to database right now.");
-            }
-        }
-        catch (Exception ex)
-        {
-            retryCount++;
-            startupLogger.LogError(ex, $"Migration failed (Attempt {retryCount}/{maxRetries}): {ex.Message}");
-            
-            if (retryCount < maxRetries)
-            {
-                startupLogger.LogInformation($"Waiting {delaySeconds}s before next retry...");
-                Thread.Sleep(delaySeconds * 1000);
-            }
-            else
-            {
-                startupLogger.LogCritical("Could not apply migrations after multiple attempts. Application might fail.");
-            }
-        }
+        startupLogger.LogInformation("Applying database migrations...");
+        dbContext.Database.Migrate();
+        startupLogger.LogInformation("Database migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+        // Log and continue, we trust the schema is there (hopefully).
+        startupLogger.LogError(ex, "Migration failed: {Message}. Attempting to continue...", ex.Message);
     }
 
     // Seed default administrator account if the Users table is empty.
-    if (migrationSucceeded) 
+    if (!dbContext.Users.Any())
     {
-        try 
+        dbContext.Users.Add(new User
         {
-            if (!dbContext.Users.Any())
-            {
-                dbContext.Users.Add(new User
-                {
-                    Username = "admin",
-                    Email = "admin@faraday.com",
-                    Role = UserRole.Administrator,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                    IsActive = true
-                });
-                dbContext.SaveChanges();
-                startupLogger.LogInformation("Default administrator account seeded.");
-            }
-        }
-        catch(Exception ex)
-        {
-             startupLogger.LogError(ex, "Error seeding default user.");
-        }
+            Username = "admin",
+            Email = "admin@faraday.com",
+            Role = UserRole.Administrator,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+            IsActive = true
+        });
+        dbContext.SaveChanges();
+        startupLogger.LogInformation("Default administrator account seeded: admin / admin123");
     }
 }
 

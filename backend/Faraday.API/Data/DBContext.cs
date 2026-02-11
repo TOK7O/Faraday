@@ -87,7 +87,7 @@ namespace Faraday.API.Data
             
             modelBuilder.Entity<Alert>()
                 .HasIndex(a => new { a.RackId, a.Type, a.IsResolved })
-                .HasFilter("[IsResolved] = 0")
+                .HasFilter("\"IsResolved\" = false")
                 .IsUnique();
         }
     }

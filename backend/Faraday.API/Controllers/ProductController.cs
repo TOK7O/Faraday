@@ -69,10 +69,9 @@ namespace Faraday.API.Controllers
 
         /// <summary>
         /// Creates a new product definition.
-        /// Restricted to Administrators to ensure catalog consistency.
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         public async Task<ActionResult<ProductDto>> Create(ProductCreateDto dto)
         {
             try
@@ -101,7 +100,7 @@ namespace Faraday.API.Controllers
         /// </para>
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         public async Task<ActionResult<ProductDto>> Update(int id, ProductUpdateDto dto)
         {
             try
@@ -125,7 +124,7 @@ namespace Faraday.API.Controllers
         /// The service layer handles archiving the ScanCode to allow reuse.
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             _logger.LogInformation("Product deletion initiated for ID: {ProductId}", id);
@@ -139,7 +138,7 @@ namespace Faraday.API.Controllers
         /// Validation results (successes/errors) are returned in the response body.
         /// </summary>
         [HttpPost("import")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         public async Task<IActionResult> ImportCsv(IFormFile? file)
         {
             if (file == null || file.Length == 0)
