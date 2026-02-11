@@ -108,7 +108,7 @@ const Sidebar = () => {
 
     const handleLogout = () => {
         clearSession(); // Używamy funkcji z utils
-        navigate("/login");
+        navigate("/");
     };
 
     return (
