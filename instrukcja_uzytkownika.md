@@ -2,24 +2,121 @@
 
 ## Spis treści
 
-1. [Pierwsze kroki](#1-pierwsze-kroki)
-2. [Logowanie do systemu](#2-logowanie-do-systemu)
-3. [Panel główny (Dashboard)](#3-panel-główny-dashboard)
-4. [Przegląd magazynu](#4-przegląd-magazynu)
-5. [Inwentarz](#5-inwentarz)
-6. [Personel](#6-personel)
-7. [Historia operacji](#7-historia-operacji)
-8. [Raporty](#8-raporty)
-9. [Kopie zapasowe](#9-kopie-zapasowe)
-10. [Terminal logów](#10-terminal-logów)
-11. [Preferencje](#11-preferencje)
-12. [Sterowanie głosowe](#12-sterowanie-głosowe)
-13. [Powiadomienia i alerty](#13-powiadomienia-i-alerty)
-14. [Sesja i bezpieczeństwo](#14-sesja-i-bezpieczeństwo)
+1. [Instalacja i uruchomienie](#1-instalacja-i-uruchomienie)
+2. [Pierwsze kroki](#2-pierwsze-kroki)
+3. [Logowanie do systemu](#3-logowanie-do-systemu)
+4. [Panel główny (Dashboard)](#4-panel-główny-dashboard)
+5. [Przegląd magazynu](#5-przegląd-magazynu)
+6. [Inwentarz](#6-inwentarz)
+7. [Personel](#7-personel)
+8. [Historia operacji](#8-historia-operacji)
+9. [Raporty](#9-raporty)
+10. [Kopie zapasowe](#10-kopie-zapasowe)
+11. [Terminal logów](#11-terminal-logów)
+12. [Preferencje](#12-preferencje)
+13. [Sterowanie głosowe](#13-sterowanie-głosowe)
+14. [Powiadomienia i alerty](#14-powiadomienia-i-alerty)
+15. [Sesja i bezpieczeństwo](#15-sesja-i-bezpieczeństwo)
 
 ---
 
-## 1. Pierwsze kroki
+## 1. Instalacja i uruchomienie
+
+### 1.1. Wymagania wstępne
+
+Przed rozpoczęciem upewnij się, że na komputerze zainstalowane są:
+
+- **Docker Desktop** — silnik kontenerów, który uruchamia wszystkie komponenty systemu. Pobierz ze strony [docker.com](https://www.docker.com/products/docker-desktop/). Po instalacji upewnij się, że Docker Desktop jest uruchomiony (ikona w zasobniku systemowym).
+- **Git** — do pobrania kodu źródłowego projektu. Pobierz ze strony [git-scm.com](https://git-scm.com/).
+
+### 1.2. Pobranie projektu
+
+Otwórz terminal (PowerShell lub Wiersz poleceń) i wykonaj polecenie:
+
+```
+git clone https://github.com/Rumeleq/Faraday.git
+cd Faraday
+```
+
+### 1.3. Konfiguracja zmiennych środowiskowych
+
+W katalogu głównym projektu utwórz plik `.env` (bez rozszerzenia) i wypełnij go poniższą zawartością, zastępując wartości własnymi:
+
+```
+# Baza danych
+DB_USER=faraday
+DB_PASSWORD=TwojeHaslo123
+DB_NAME=faraday_db
+DB_HOST=faraday-db
+
+# pgAdmin (panel administracyjny bazy danych)
+PGADMIN_EMAIL=admin@faraday.local
+PGADMIN_PASSWORD=HasloPgAdmin123
+
+# JWT (tokeny autoryzacji)
+JWT_KEY=TwojDlugiKluczJWT-Minimum32Znaki!
+JWT_ISSUER=FaradayWMS
+JWT_AUDIENCE=FaradayUsers
+
+# Szyfrowanie kopii zapasowych (dokładnie 32 i 16 znaków)
+BACKUP_ENCRYPTION_KEY=12345678901234567890123456789012
+BACKUP_ENCRYPTION_IV=1234567890123456
+
+# Gemini API (sterowanie głosowe)
+GEMINI_API_KEY=twoj-klucz-api-gemini
+
+# E-mail (resetowanie haseł)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=twoj@email.com
+SMTP_PASSWORD=haslo-aplikacji
+SMTP_FROM=twoj@email.com
+```
+
+**Ważne:** Klucz `BACKUP_ENCRYPTION_KEY` musi mieć dokładnie 32 znaki, a `BACKUP_ENCRYPTION_IV` dokładnie 16 znaków. Klucz `JWT_KEY` powinien mieć co najmniej 32 znaki. Klucz Gemini API można uzyskać na stronie [Google AI Studio](https://aistudio.google.com/).
+
+### 1.4. Certyfikaty SSL
+
+Baza danych wymaga certyfikatów SSL. Utwórz katalog `ssl/` w katalogu głównym projektu i wygeneruj certyfikaty:
+
+```
+mkdir ssl
+openssl req -new -x509 -days 365 -nodes -out ssl/server.crt -keyout ssl/server.key -subj "/CN=faraday-db"
+```
+
+Jeśli nie masz polecenia `openssl`, możesz je zainstalować przez [Git for Windows](https://git-scm.com/) (jest dołączone) lub pobrać osobno.
+
+### 1.5. Uruchomienie
+
+Z katalogu głównego projektu wykonaj:
+
+```
+docker compose up --build
+```
+
+Pierwsze uruchomienie może potrwać kilka minut — Docker pobierze potrzebne obrazy i zbuduje kontenery. Po zakończeniu w terminalu pojawią się logi ze wszystkich usług.
+
+### 1.6. Dostęp do aplikacji
+
+Po pomyślnym uruchomieniu system jest dostępny pod adresami:
+
+| Usługa | Adres | Opis |
+|---|---|---|
+| **Aplikacja** | [http://localhost:5173](http://localhost:5173) | Główny interfejs Faraday WMS |
+| **API** | [http://localhost:5000](http://localhost:5000) | Backend (REST API) |
+| **pgAdmin** | [http://localhost:5050](http://localhost:5050) | Panel administracyjny bazy danych |
+
+Przy pierwszym uruchomieniu system automatycznie utworzy strukturę bazy danych i konto domyślnego administratora.
+
+### 1.7. Zatrzymywanie i ponowne uruchamianie
+
+- **Zatrzymanie:** naciśnij `Ctrl+C` w terminalu z uruchomionym Docker Compose, lub wykonaj `docker compose down`.
+- **Ponowne uruchomienie:** `docker compose up` (bez `--build`, jeśli nie zmieniano kodu).
+- **Pełny reset danych:** `docker compose down -v` — usunie wolumeny z danymi bazy. Przy następnym uruchomieniu baza zostanie utworzona od nowa.
+
+---
+
+## 2. Pierwsze kroki
 
 Faraday WMS to system zarządzania magazynem dostępny przez przeglądarkę internetową. Po uruchomieniu aplikacji zobaczysz stronę startową, z której możesz przejść do logowania.
 
@@ -34,7 +131,7 @@ Funkcje oznaczone w tej instrukcji jako **(tylko Administrator)** nie są widocz
 
 ---
 
-## 2. Logowanie do systemu
+## 3. Logowanie do systemu
 
 1. Wejdź na stronę aplikacji i kliknij przycisk logowania.
 2. Podaj swoją **nazwę użytkownika** oraz **hasło**.
@@ -45,7 +142,7 @@ Jeśli nie pamiętasz hasła, użyj opcji **„Zapomniałem hasła"** na stronie
 
 ---
 
-## 3. Panel główny (Dashboard)
+## 4. Panel główny (Dashboard)
 
 Po zalogowaniu widzisz panel główny podzielony na dwie części:
 
@@ -64,11 +161,9 @@ Nawigacja w pasku bocznym jest podzielona na grupy:
 
 Na dole paska bocznego znajduje się przycisk **Wyloguj** oraz — gdy zbliża się koniec sesji — ostrzeżenie z przyciskiem **Przedłuż sesję**.
 
-Na urządzeniach mobilnych nawigacja jest dostępna z górnego paska.
-
 ---
 
-## 4. Przegląd magazynu
+## 5. Przegląd magazynu
 
 Pierwsza sekcja, którą widzisz po zalogowaniu. Zawiera **interaktywną wizualizację 3D** całego magazynu — wszystkie regały wraz z aktualnie składowanymi na nich produktami.
 
@@ -82,11 +177,11 @@ Dane w wizualizacji są pobierane bezpośrednio z bazy danych, więc widok zawsz
 
 ---
 
-## 5. Inwentarz
+## 6. Inwentarz
 
 Główna sekcja operacyjna systemu. Składa się z dwóch elementów: **siatki regałów** i **katalogu produktów**.
 
-### 5.1. Siatka regałów
+### 6.1. Siatka regałów
 
 Wyświetla wszystkie aktywne regały w formie wizualnych kart. Każda karta regału pokazuje:
 
@@ -96,11 +191,11 @@ Wyświetla wszystkie aktywne regały w formie wizualnych kart. Każda karta rega
 
 Po kliknięciu na zajęty slot możesz zobaczyć szczegóły przechowywaneg produktu (nazwa, kod, data przyjęcia, termin ważności).
 
-### 5.2. Katalog produktów
+### 6.2. Katalog produktów
 
 Lista wszystkich zdefiniowanych produktów z ich parametrami: kod kreskowy, nazwa, wymiary, waga, wymagania temperaturowe, klasyfikacja zagrożeń.
 
-### 5.3. Operacje magazynowe
+### 6.3. Operacje magazynowe
 
 Z poziomu sekcji inwentarza możesz wykonywać trzy kluczowe operacje:
 
@@ -110,7 +205,7 @@ Z poziomu sekcji inwentarza możesz wykonywać trzy kluczowe operacje:
 2. System automatycznie znajdzie najlepsze miejsce składowania — uwzględnia wymiary produktu, wymagania temperaturowe i nośność regału.
 3. Po zatwierdzeniu towar zostaje zarejestrowany w wyznaczonym slocie.
 
-Jeśli system nie znajdzie odpowiedniego miejsca, poinformuje Cię o powodzie (np. brak wolnych slotów spełniających wymagania temperaturowe).
+Jeśli system nie znajdzie odpowiedniego miejsca, poinformuje Cię o tym.
 
 #### Wydanie towaru (Outbound)
 
@@ -125,24 +220,24 @@ Jeśli system nie znajdzie odpowiedniego miejsca, poinformuje Cię o powodzie (n
 3. System sprawdzi, czy docelowe miejsce jest kompatybilne z produktem (wymiary, temperatura, nośność).
 4. Po zatwierdzeniu towar zostaje przeniesiony.
 
-### 5.4. Skaner kodów kreskowych
+### 6.4. Skaner kodów kreskowych
 
 System obsługuje skanowanie kodów kreskowych przez kamerę urządzenia. Po zeskanowaniu kodu system automatycznie rozpoznaje produkt i umożliwia wykonanie operacji przyjęcia lub wydania.
 
-### 5.5. Dodawanie regałów i produktów
+### 6.5. Dodawanie regałów i produktów
 
 - **Nowy regał** — kliknij przycisk dodawania i wypełnij formularz: kod regału, wymiary siatki (wiersze × kolumny), ograniczenia wymiarowe, zakres temperatur, nośność. System automatycznie wygeneruje siatkę slotów.
 - **Nowy produkt** — wypełnij formularz: kod kreskowy, nazwa, wymiary, waga, wymagania temperaturowe, klasyfikacja zagrożeń, okres ważności.
 - **Edycja** — kliknij na istniejący regał lub produkt, aby zmodyfikować jego parametry.
 - **Usuwanie** — regały i produkty są ukrywane (nie usuwane fizycznie), więc dane historyczne pozostają nienaruszone.
 
-### 5.6. Import masowy z CSV
+### 6.6. Import masowy z CSV
 
 Możesz jednorazowo zaimportować wiele regałów lub produktów z pliku CSV. Po wybraniu pliku system wyświetli podgląd danych do zaimportowania, pozwalając zweryfikować ich poprawność przed zatwierdzeniem. System automatycznie wykryje duplikaty i poinformuje o ewentualnych błędach.
 
 ---
 
-## 6. Personel
+## 7. Personel
 
 **(tylko Administrator)**
 
@@ -161,7 +256,7 @@ Lista użytkowników zawiera przeszukiwarkę oraz informacje o: roli, statusie a
 
 ---
 
-## 7. Historia operacji
+## 8. Historia operacji
 
 Chronologiczny dziennik wszystkich operacji magazynowych. Każdy wpis zawiera:
 
@@ -181,18 +276,18 @@ Chronologiczny dziennik wszystkich operacji magazynowych. Każdy wpis zawiera:
 
 ---
 
-## 8. Raporty
+## 9. Raporty
 
 Sekcja analityczna podzielona na cztery zakładki:
 
-### 8.1. Inwentarz
+### 9.1. Inwentarz
 
 - **Statystyki ogólne** — procent zajętości magazynu, liczba zajętych/wolnych slotów, łączna waga, liczba operacji dziennych.
 - **Podsumowanie inwentaryzacji** — tabela produktów pogrupowanych z ilościami i lokalizacjami.
 - **Elementy z kończącą się ważnością** — lista towarów, którym wkrótce mija termin ważności, z informacją o lokalizacji i dniach do wygaśnięcia.
 - **Pełna inwentaryzacja** — kompletny spis zawartości magazynu z wszystkimi szczegółami (produkt, kod, lokalizacja, data przyjęcia, temperatura bieżąca vs. wymagana).
 
-### 8.2. Utylizacja
+### 9.2. Utylizacja
 
 Raport wykorzystania każdego regału:
 
@@ -202,7 +297,7 @@ Raport wykorzystania każdego regału:
 
 Pozwala szybko zidentyfikować regały przeciążone lub mało wykorzystane.
 
-### 8.3. Czujniki
+### 9.3. Czujniki
 
 Historia odczytów z sensorów dla każdego regału:
 
@@ -211,14 +306,14 @@ Historia odczytów z sensorów dla każdego regału:
 - **Naruszenia temperaturowe regałów** — przypadki, gdy zarejestrowana temperatura wykroczyła poza dopuszczalny zakres regału.
 - **Naruszenia temperaturowe produktów** — przypadki, gdy produkty były przechowywane w temperaturze poza ich wymaganiami.
 
-### 8.4. Alarmy
+### 9.4. Alarmy
 
 - **Aktywne alerty** — lista nierozwiązanych alertów wymagających uwagi.
 - **Historia alertów** — pełna historia wszystkich alertów (rozwiązanych i aktywnych) z informacją o typie, regale, treści i czasie trwania.
 
 ---
 
-## 9. Kopie zapasowe
+## 10. Kopie zapasowe
 
 Sekcja zarządzania kopiami zapasowymi bazy danych.
 
@@ -240,7 +335,7 @@ System automatycznie tworzy kopie zapasowe co 24 godziny, więc nawet bez ręczn
 
 ---
 
-## 10. Terminal logów
+## 11. Terminal logów
 
 **(tylko Administrator)**
 
@@ -259,26 +354,26 @@ Każdy wpis logu wyświetla: czas, poziom (oznaczony kolorem), kategorię i tre�
 
 ---
 
-## 11. Preferencje
+## 12. Preferencje
 
 Sekcja ustawień osobistych, dostępna dla wszystkich użytkowników.
 
-### 11.1. Motyw
+### 12.1. Motyw
 
 Przełączanie między trybem jasnym (**Light**) a ciemnym (**Dark**). Zmiana jest natychmiastowa.
 
-### 11.2. Język
+### 12.2. Język
 
 Wybierz język interfejsu:
 
 - **Polski (PL)**
 - **Angielski (EN)**
 
-### 11.3. Zmiana hasła
+### 12.3. Zmiana hasła
 
 Formularz do zmiany własnego hasła. Wymaga podania aktualnego hasła oraz dwukrotnego wpisania nowego. Hasło musi spełniać wymogi bezpieczeństwa (min. 8 znaków, cyfra i znak specjalny).
 
-### 11.4. Uwierzytelnianie dwuskładnikowe (2FA)
+### 12.4. Uwierzytelnianie dwuskładnikowe (2FA)
 
 Dodatkowa warstwa bezpieczeństwa. Po włączeniu, przy każdym logowaniu oprócz hasła wymagany jest jednorazowy kod z aplikacji uwierzytelniającej.
 
@@ -295,21 +390,21 @@ Użyj opcji wyłączenia w sekcji 2FA. Będziesz musiał potwierdzić operację 
 
 ---
 
-## 12. Sterowanie głosowe
+## 13. Sterowanie głosowe
 
 W prawym dolnym rogu ekranu znajduje się **pływający przycisk sterowania głosowego**. Umożliwia on wydawanie poleceń systemowi w języku naturalnym.
 
 ### Jak używać:
 
 1. Kliknij przycisk mikrofonu.
-2. Wpisz polecenie tekstem (np. „pokaż wszystkie produkty", „przyjmij produkt o kodzie ABC-123", „ile mamy wolnych slotów").
-3. System przetworzy polecenie i wykona odpowiednią operację lub wyświetli żądane informacje.
+2. Powiedz polecenie.
+3. System przetworzy polecenie i wykona odpowiednią operację lub zwróci Ci żądane informacje.
 
 Sterowanie głosowe rozumie polecenia dotyczące: operacji magazynowych (przyjęcie, wydanie), przeglądania produktów i regałów oraz generowania raportów.
 
 ---
 
-## 13. Powiadomienia i alerty
+## 14. Powiadomienia i alerty
 
 System automatycznie monitoruje warunki magazynowe i generuje alerty w następujących sytuacjach:
 
@@ -325,7 +420,7 @@ Alerty, które dotyczą temperatury lub wagi, są automatycznie zamykane przez s
 
 ---
 
-## 14. Sesja i bezpieczeństwo
+## 15. Sesja i bezpieczeństwo
 
 - **Automatyczne wylogowanie** — sesja wygasa po określonym czasie nieaktywności. Na 5 minut przed wygaśnięciem system wyświetla ostrzeżenie z odliczaniem i przyciskiem **Przedłuż sesję**.
 - **Kontrola sesji** — system regularnie sprawdza ważność Twojej sesji. Jeśli wygaśnie, zostaniesz automatycznie przekierowany na stronę logowania.
