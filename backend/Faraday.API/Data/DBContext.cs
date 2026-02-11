@@ -66,7 +66,7 @@ namespace Faraday.API.Data
                     .Property(prop.Item2)
                     .HasPrecision(18, 4); // 18 total digits, 4 decimal places
             }
-            
+
             modelBuilder.Entity<Rack>()
                 .Property(r => r.Version)
                 .IsRowVersion();
@@ -78,13 +78,13 @@ namespace Faraday.API.Data
             modelBuilder.Entity<InventoryItem>()
                 .Property(r => r.Version)
                 .IsRowVersion();
-            
+
             modelBuilder.Entity<InventoryItem>()
                 .HasOne(i => i.Slot)
                 .WithOne(s => s.CurrentItem)
                 .HasForeignKey<InventoryItem>(i => i.RackSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             modelBuilder.Entity<Alert>()
                 .HasIndex(a => new { a.RackId, a.Type, a.IsResolved })
                 .HasFilter("\"IsResolved\" = false")
