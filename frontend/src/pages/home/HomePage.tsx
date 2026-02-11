@@ -19,14 +19,14 @@ const HomePage = () => {
         <div className="nav-actions">
           {/* some elements in navigation are only temporary, for easier accesibility*/}
           <Link to="/docs">
-            <button>{t.homePage.nav.documentation}</button>
+            <button className={"btn-ht"}>{t.homePage.nav.documentation}</button>
           </Link>
           <Link to="/dashboard">
-            <button>{t.homePage.nav.dashboard}</button>
+            <button className={"btn-ht"}>{t.homePage.nav.dashboard}</button>
           </Link>
-          <Link to="/login">
-            <button>{t.homePage.nav.login}</button>
-          </Link>
+          {/*<Link to="/login">*/}
+          {/*  <button>{t.homePage.nav.login}</button>*/}
+          {/*</Link>*/}
         </div>
       </header>
 
