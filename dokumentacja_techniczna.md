@@ -215,16 +215,6 @@ erDiagram
         int UploadedByUserId FK
     }
 
-    LogEntry {
-        int Id PK
-        datetime Timestamp
-        string Level
-        string Category
-        string Message
-        string Exception
-        int EventId
-    }
-
     User ||--o{ InventoryItem : "przyjął"
     User ||--o{ OperationLog : "wykonał"
     User ||--o{ BackupLog : "utworzył"
@@ -237,6 +227,19 @@ erDiagram
     Rack ||--o{ WeightReading : "rejestruje"
     RackSlot ||--o| InventoryItem : "przechowuje"
 ```
+
+### 3.1. Enumeracje
+
+Poniższa tabela opisuje wszystkie enumeracje (typy wyliczeniowe) używane w modelu danych.
+
+| Enumeracja | Wartości | Opis |
+|---|---|---|
+| `UserRole` | `Administrator`, `WarehouseWorker` | Rola użytkownika w systemie |
+| `ItemStatus` | `InStock` | Status elementu magazynowego |
+| `OperationType` | `Inbound`, `Outbound`, `Adjustment`, `Movement`, `SystemBackup`, `SystemRestore` | Typ operacji magazynowej |
+| `HazardType` | `Explosive`, `Flammable`, `Oxidizing`, `Toxic`, `Corrosive`, `RadioActive`, `Environmental` | Klasyfikacja zagrożeń (enum flagowy — wartości mogą być łączone) |
+| `RackSlotStatus` | `Available`, `Reserved` | Status slotu regałowego |
+| `AlertType` | `TemperatureMismatch`, `WeightMismatch`, `ExpirationWarning`, `ExpirationExpired` | Typ alertu systemowego |
 
 ---
 
@@ -352,7 +355,7 @@ Alerty są automatycznie rozwiązywane, gdy odczyty powrócą do normy, co zapob
 
 Zarządza tworzeniem i przywracaniem zaszyfrowanych kopii zapasowych bazy danych PostgreSQL.
 
-**Tworzenie kopii** wykorzystuje zewnętrzne narzędzie `pg_dump` w formacie custom (`-Fc`). Wygenerowany plik jest szyfrowany algorytmem AES-256-CBC z kluczem i wektorem inicjalizacji (IV) pobieranymi ze zmiennych środowiskowych. Zaszyfrowany plik otrzymuje rozszerzenie `.enc`. Operacja jest rejestrowana w tabeli `BackupLog`.
+**Tworzenie kopii** wykorzystuje narzędzie `pg_dump` w formacie custom (`-Fc`). Wygenerowany plik jest szyfrowany algorytmem AES-256-CBC z kluczem i wektorem inicjalizacji (IV) pobieranymi ze zmiennych środowiskowych. Zaszyfrowany plik otrzymuje rozszerzenie `.enc`. Operacja jest rejestrowana w tabeli `BackupLog`.
 
 **Przywracanie kopii** odszyfrowuje plik, a następnie uruchamia `pg_restore` z flagą `--clean` (usuwanie istniejących obiektów przed przywróceniem). Przed przywróceniem system terminuje wszystkie aktywne połączenia z bazą danych (oprócz własnego), aby uniknąć blokad.
 
