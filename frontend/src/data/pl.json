@@ -484,58 +484,22 @@
         },
         "status": {
           "active": "Aktywny",
-          "offline": "Offline",
-          "never": "Nigdy",
-          "twoFactorOn": "2FA WŁ."
+          "offline": "Offline"
         },
         "actions": {
           "edit": "Edytuj Użytkownika",
           "resetPass": "Zresetuj Hasło",
           "reset2fa": "Zresetuj 2FA",
           "activate": "Aktywuj",
-          "deactivate": "Dezaktywuj",
-          "delete": "Usuń Użytkownika"
+          "deactivate": "Dezaktywuj"
         },
         "messages": {
           "confirmStatusChange": "Czy na pewno chcesz zmienić statusu tego użytkownika?",
           "confirmReset2fa": "Czy na pewno chcesz zresetować 2FA dla tego użytkownika?",
-          "confirmActivate": "Czy na pewno chcesz aktywować tego użytkownika?",
-          "confirmDeactivate": "Czy na pewno chcesz dezaktywować tego użytkownika?",
-          "confirmDelete": "Czy na pewno chcesz trwale usunąć tego użytkownika? Tej operacji nie można cofnąć.",
           "reset2faSuccess": "2FA zostało zresetowane.",
           "resetPassSuccess": "Hasło zostało zresetowane.",
           "updateSuccess": "Użytkownik zaktualizowany.",
-          "updateError": "Nie udało się zaktualizować użytkownika.",
-          "resetPassError": "Nie udało się zresetować hasła.",
           "error": "Wystąpił błąd."
-        },
-        "modals": {
-          "editUser": {
-            "title": "Edycja Użytkownika",
-            "username": "Nazwa użytkownika (Tylko do odczytu)",
-            "email": "Email",
-            "role": "Rola",
-            "save": "Zapisz Zmiany"
-          },
-          "resetPassword": {
-            "title": "Reset Hasła",
-            "description": "Nadpisz hasło dla",
-            "submit": "Zmień Hasło",
-            "newPassword": "Nowe hasło",
-            "confirmPassword": "Potwierdź nowe hasło",
-            "placeholders": {
-              "newPassword": "Min 8 znaków, cyfra, symbol",
-              "confirm": "Powtórz hasło"
-            },
-            "errors": {
-              "required": "Hasło jest wymagane",
-              "confirmRequired": "Potwierdzenie hasła jest wymagane",
-              "tooShort": "Min 8 znaków",
-              "noNumber": "Wymagana cyfra",
-              "noSpecial": "Wymagany symbol",
-              "mismatch": "Hasła nie pasują do siebie"
-            }
-          }
         }
       },
       "operations": {
