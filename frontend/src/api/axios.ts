@@ -1,15 +1,12 @@
 ﻿import axios from 'axios';
 
-// 1. Create an Axios instance
 const instance = axios.create({
-    // Use environment variable or fallback to localhost
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// --- 2. Request Interceptor ---
 // Automatically adds the JWT Token to every request
 instance.interceptors.request.use(
     (config) => {
@@ -24,15 +21,12 @@ instance.interceptors.request.use(
     }
 );
 
-// --- 3. Response Interceptor ---
 // Automatically logs the user out if the API says "401 Unauthorized"
 instance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Token expired or invalid
             localStorage.removeItem('token');
-            // Optional: Redirect to login page
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
@@ -40,8 +34,6 @@ instance.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
-// --- API ENDPOINTS ---
 
 // 1. Report Endpoints
 export const getDashboardStats = async () => (await instance.get("/api/report/dashboard-stats")).data;
@@ -120,5 +112,10 @@ export const resetUserPassword = async (targetUserId: number, newPassword: strin
 
 // Reset 2FA przez administratora
 export const resetUser2FA = async (targetUserId: number) => (await instance.post(`/api/Auth/users/${targetUserId}/reset-2fa`)).data;
-export default instance;
 
+export const sendVoiceCommand = async (commandText: string) => {
+    const response = await instance.post("/api/Voice/command", { commandText });
+    return response.data;
+};
+
+export default instance;

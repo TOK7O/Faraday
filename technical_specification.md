@@ -696,7 +696,7 @@ cd frontend && npm install && npm run dev
 System obsługuje 2 języki: **Polski** i **Angielski**. Tłumaczenia przechowywane w `/frontend/src/data/pl.json` i `en.json`. Zmiana języka: Preferencje → Język.
 
 ### 11.2 Interfejs głosowy
-Moduł `VoiceCommandService` (30 KB) przetwarza komendy tekstowe na akcje magazynowe. Obsługuje komendy w języku polskim, m.in.: przyjęcie towaru, wydanie, wyszukiwanie, sprawdzenie stanu regału.
+Moduł `VoiceCommandService` (30 KB) oraz komponent frontendowy `VoiceControlFAB` przetwarzają komendy tekstowe na akcje magazynowe. System obsługuje pełną bilingwalność (PL/EN) – automatycznie wykrywa język interfejsu i dostosowuje język nasłuchiwania (Speech-to-Text) oraz syntezy odpowiedzi (Text-to-Speech). Obsługuje m.in.: przyjęcie towaru, wydanie, wyszukiwanie, sprawdzenie stanu regału oraz generowanie naturalnych streszczeń stanów magazynowych.
 
 ### 11.3 Rozpoznawanie obrazu
 Integracja z Google Gemini API. Użytkownik może uploadować zdjęcia referencyjne produktów, a następnie rozpoznawać produkty przez porównanie z biblioteką referencyjną.
