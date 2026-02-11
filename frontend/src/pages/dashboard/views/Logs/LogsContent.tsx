@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useRef, useCallback } from 'react';
 import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
-import { getRecentLogs, clearLogs } from "@/api/axios";
+import { clearLogs } from "@/api/axios";
 import { useTranslation } from "@/context/LanguageContext";
 import {
     Terminal, Trash2, PauseCircle, PlayCircle,
@@ -23,6 +23,7 @@ const HUB_URL = `${API_URL}/hubs/logs`;
 
 const LogsContent = () => {
     const { t } = useTranslation();
+    const logsT: any = t.dashboardPage.content.logs;
 
     // Data State
     const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -115,10 +116,10 @@ const LogsContent = () => {
                 <div className="header-brand">
                     <div className="system-tag">
                         <Activity size={14} className="icon-glow" />
-                        <span>Real-time Terminal</span>
+                        <span>{logsT.tag}</span>
                     </div>
                     <h1>
-                        System <span className="outline-text">Logs</span>
+                        {logsT.title.split(' ')[0]} <span className="outline-text">{logsT.title.split(' ').slice(1).join(' ')}</span>
                     </h1>
                 </div>
 
@@ -126,7 +127,7 @@ const LogsContent = () => {
                     <div className={`status-pill ${isConnected ? 'connected' : 'disconnected'}`}>
                         <span className="status-dot"></span>
                         {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
-                        <span>{isConnected ? "Live Sync" : "Connection Lost"}</span>
+                        <span>{isConnected ? logsT.status.pill : logsT.status.lost}</span>
                     </div>
                 </div>
             </header>
@@ -137,7 +138,7 @@ const LogsContent = () => {
                         <Search size={18} />
                         <input
                             type="text"
-                            placeholder="Search packets..."
+                            placeholder={logsT.searchPlaceholder}
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                         />
@@ -145,32 +146,32 @@ const LogsContent = () => {
                     <div className="filter-wrapper">
                         <Filter size={16} />
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)}>
-                            <option value="All">All Levels</option>
-                            <option value="Information">Info & Up</option>
-                            <option value="Warning">Warning & Up</option>
-                            <option value="Error">Errors Only</option>
+                            <option value="All">{logsT.levels.all}</option>
+                            <option value="Information">{logsT.levels.info}</option>
+                            <option value="Warning">{logsT.levels.warn}</option>
+                            <option value="Error">{logsT.levels.error}</option>
                         </select>
                     </div>
                     <div className="filter-wrapper limit-selector">
                         <ListOrdered size={16} />
                         <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
-                            <option value={20}>20 per page</option>
-                            <option value={50}>50 per page</option>
-                            <option value={100}>100 per page</option>
-                            <option value={200}>200 per page</option>
+                            <option value={20}>{logsT.limit.replace('{count}', '20')}</option>
+                            <option value={50}>{logsT.limit.replace('{count}', '50')}</option>
+                            <option value={100}>{logsT.limit.replace('{count}', '100')}</option>
+                            <option value={200}>{logsT.limit.replace('{count}', '200')}</option>
                         </select>
                     </div>
                 </div>
 
                 <div className="button-group glass-card">
                     <button className={`btn-ht ${isPaused ? 'paused-active' : ''}`} onClick={() => setIsPaused(!isPaused)}>
-                        {isPaused ? <PlayCircle size={18}/> : <PauseCircle size={18}/>}
-                        <span>{isPaused ? "Resume" : "Pause"}</span>
+                        {isPaused ? <PlayCircle size={18} /> : <PauseCircle size={18} />}
+                        <span>{isPaused ? logsT.actions.resume : logsT.actions.pause}</span>
                     </button>
-                    <button className="btn-ht" onClick={() => initSignalR()} title="Reconnect Hub">
+                    <button className="btn-ht" onClick={() => initSignalR()} title={logsT.actions.reconnect}>
                         <RefreshCw size={18} />
                     </button>
-                    <button className="btn-ht danger" onClick={async () => { if(confirm("Clear logs?")) { await clearLogs(); setLogs([]); } }}>
+                    <button className="btn-ht danger" onClick={async () => { if (confirm(logsT.actions.clearConfirm)) { await clearLogs(); setLogs([]); } }}>
                         <Trash2 size={18} />
                     </button>
                 </div>
@@ -179,13 +180,13 @@ const LogsContent = () => {
             <main className="logs-main-wrapper glass-table-wrapper">
                 <div className="pagination-header">
                     <div className="page-info">
-                        Showing <strong>{currentLogs.length}</strong> of {filteredLogs.length} entries
+                        {logsT.pagination.info.replace('{count}', currentLogs.length.toString()).replace('{total}', filteredLogs.length.toString())}
                     </div>
                     <div className="pagination-controls">
                         <button className="btn-ht" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                             <ChevronLeft size={18} />
                         </button>
-                        <span className="current-page">P. {currentPage} / {totalPages || 1}</span>
+                        <span className="current-page">{logsT.pagination.page.replace('{current}', currentPage.toString()).replace('{total}', (totalPages || 1).toString())}</span>
                         <button className="btn-ht" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages || totalPages === 0}>
                             <ChevronRight size={18} />
                         </button>
@@ -196,7 +197,7 @@ const LogsContent = () => {
                     {currentLogs.length === 0 ? (
                         <div className="empty-state">
                             <Terminal size={48} />
-                            <p>{isConnected ? "No data found" : "Re-establishing link..."}</p>
+                            <p>{isConnected ? logsT.empty.noData : logsT.empty.connecting}</p>
                         </div>
                     ) : (
                         <div className="log-rows">
@@ -207,7 +208,7 @@ const LogsContent = () => {
                                         <span className="level-badge">{log.level}</span>
                                     </div>
                                     <div className="row-content">
-                                        <span className="cat">{log.category?.split('.').pop() || "System"}</span>
+                                        <span className="cat">{log.category?.split('.').pop() || logsT.system}</span>
                                         <p className="msg">{log.message}</p>
                                         {log.exception && (
                                             <div className="trace-box"><code>{log.exception}</code></div>

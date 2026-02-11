@@ -528,7 +528,109 @@
         "empty": "Brak wpisów w historii."
       },
       "reports": {
-        "title": "Raporty",
+        "title": "Raporty Systemowe",
+        "tag": "Raporty i Alarmy",
+        "loading": "Ładowanie danych...",
+        "common": {
+          "rackPrefix": "Regał",
+          "product": "Produkt",
+          "mins": "min",
+          "kg": "kg"
+        },
+        "tabs": {
+          "inventory": "Inwentarz",
+          "utilization": "Utylizacja",
+          "sensors": "Czujniki i Naruszenia",
+          "alerts": "Alarmy"
+        },
+        "stats": {
+          "occupancy": "Zajętość",
+          "slots": "Sloty",
+          "totalWeight": "Waga Całkowita",
+          "cap": "Poj.",
+          "opsToday": "Operacje Dzisiaj",
+          "totalItems": "Wszystkie Towary",
+          "blockedItems": "Zablokowane",
+          "expiring": "Wygasające (7 dni)"
+        },
+        "filters": {
+          "rackId": "ID Regału",
+          "allRacks": "Wszystkie Regały",
+          "fromDate": "Od",
+          "toDate": "Do",
+          "refresh": "Odśwież"
+        },
+        "inventory": {
+          "expiringTitle": "Towary Wygasające Wkrótce",
+          "fullTitle": "Pełna Lista Inwentarza",
+          "emptyExpiring": "Brak towarów wygasających wkrótce.",
+          "showingFirst": "Pokazano pierwsze {count} z {total} pozycji",
+          "table": {
+            "product": "Produkt",
+            "barcode": "Kod",
+            "location": "Lokacja",
+            "expDate": "Data Ważności",
+            "daysLeft": "Pozostało",
+            "status": "Status",
+            "temp": "Temp (°C)",
+            "entryDate": "Data Przyjęcia"
+          },
+          "days": "dni"
+        },
+        "utilization": {
+          "title": "Utylizacja Regałów",
+          "table": {
+            "rack": "Regał",
+            "occupancy": "Zajętość (Sloty)",
+            "weight": "Obciążenie Wagowe",
+            "maxWeight": "Max Waga"
+          }
+        },
+        "sensors": {
+          "violationsTitle": "Naruszenia Temperatury",
+          "tempHistory": "Historia Temperatur",
+          "weightHistory": "Historia Wagi",
+          "emptyViolations": "Brak odnotowanych naruszeń.",
+          "table": {
+            "type": "Typ",
+            "target": "Cel",
+            "recorded": "Odczyt",
+            "range": "Dozwolony Zakres",
+            "deviation": "Odchylenie",
+            "time": "Czas",
+            "rack": "Regał",
+            "measured": "Zmierzono",
+            "discrepancy": "Rozbieżność"
+          }
+        },
+        "alerts": {
+          "activeTitle": "Aktywne Alarmy",
+          "historyTitle": "Historia Alarmów",
+          "emptyActive": "Brak aktywnych alarmów. System sprawny.",
+          "table": {
+            "severity": "Ważność",
+            "rack": "Regał",
+            "message": "Wiadomość",
+            "duration": "Czas trwania",
+            "status": "Status",
+            "created": "Utworzono",
+            "resolved": "Rozwiązano"
+          },
+          "status": {
+            "resolved": "Rozwiązany",
+            "active": "Aktywny"
+          },
+          "inventoryStatus": {
+            "InStock": "W magazynie",
+            "OutStock": "Brak stanu",
+            "LowStock": "Niski stan"
+          },
+          "severityLevels": {
+            "Critical": "Krytyczny",
+            "Warning": "Ostrzeżenie",
+            "Information": "Informacja"
+          }
+        },
         "placeholder": "Historia operacji magazynowych (CSV Export)",
         "generator": "Generator raportów PDF/CSV"
       },
@@ -536,14 +638,145 @@
         "title": "Kopie Zapasowe Systemu",
         "description": "Twórz i zarządzaj ręcznymi kopiami zapasowymi bazy danych.",
         "createButton": "Utwórz Nową Kopię",
+        "generating": "Generowanie...",
+        "initBackup": "Inicjuj Nową Kopię",
         "history": "Historia Kopii",
+        "snapshotHistory": "Historia Zrzutów",
         "noBackups": "Nie znaleziono wcześniejszych kopii zapasowych.",
         "fileName": "Nazwa pliku",
         "size": "Rozmiar",
         "date": "Data utworzenia",
         "download": "Pobierz",
         "success": "Kopia zapasowa utworzona pomyślnie!",
-        "error": "Nie udało się utworzyć kopii zapasowej."
+        "error": "Nie udało się utworzyć kopii zapasowej.",
+        "scanning": "Skanowanie dysku...",
+        "table": {
+          "name": "Nazwa",
+          "size": "Rozmiar",
+          "created": "Utworzono",
+          "ops": "Operacje"
+        },
+        "restore": {
+          "title": "Potwierdź przywracanie",
+          "critical": "Operacja krytyczna dla systemu",
+          "target": "Cel przywracania:",
+          "warningTitle": "UWAGA: PROTOKÓŁ NADPISANIA",
+          "warning1": "Wszystkie obecne dane zostaną trwale utracone.",
+          "warning2": "Wszystkie aktywne sesje połączeń zostaną przerwane.",
+          "warning3": "System zostanie automatycznie wylogowany po operacji.",
+          "cancel": "Przerwij",
+          "confirm": "Wykonaj Przywracanie",
+          "executing": "Przywracanie...",
+          "error": "Błąd przywracania"
+        },
+        "statusMapping": {
+          "success": "Sukces",
+          "error": "Błąd"
+        }
+      },
+      "logs": {
+        "tag": "Terminal w czasie rzeczywistym",
+        "title": "Logi",
+        "system": "Systemowe",
+        "status": {
+          "pill": "Live Sync",
+          "lost": "Połączenie utracone"
+        },
+        "searchPlaceholder": "Szukaj pakietów...",
+        "levels": {
+          "all": "Wszystkie poziomy",
+          "info": "Info i wyżej",
+          "warn": "Ostrzeżenia i wyżej",
+          "error": "Tylko błędy"
+        },
+        "limit": "{count} na stronę",
+        "pagination": {
+          "info": "Pokazano {count} z {total} wpisów",
+          "page": "Str. {current} / {total}"
+        },
+        "actions": {
+          "resume": "Wznów",
+          "pause": "Zatrzymaj",
+          "clearConfirm": "Wyczyścić logi?",
+          "reconnect": "Połącz ponownie Hub"
+        },
+        "empty": {
+          "noData": "Nie znaleziono danych",
+          "connecting": "Budowanie połączenia..."
+        }
+      },
+      "preferences": {
+        "title": "Preferencje",
+        "description": "Zarządzaj ustawieniami interfejsu i konta",
+        "theme": {
+          "title": "Motyw",
+          "darkMode": "Tryb Ciemny",
+          "lightMode": "Tryb Jasny",
+          "darkModeDesc": "Ciemna estetyka",
+          "lightModeDesc": "Jasna estetyka"
+        },
+        "language": {
+          "title": "Język",
+          "english": "Angielski",
+          "polish": "Polski"
+        },
+        "security": {
+          "title": "Bezpieczeństwo",
+          "password": {
+            "title": "Ustawienia Bezpieczeństwa",
+            "description": "Zaktualizuj swoje hasło, aby dbać o bezpieczeństwo konta.",
+            "fields": {
+              "current": "Obecne hasło",
+              "currentPlaceholder": "Wprowadź obecne hasło",
+              "new": "Nowe hasło",
+              "newPlaceholder": "Wprowadź nowe hasło",
+              "confirm": "Potwierdź nowe hasło",
+              "confirmPlaceholder": "Powtórz nowe hasło"
+            },
+            "validation": {
+              "requiredCurrent": "Obecne hasło jest wymagane",
+              "requiredNew": "Nowe hasło jest wymagane",
+              "tooShort": "Hasło musi mieć minimum 8 znaków",
+              "noNumber": "Hasło musi zawierać cyfrę",
+              "noSpecial": "Hasło musi zawierać znak specjalny",
+              "requiredConfirm": "Potwierdzenie jest wymagane",
+              "mismatch": "Hasła nie pasują do siebie"
+            },
+            "status": {
+              "success": "Hasło zostało zmienione pomyślnie.",
+              "error": "Nie udało się zmienić hasła.",
+              "updating": "Aktualizacja..."
+            },
+            "updateBtn": "Zaktualizuj Hasło"
+          },
+          "twoFactor": {
+            "title": "Weryfikacja dwuetapowa",
+            "description": "Dodaj dodatkową warstwę ochrony do swojego konta, wymagając kodu z aplikacji uwierzytelniającej (np. Google Authenticator, Authy).",
+            "status": {
+              "enabled": "Włączone",
+              "disabled": "Wyłączone"
+            },
+            "actions": {
+              "setup": "Skonfiguruj 2FA",
+              "enable": "Włącz",
+              "disable": "Wyłącz 2FA",
+              "verifying": "Weryfikacja...",
+              "cancel": "Anuluj konfigurację",
+              "loading": "Ładowanie..."
+            },
+            "setup": {
+              "qrStep1": "1. Zeskanuj kod QR aplikacją uwierzytelniającą.",
+              "manualStep": "Lub wprowadź kod ręcznie:",
+              "verifyStep2": "2. Wprowadź 6-cyfrowy kod z aplikacji:"
+            },
+            "messages": {
+              "setupError": "Nie udało się wygenerować kodu QR.",
+              "enableSuccess": "Weryfikacja dwuetapowa została włączona!",
+              "disableConfirm": "Czy na pewno chcesz wyłączyć 2FA? Twoje konto będzie mniej bezpieczne.",
+              "disableSuccess": "Weryfikacja dwuetapowa została wyłączona."
+            }
+          }
+        }
       },
       "pageNotFound": "404 - Nie znaleziono strony"
     }

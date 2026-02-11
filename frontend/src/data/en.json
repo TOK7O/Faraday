@@ -528,7 +528,110 @@
         "empty": "No records found."
       },
       "reports": {
-        "title": "Reports",
+        "title": "System Reports",
+        "tag": "Reports & Alarms",
+        "loading": "Loading report data...",
+        "common": {
+          "rackPrefix": "Rack",
+          "product": "Product",
+          "mins": "min",
+          "kg": "kg"
+        },
+        "tabs": {
+          "inventory": "Inventory",
+          "utilization": "Utilization",
+          "sensors": "Sensors & Violations",
+          "alerts": "Alerts"
+        },
+        "stats": {
+          "occupancy": "Occupancy",
+          "slots": "Slots",
+          "totalWeight": "Total Weight",
+          "cap": "Cap",
+          "opsToday": "Operations Today",
+          "totalItems": "Total Items",
+          "blockedItems": "Blocked Items",
+          "expiring": "Expiring Soon (7 days)"
+        },
+        "filters": {
+          "rackId": "Rack ID",
+          "allRacks": "All Racks",
+          "fromDate": "From Date",
+          "toDate": "To Date",
+          "refresh": "Refresh"
+        },
+        "inventory": {
+          "expiringTitle": "Items Expiring Soon",
+          "fullTitle": "Full Inventory List",
+          "emptyExpiring": "No items expiring soon.",
+          "showingFirst": "Showing first {count} of {total} items",
+          "table": {
+            "product": "Product",
+            "barcode": "Barcode",
+            "location": "Location",
+            "expDate": "Exp. Date",
+            "daysLeft": "Days Left",
+            "status": "Status",
+            "temp": "Temp (°C)",
+            "entryDate": "Entry Date"
+          },
+          "days": "days"
+        },
+        "utilization": {
+          "title": "Rack Utilization",
+          "table": {
+            "rack": "Rack",
+            "occupancy": "Occupancy (Slots)",
+            "weight": "Weight Load",
+            "maxWeight": "Max Weight"
+          }
+        },
+        "sensors": {
+          "violationsTitle": "Temperature Violations",
+          "tempHistory": "Temperature History",
+          "weightHistory": "Weight History",
+          "emptyViolations": "No temperature violations found.",
+          "table": {
+            "type": "Type",
+            "target": "Target",
+            "recorded": "Recorded",
+            "range": "Allowed Range",
+            "deviation": "Deviation",
+            "time": "Time",
+            "rack": "Rack",
+            "measured": "Measured",
+            "discrepancy": "Discrepancy"
+          }
+        },
+        "alerts": {
+          "activeTitle": "Active Alerts",
+          "historyTitle": "Alert History",
+          "emptyActive": "No active alerts. System healthy.",
+          "table": {
+            "severity": "Severity",
+            "rack": "Rack",
+            "message": "Message",
+            "duration": "Duration",
+            "status": "Status",
+            "created": "Created At",
+            "resolved": "Resolved At"
+          },
+          "status": {
+            "resolved": "Resolved",
+            "active": "Active"
+          },
+          "general": "General",
+          "inventoryStatus": {
+            "InStock": "In Stock",
+            "OutStock": "Out of Stock",
+            "LowStock": "Low Stock"
+          },
+          "severityLevels": {
+            "Critical": "Critical",
+            "Warning": "Warning",
+            "Information": "Information"
+          }
+        },
         "placeholder": "Warehouse operations history (CSV Export)",
         "generator": "PDF/CSV Report Generator"
       },
@@ -536,14 +639,145 @@
         "title": "System Backups",
         "description": "Create and manage manual database backups.",
         "createButton": "Create New Backup",
+        "generating": "Generating...",
+        "initBackup": "Init New Backup",
         "history": "Backup History",
+        "snapshotHistory": "Snapshot History",
         "noBackups": "No previous backups found locally.",
         "fileName": "File name",
         "size": "Size",
         "date": "Created at",
         "download": "Download",
         "success": "Backup created successfully!",
-        "error": "Failed to create backup."
+        "error": "Failed to create backup.",
+        "scanning": "Scanning disk...",
+        "table": {
+          "name": "Name",
+          "size": "Size",
+          "created": "Created At",
+          "ops": "Operations"
+        },
+        "restore": {
+          "title": "Confirm Restore",
+          "critical": "Critical system operation",
+          "target": "Target Snapshot:",
+          "warningTitle": "WARNING: OVERWRITE PROTOCOL",
+          "warning1": "All current data will be permanently lost.",
+          "warning2": "All active connection sessions will be terminated.",
+          "warning3": "System will automatically logout after operation.",
+          "cancel": "Abort",
+          "confirm": "Execute Restore",
+          "executing": "Restoring...",
+          "error": "Restore failed"
+        },
+        "statusMapping": {
+          "success": "Success",
+          "error": "Error"
+        }
+      },
+      "logs": {
+        "tag": "Real-time Terminal",
+        "title": "Logs",
+        "system": "System",
+        "status": {
+          "pill": "Live Sync",
+          "lost": "Connection Lost"
+        },
+        "searchPlaceholder": "Search packets...",
+        "levels": {
+          "all": "All Levels",
+          "info": "Info & Up",
+          "warn": "Warning & Up",
+          "error": "Errors Only"
+        },
+        "limit": "{count} per page",
+        "pagination": {
+          "info": "Showing {count} of {total} entries",
+          "page": "P. {current} / {total}"
+        },
+        "actions": {
+          "resume": "Resume",
+          "pause": "Pause",
+          "clearConfirm": "Clear logs?",
+          "reconnect": "Reconnect Hub"
+        },
+        "empty": {
+          "noData": "No data found",
+          "connecting": "Re-establishing link..."
+        }
+      },
+      "preferences": {
+        "title": "Preferences",
+        "description": "Manage your interface settings",
+        "theme": {
+          "title": "Theme",
+          "darkMode": "Dark Mode",
+          "lightMode": "Light Mode",
+          "darkModeDesc": "Dark aesthetic",
+          "lightModeDesc": "Bright aesthetic"
+        },
+        "language": {
+          "title": "Language",
+          "english": "English",
+          "polish": "Polish"
+        },
+        "security": {
+          "title": "Security",
+          "password": {
+            "title": "Security Settings",
+            "description": "Update your password to keep your account secure.",
+            "fields": {
+              "current": "Current Password",
+              "currentPlaceholder": "Enter current password",
+              "new": "New Password",
+              "newPlaceholder": "Enter new password",
+              "confirm": "Confirm New Password",
+              "confirmPlaceholder": "Retype new password"
+            },
+            "validation": {
+              "requiredCurrent": "Current password is required",
+              "requiredNew": "New password is required",
+              "tooShort": "Must be at least 8 characters",
+              "noNumber": "Must contain a number",
+              "noSpecial": "Must contain a special character",
+              "requiredConfirm": "Confirmation is required",
+              "mismatch": "Passwords do not match"
+            },
+            "status": {
+              "success": "Password changed successfully.",
+              "error": "Failed to update password.",
+              "updating": "Updating..."
+            },
+            "updateBtn": "Update Password"
+          },
+          "twoFactor": {
+            "title": "Two-Factor Authentication",
+            "description": "Add an extra layer of security to your account by requiring a code from your authenticator app (Google Authenticator, Authy, etc.).",
+            "status": {
+              "enabled": "Enabled",
+              "disabled": "Disabled"
+            },
+            "actions": {
+              "setup": "Setup 2FA",
+              "enable": "Enable",
+              "disable": "Disable 2FA",
+              "verifying": "Verifying...",
+              "cancel": "Cancel Setup",
+              "loading": "Loading..."
+            },
+            "setup": {
+              "qrStep1": "1. Scan this QR code with your authenticator app.",
+              "manualStep": "Or enter this key manually:",
+              "verifyStep2": "2. Enter the 6-digit code from the app:"
+            },
+            "messages": {
+              "setupError": "Could not generate QR code.",
+              "enableSuccess": "Two-Factor Authentication enabled successfully!",
+              "disableConfirm": "Are you sure you want to disable 2FA? Your account will be less secure.",
+              "disableSuccess": "Two-Factor Authentication disabled."
+            }
+          }
+        }
       },
       "pageNotFound": "404 - Page not found"
     }

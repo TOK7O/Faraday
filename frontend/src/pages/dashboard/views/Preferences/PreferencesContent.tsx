@@ -29,12 +29,7 @@ const PreferencesContent = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Translations fallback
-    const prefT = t.preferences || {
-        title: "Preferences",
-        description: "Manage your interface settings",
-        theme: { title: "Theme", darkMode: "Dark Mode", lightMode: "Light Mode", darkModeDesc: "Dark aesthetic", lightModeDesc: "Bright aesthetic" },
-        language: { title: "Language", english: "English", polish: "Polish" }
-    };
+    const prefT: any = t.dashboardPage.content.preferences;
 
     // --- 2FA LOGIC ---
 
@@ -59,7 +54,7 @@ const PreferencesContent = () => {
             const data = await setup2fa();
             setSetupData(data); // Contains qrCodeImage and manualEntryKey
         } catch (error) {
-            setMessage({ type: 'error', text: "Could not generate QR code." });
+            setMessage({ type: 'error', text: prefT.security.twoFactor.messages.setupError });
         } finally {
             setLoading2fa(false);
         }
@@ -74,7 +69,7 @@ const PreferencesContent = () => {
             setIs2faEnabled(true);
             setSetupData(null); // Close setup window
             setVerifyCode("");
-            setMessage({ type: 'success', text: "Two-Factor Authentication enabled successfully!" });
+            setMessage({ type: 'success', text: prefT.security.twoFactor.messages.enableSuccess });
         } catch (error: any) {
             setMessage({ type: 'error', text: error.message });
         } finally {
@@ -84,14 +79,14 @@ const PreferencesContent = () => {
 
     // 4. Disable 2FA
     const handleDisable2fa = async () => {
-        if (!confirm("Are you sure you want to disable 2FA? Your account will be less secure.")) return;
+        if (!confirm(prefT.security.twoFactor.messages.disableConfirm)) return;
         setLoading2fa(true);
         try {
             await disable2fa();
             setIs2faEnabled(false);
-            setMessage({ type: 'success', text: "Two-Factor Authentication disabled." });
+            setMessage({ type: 'success', text: prefT.security.twoFactor.messages.disableSuccess });
         } catch (error) {
-            setMessage({ type: 'error', text: "Failed to disable 2FA." });
+            setMessage({ type: 'error', text: prefT.security.twoFactor.status.errorGen || "Error" });
         } finally {
             setLoading2fa(false);
         }
@@ -191,7 +186,7 @@ const PreferencesContent = () => {
                 <div className="pref-section full-width">
                     <div className="section-header">
                         <Shield size={20} className="icon-accent" />
-                        <h3>Security</h3>
+                        <h3>{prefT.security.title}</h3>
                     </div>
 
                     {/* Change Password Sub-Component */}
@@ -204,11 +199,11 @@ const PreferencesContent = () => {
                         <div className="panel-header">
                             <h4>
                                 <Smartphone size={20} />
-                                Two-Factor Authentication
+                                {prefT.security.twoFactor.title}
                             </h4>
                             <div className={`status-badge ${is2faEnabled ? 'active' : 'inactive'}`}>
                                 {is2faEnabled ? <Check size={14} /> : <AlertTriangle size={14} />}
-                                <span>{is2faEnabled ? "Enabled" : "Disabled"}</span>
+                                <span>{is2faEnabled ? prefT.security.twoFactor.status.enabled : prefT.security.twoFactor.status.disabled}</span>
                             </div>
                         </div>
 
@@ -223,7 +218,7 @@ const PreferencesContent = () => {
                         )}
 
                         <p className="text-muted" style={{ fontSize: '0.9rem', margin: 0 }}>
-                            Add an extra layer of security to your account by requiring a code from your authenticator app (Google Authenticator, Authy, etc.).
+                            {prefT.security.twoFactor.description}
                         </p>
 
                         {!is2faEnabled && !setupData && (
@@ -233,7 +228,7 @@ const PreferencesContent = () => {
                                     onClick={handleStartSetup}
                                     disabled={loading2fa}
                                 >
-                                    {loading2fa ? "Loading..." : "Setup 2FA"}
+                                    {loading2fa ? prefT.security.twoFactor.actions.loading : prefT.security.twoFactor.actions.setup}
                                 </button>
                             </div>
                         )}
@@ -246,11 +241,11 @@ const PreferencesContent = () => {
                                         <img src={setupData.qrCodeImage} alt="2FA QR Code" />
                                     </div>
                                     <div className="instructions">
-                                        <p>1. Scan this QR code with your authenticator app.</p>
-                                        <p>Or enter this key manually:</p>
+                                        <p>{prefT.security.twoFactor.setup.qrStep1}</p>
+                                        <p>{prefT.security.twoFactor.setup.manualStep}</p>
                                         <div className="secret-key">{setupData.manualEntryKey}</div>
 
-                                        <p style={{ marginTop: '10px' }}>2. Enter the 6-digit code from the app:</p>
+                                        <p style={{ marginTop: '10px' }}>{prefT.security.twoFactor.setup.verifyStep2}</p>
                                         <div className="verify-group">
                                             <input
                                                 type="text"
@@ -264,7 +259,7 @@ const PreferencesContent = () => {
                                                 onClick={handleEnable2fa}
                                                 disabled={loading2fa || verifyCode.length !== 6}
                                             >
-                                                {loading2fa ? "Verifying..." : "Enable"}
+                                                {loading2fa ? prefT.security.twoFactor.actions.verifying : prefT.security.twoFactor.actions.enable}
                                             </button>
                                         </div>
                                     </div>
@@ -273,7 +268,7 @@ const PreferencesContent = () => {
                                     onClick={() => setSetupData(null)}
                                     style={{ marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
                                 >
-                                    Cancel Setup
+                                    {prefT.security.twoFactor.actions.cancel}
                                 </button>
                             </div>
                         )}
@@ -286,7 +281,7 @@ const PreferencesContent = () => {
                                     onClick={handleDisable2fa}
                                     disabled={loading2fa}
                                 >
-                                    Disable 2FA
+                                    {prefT.security.twoFactor.actions.disable}
                                 </button>
                             </div>
                         )}

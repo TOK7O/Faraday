@@ -10,35 +10,38 @@ import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordField
 
 import { changePassword } from '@/api/axios';
 
+import { useTranslation } from "@/context/LanguageContext";
 import "./PasswordChangeForm.scss";
 
 export const ChangePasswordForm = () => {
+    const { t } = useTranslation();
+    const securityT: any = t.dashboardPage.content.preferences.security.password;
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Configuration for the fields
     const fieldConfig = {
         oldPassword: {
-            label: "Current Password",
-            placeholder: "Enter current password",
-            validation: { required: "Current password is required" }
+            label: securityT.fields.current,
+            placeholder: securityT.fields.currentPlaceholder,
+            validation: { required: securityT.validation.requiredCurrent }
         },
         newPassword: {
-            label: "New Password",
-            placeholder: "Enter new password",
+            label: securityT.fields.new,
+            placeholder: securityT.fields.newPlaceholder,
             validation: {
-                required: "New password is required",
-                tooShort: "Must be at least 8 characters",
-                noNumber: "Must contain a number",
-                noSpecialChar: "Must contain a special character"
+                required: securityT.validation.requiredNew,
+                tooShort: securityT.validation.tooShort,
+                noNumber: securityT.validation.noNumber,
+                noSpecialChar: securityT.validation.noSpecial
             }
         },
         confirmPassword: {
-            label: "Confirm New Password",
-            placeholder: "Retype new password",
+            label: securityT.fields.confirm,
+            placeholder: securityT.fields.confirmPlaceholder,
             validation: {
-                required: "Confirmation is required",
-                mismatch: "Passwords do not match"
+                required: securityT.validation.requiredConfirm,
+                mismatch: securityT.validation.mismatch
             }
         }
     };
@@ -57,19 +60,19 @@ export const ChangePasswordForm = () => {
         const confirmPassword = formData.get("confirmPassword") as string;
 
         if (newPassword !== confirmPassword) {
-            setMessage({ type: 'error', text: "New passwords do not match." });
+            setMessage({ type: 'error', text: securityT.validation.mismatch });
             setIsLoading(false);
             return;
         }
 
         try {
             await changePassword(oldPassword, newPassword);
-            setMessage({ type: 'success', text: "Password changed successfully." });
+            setMessage({ type: 'success', text: securityT.status.success });
 
             // Reset form logic
             form.reset();
         } catch (err: any) {
-            const errorMsg = err.response?.data?.message || err.message || "Failed to update password";
+            const errorMsg = err.response?.data?.message || err.message || securityT.status.error;
             setMessage({ type: 'error', text: errorMsg });
         } finally {
             setIsLoading(false);
@@ -79,8 +82,8 @@ export const ChangePasswordForm = () => {
     return (
         <div className="settings-card">
             <div className="settings-header">
-                <h3>Security Settings</h3>
-                <p>Update your password to keep your account secure.</p>
+                <h3>{securityT.title}</h3>
+                <p>{securityT.description}</p>
             </div>
 
             <Form.Root className="settings-form" onSubmit={handleSubmit}>
@@ -114,12 +117,12 @@ export const ChangePasswordForm = () => {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="animate-spin" size={18} />
-                                    <span>Updating...</span>
+                                    <span>{securityT.status.updating}</span>
                                 </>
                             ) : (
                                 <>
                                     <Save size={18} />
-                                    <span>Update Password</span>
+                                    <span>{securityT.updateBtn}</span>
                                 </>
                             )}
                         </button>

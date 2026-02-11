@@ -16,7 +16,7 @@ interface BackupHistoryItem {
 
 const BackupsContent = () => {
     const { t } = useTranslation();
-    const backupT = t.dashboardPage.content.backups;
+    const backupT: any = t.dashboardPage.content.backups;
 
     const [isLoading, setIsLoading] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -52,13 +52,13 @@ const BackupsContent = () => {
             const data = await createBackup();
             setStatus({
                 type: 'success',
-                message: `${backupT?.success || "Backup created successfully"}: ${data.fileName}`
+                message: `${backupT.success || "Backup created successfully"}: ${data.fileName}`
             });
             fetchHistory();
         } catch (error: any) {
             setStatus({
                 type: 'error',
-                message: error.message || (backupT?.error || "An unexpected error occurred.")
+                message: error.message || (backupT.error || "An unexpected error occurred.")
             });
         } finally {
             setIsLoading(false);
@@ -102,7 +102,7 @@ const BackupsContent = () => {
             localStorage.removeItem("token");
             window.location.href = "/login?msg=restored";
         } catch (error: any) {
-            alert(`Błąd przywracania: ${error.message}`);
+            alert(`${backupT.restore.error}: ${error.message}`);
         } finally {
             setIsRestoring(false);
             setRestoreModalOpen(false);
@@ -119,7 +119,7 @@ const BackupsContent = () => {
                         <span>Security & Redundancy</span>
                     </div>
                     <h1>
-                        System <span className="outline-text">Backups</span>
+                        {backupT.title}
                     </h1>
                 </div>
 
@@ -130,7 +130,7 @@ const BackupsContent = () => {
                         disabled={isLoading}
                     >
                         {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Plus size={18} />}
-                        <span>{isLoading ? "Generating..." : "Init New Backup"}</span>
+                        <span>{isLoading ? backupT.generating : backupT.initBackup}</span>
                     </button>
                 </div>
             </header>
@@ -140,7 +140,7 @@ const BackupsContent = () => {
                     <div className={`status-alert glass-card ${status.type}`}>
                         {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
                         <div className="alert-text">
-                            <strong>{status.type.toUpperCase()}</strong>
+                            <strong>{backupT.statusMapping?.[status.type] || status.type}</strong>
                             <p>{status.message}</p>
                         </div>
                         <button className="close-alert" onClick={() => setStatus(null)}>×</button>
@@ -151,7 +151,7 @@ const BackupsContent = () => {
                     <div className="table-header-bento">
                         <div className="title-group">
                             <Clock size={18} className="text-accent" />
-                            <h2>Snapshot History</h2>
+                            <h2>{backupT.snapshotHistory}</h2>
                         </div>
                         <button className="btn-icon" onClick={fetchHistory} disabled={historyLoading}>
                             <RefreshCw size={16} className={historyLoading ? "animate-spin" : ""} />
@@ -161,46 +161,46 @@ const BackupsContent = () => {
                     <div className="scrollable-table">
                         <table className="ht-table">
                             <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Size</th>
-                                <th>Created At</th>
-                                <th className="text-right">Operations</th>
-                            </tr>
+                                <tr>
+                                    <th>{backupT.table.name}</th>
+                                    <th>{backupT.table.size}</th>
+                                    <th>{backupT.table.created}</th>
+                                    <th className="text-right">{backupT.table.ops}</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {history.length > 0 ? (
-                                history.map((item) => (
-                                    <tr key={item.fileName}>
-                                        <td className="name-col">
-                                            <div className="file-info">
-                                                <span>{item.fileName}</span>
-                                            </div>
-                                        </td>
-                                        <td className="mono-text">{formatSize(item.sizeBytes)}</td>
-                                        <td className="time-col">
-                                            <span className="date">{new Date(item.createdAt).toLocaleDateString()}</span>
-                                            <span className="time">{new Date(item.createdAt).toLocaleTimeString()}</span>
-                                        </td>
-                                        <td className="text-right">
-                                            <div className="action-cell">
-                                                <button className="btn-icon" onClick={() => handleDownload(item.fileName)}>
-                                                    <Download size={18} />
-                                                </button>
-                                                <button className="btn-icon danger" onClick={() => handleRestoreClick(item)}>
-                                                    <Database size={18} />
-                                                </button>
-                                            </div>
+                                {history.length > 0 ? (
+                                    history.map((item) => (
+                                        <tr key={item.fileName}>
+                                            <td className="name-col">
+                                                <div className="file-info">
+                                                    <span>{item.fileName}</span>
+                                                </div>
+                                            </td>
+                                            <td className="mono-text">{formatSize(item.sizeBytes)}</td>
+                                            <td className="time-col">
+                                                <span className="date">{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                <span className="time">{new Date(item.createdAt).toLocaleTimeString()}</span>
+                                            </td>
+                                            <td className="text-right">
+                                                <div className="action-cell">
+                                                    <button className="btn-icon" onClick={() => handleDownload(item.fileName)}>
+                                                        <Download size={18} />
+                                                    </button>
+                                                    <button className="btn-icon danger" onClick={() => handleRestoreClick(item)}>
+                                                        <Database size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="empty-row">
+                                            {historyLoading ? backupT.scanning : backupT.noBackups}
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={4} className="empty-row">
-                                        {historyLoading ? "Scanning disk..." : "No snapshots available"}
-                                    </td>
-                                </tr>
-                            )}
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -216,37 +216,37 @@ const BackupsContent = () => {
                             <div className="title-group">
                                 <AlertTriangle size={32} className="text-danger" />
                                 <div>
-                                    <h2>Potwierdź przywracanie</h2>
-                                    <p>Operacja krytyczna dla systemu</p>
+                                    <h2>{backupT.restore.title}</h2>
+                                    <p>{backupT.restore.critical}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="modal-body">
                             <div className="target-file">
-                                <label>Target Snapshot:</label>
+                                <label>{backupT.restore.target}</label>
                                 <code>{selectedBackup?.fileName}</code>
                             </div>
 
                             <div className="warning-panel">
                                 <div className="warning-header">
                                     <AlertTriangle size={16} />
-                                    <span>UWAGA: PROTOKÓŁ NADPISANIA</span>
+                                    <span>{backupT.restore.warningTitle}</span>
                                 </div>
                                 <ul>
-                                    <li>Wszystkie obecne dane zostaną <strong>trwale utracone</strong>.</li>
-                                    <li>Wszystkie aktywne sesje połączeń zostaną przerwane.</li>
-                                    <li>System zostanie automatycznie wylogowany po operacji.</li>
+                                    <li>{backupT.restore.warning1}</li>
+                                    <li>{backupT.restore.warning2}</li>
+                                    <li>{backupT.restore.warning3}</li>
                                 </ul>
                             </div>
                         </div>
 
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={() => setRestoreModalOpen(false)} disabled={isRestoring}>
-                                Abort
+                                {backupT.restore.cancel}
                             </button>
                             <button className="btn-submit-ht danger" onClick={confirmRestore} disabled={isRestoring}>
-                                {isRestoring ? <RefreshCw className="animate-spin" /> : "Execute Restore"}
+                                {isRestoring ? <RefreshCw className="animate-spin" /> : backupT.restore.confirm}
                             </button>
                         </div>
                     </div>
