@@ -328,7 +328,7 @@
         },
         "catalog": {
           "table": {
-            "id": "ID / SKU",
+            "id": "ID",
             "name": "Name",
             "weight": "Weight",
             "dims": "Dimensions",
