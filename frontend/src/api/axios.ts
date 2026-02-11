@@ -92,6 +92,7 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
 
 // Auth
 export const login = async (username: string, password: string, twoFactorCode: string = "") => await instance.post("/api/Auth/login", { username, password, twoFactorCode });
+export const refreshToken = async () => (await instance.post("/api/Auth/refresh-token")).data;
 
 // Backups
 export const getBackupHistory = async () => (await instance.get("/api/Backup/history")).data;
@@ -120,3 +121,4 @@ export const resetUserPassword = async (targetUserId: number, newPassword: strin
 // Reset 2FA przez administratora
 export const resetUser2FA = async (targetUserId: number) => (await instance.post(`/api/Auth/users/${targetUserId}/reset-2fa`)).data;
 export default instance;
+

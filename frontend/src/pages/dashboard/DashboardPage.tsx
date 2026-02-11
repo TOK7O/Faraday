@@ -17,50 +17,32 @@ import LogsContent from "./views/Logs/LogsContent";
 import Sidebar from "@/components/layouts/dashboard/Sidebar";
 import DashboardNavbar from "@/components/layouts/dashboard/DashboardNavbar";
 import MobileNavbar from "@/components/layouts/dashboard/MobileNavbar";
-import { useTranslation } from "@/context/LanguageContext";
+
+// Utils & Context
+import { isSessionExpired, clearSession } from "@/utils/auth.utils";
 
 const DashboardPage = () => {
-    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState("overview");
-    const navigate = useNavigate(); // Hook do przekierowania
+    const navigate = useNavigate();
 
     // --- LOGIKA AUTOMATYCZNEGO WYLOGOWANIA ---
     useEffect(() => {
-    const logout = () => {
-        console.warn("Sesja wygasła. Wylogowywanie...");
-        localStorage.removeItem("token");
-        navigate("/login", { replace: true });
-    };
+        const checkSession = () => {
+            if (isSessionExpired()) {
+                console.warn("Sesja wygasła. Wylogowywanie...");
+                clearSession();
+                navigate("/login", { replace: true });
+            }
+        };
 
-    const getExpirationTime = () => {
-        const token = localStorage.getItem("token");
-        if (!token) return null;
+        // Sprawdź natychmiast po załadowaniu
+        checkSession();
 
-        try {
-            const payload = JSON.parse(
-                atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-            );
+        // Sprawdzaj co sekundę (lub rzadziej, np. co 10s)
+        const intervalId = setInterval(checkSession, 1000);
 
-            return payload.exp ? payload.exp * 1000 : null;
-        } catch {
-            return null;
-        }
-    };
-
-    const checkSession = () => {
-        const expirationTime = getExpirationTime();
-
-        if (!expirationTime || Date.now() >= expirationTime) {
-            logout();
-        }
-    };
-
-    checkSession();
-
-    const intervalId = setInterval(checkSession, 1000);
-
-    return () => clearInterval(intervalId);
-}, [navigate]);
+        return () => clearInterval(intervalId);
+    }, [navigate]);
 
     return (
         <div className="dashboard-container">
