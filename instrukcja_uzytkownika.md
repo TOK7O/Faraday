@@ -24,71 +24,16 @@
 
 ### 1.1. Wymagania wstępne
 
-Przed rozpoczęciem upewnij się, że na komputerze zainstalowane są:
+Do uruchomienia systemu potrzebny jest wyłącznie **Docker Desktop** — silnik kontenerów, który uruchamia wszystkie komponenty systemu. Pobierz go ze strony [docker.com](https://www.docker.com/products/docker-desktop/). Po instalacji upewnij się, że Docker Desktop jest uruchomiony (ikona w zasobniku systemowym).
 
-- **Docker Desktop** — silnik kontenerów, który uruchamia wszystkie komponenty systemu. Pobierz ze strony [docker.com](https://www.docker.com/products/docker-desktop/). Po instalacji upewnij się, że Docker Desktop jest uruchomiony (ikona w zasobniku systemowym).
-- **Git** — do pobrania kodu źródłowego projektu. Pobierz ze strony [git-scm.com](https://git-scm.com/).
+### 1.2. Przygotowanie projektu
 
-### 1.2. Pobranie projektu
+1. Pobierz archiwum projektu z dysku Google i rozpakuj je w wybranym miejscu na dysku.
+2. Projekt zawiera już wszystkie niezbędne pliki konfiguracyjne (`.env`, certyfikaty SSL) — nie trzeba niczego dodawać ani modyfikować.
 
-Otwórz terminal (PowerShell lub Wiersz poleceń) i wykonaj polecenie:
+### 1.3. Uruchomienie
 
-```
-git clone https://github.com/Rumeleq/Faraday.git
-cd Faraday
-```
-
-### 1.3. Konfiguracja zmiennych środowiskowych
-
-W katalogu głównym projektu utwórz plik `.env` (bez rozszerzenia) i wypełnij go poniższą zawartością, zastępując wartości własnymi:
-
-```
-# Baza danych
-DB_USER=faraday
-DB_PASSWORD=TwojeHaslo123
-DB_NAME=faraday_db
-DB_HOST=faraday-db
-
-# pgAdmin (panel administracyjny bazy danych)
-PGADMIN_EMAIL=admin@faraday.local
-PGADMIN_PASSWORD=HasloPgAdmin123
-
-# JWT (tokeny autoryzacji)
-JWT_KEY=TwojDlugiKluczJWT-Minimum32Znaki!
-JWT_ISSUER=FaradayWMS
-JWT_AUDIENCE=FaradayUsers
-
-# Szyfrowanie kopii zapasowych (dokładnie 32 i 16 znaków)
-BACKUP_ENCRYPTION_KEY=12345678901234567890123456789012
-BACKUP_ENCRYPTION_IV=1234567890123456
-
-# Gemini API (sterowanie głosowe)
-GEMINI_API_KEY=twoj-klucz-api-gemini
-
-# E-mail (resetowanie haseł)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=twoj@email.com
-SMTP_PASSWORD=haslo-aplikacji
-SMTP_FROM=twoj@email.com
-```
-
-**Ważne:** Klucz `BACKUP_ENCRYPTION_KEY` musi mieć dokładnie 32 znaki, a `BACKUP_ENCRYPTION_IV` dokładnie 16 znaków. Klucz `JWT_KEY` powinien mieć co najmniej 32 znaki. Klucz Gemini API można uzyskać na stronie [Google AI Studio](https://aistudio.google.com/).
-
-### 1.4. Certyfikaty SSL
-
-Baza danych wymaga certyfikatów SSL. Utwórz katalog `ssl/` w katalogu głównym projektu i wygeneruj certyfikaty:
-
-```
-mkdir ssl
-openssl req -new -x509 -days 365 -nodes -out ssl/server.crt -keyout ssl/server.key -subj "/CN=faraday-db"
-```
-
-Jeśli nie masz polecenia `openssl`, możesz je zainstalować przez [Git for Windows](https://git-scm.com/) (jest dołączone) lub pobrać osobno.
-
-### 1.5. Uruchomienie
-
-Z katalogu głównego projektu wykonaj:
+Otwórz terminal (PowerShell lub Wiersz poleceń) w katalogu rozpakowanego projektu i wykonaj:
 
 ```
 docker compose up --build
@@ -96,7 +41,7 @@ docker compose up --build
 
 Pierwsze uruchomienie może potrwać kilka minut — Docker pobierze potrzebne obrazy i zbuduje kontenery. Po zakończeniu w terminalu pojawią się logi ze wszystkich usług.
 
-### 1.6. Dostęp do aplikacji
+### 1.4. Dostęp do aplikacji
 
 Po pomyślnym uruchomieniu system jest dostępny pod adresami:
 
@@ -108,7 +53,7 @@ Po pomyślnym uruchomieniu system jest dostępny pod adresami:
 
 Przy pierwszym uruchomieniu system automatycznie utworzy strukturę bazy danych i konto domyślnego administratora.
 
-### 1.7. Zatrzymywanie i ponowne uruchamianie
+### 1.5. Zatrzymywanie i ponowne uruchamianie
 
 - **Zatrzymanie:** naciśnij `Ctrl+C` w terminalu z uruchomionym Docker Compose, lub wykonaj `docker compose down`.
 - **Ponowne uruchomienie:** `docker compose up` (bez `--build`, jeśli nie zmieniano kodu).
