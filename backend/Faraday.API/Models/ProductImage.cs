@@ -13,7 +13,7 @@ namespace Faraday.API.Models
         [Required]
         [MaxLength(500)]
         public required string ImagePath { get; set; }
-        
+
         [Required]
         public required string FeatureVector { get; set; }
 
