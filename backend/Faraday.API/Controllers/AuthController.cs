@@ -299,7 +299,7 @@ namespace Faraday.API.Controllers
         }
 
         /// <summary>
-        /// Usuwa użytkownika z bazy. Dostępne tylko dla administratora.
+        /// Deletes a user from the db. Accessible only to the admin.
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete("users/{targetUserId}")]

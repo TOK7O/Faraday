@@ -11,22 +11,12 @@ namespace Faraday.API.Services
     /// Handles the lifecycle of inventory items: Receiving (Inbound), Shipping (Outbound), and Internal Movements.
     /// Ensures data consistency using database transactions.
     /// </summary>
-    public class OperationService : IOperationService
+    public class OperationService(
+        FaradayDbContext context,
+        IWarehouseAlgorithmService algorithm,
+        ILogger<OperationService> logger)
+        : IOperationService
     {
-        private readonly FaradayDbContext _context;
-        private readonly IWarehouseAlgorithmService _algorithm;
-        private readonly ILogger<OperationService> _logger;
-
-        public OperationService(
-            FaradayDbContext context, 
-            IWarehouseAlgorithmService algorithm,
-            ILogger<OperationService> logger)
-        {
-            _context = context;
-            _algorithm = algorithm;
-            _logger = logger;
-        }
-
         /// <summary>
         /// Processes an incoming item (Receipt). 
         /// Uses the allocation algorithm to determine the best storage slot and records the inventory entry.
@@ -37,20 +27,20 @@ namespace Faraday.API.Services
         {
             // We use an explicit transaction to ensure that the InventoryItem creation 
             // and the OperationLog entry are committed atomically.
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
                 // Identify product
-                var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == request.Barcode);
+                var product = await context.Products.FirstOrDefaultAsync(p => p.ScanCode == request.Barcode);
                 if (product == null)
                     throw new KeyNotFoundException($"Product with barcode {request.Barcode} not found.");
 
                 // Algorithm
                 // Delegate the complex logic of "where should this go?" to the dedicated algorithm service.
-                var targetSlot = await _algorithm.FindBestSlotForProductAsync(product.Id);
+                var targetSlot = await algorithm.FindBestSlotForProductAsync(product.Id);
 
-                // Create inventory item
+                // Create an inventory item
                 DateTime? expirationDate = product.ValidityDays.HasValue 
                     ? DateTime.UtcNow.AddDays(product.ValidityDays.Value) 
                     : null;
@@ -67,7 +57,7 @@ namespace Faraday.API.Services
 
                 // Update slot
                 targetSlot.CurrentItem = inventoryItem; 
-                _context.InventoryItems.Add(inventoryItem);
+                context.InventoryItems.Add(inventoryItem);
 
                 // Audit log
                 var log = new OperationLog
@@ -81,15 +71,15 @@ namespace Faraday.API.Services
                     RackCode = targetSlot.Rack.Code,
                     Description = $"Allocated to {targetSlot.Rack.Code} [{targetSlot.X},{targetSlot.Y}]"
                 };
-                _context.OperationLogs.Add(log);
+                context.OperationLogs.Add(log);
 
                 // Commit
                 // SaveChangesAsync generates the IDs for new entities
                 // (InventoryItem, Log) before the transaction commits.
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation($"Inbound success: {product.Name} -> {targetSlot.Rack.Code}");
+                logger.LogInformation($"Inbound success: {product.Name} -> {targetSlot.Rack.Code}");
 
                 return new OperationResultDto
                 {
@@ -104,7 +94,7 @@ namespace Faraday.API.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Inbound transaction failed.");
+                logger.LogError(ex, "Inbound transaction failed.");
                 throw;
             }
         }
@@ -115,13 +105,13 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task<OperationResultDto> ProcessOutboundAsync(OperationOutboundDto request, int userId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
                 // FIFO
                 // We order by EntryDate ascending to pick the oldest item available.
-                var itemToRemove = await _context.InventoryItems
+                var itemToRemove = await context.InventoryItems
                     .Include(i => i.Slot)
                     .ThenInclude(s => s.Rack)
                     .Include(i => i.Product)
@@ -139,7 +129,7 @@ namespace Faraday.API.Services
 
                 // Remove
                 // Historical data is preserved in OperationLogs.
-                _context.InventoryItems.Remove(itemToRemove);
+                context.InventoryItems.Remove(itemToRemove);
 
                 // Audit log
                 var log = new OperationLog
@@ -153,13 +143,13 @@ namespace Faraday.API.Services
                     RackCode = rackCode,
                     Description = $"Removed from {rackCode} [{slotX},{slotY}] (FIFO)"
                 };
-                _context.OperationLogs.Add(log);
+                context.OperationLogs.Add(log);
 
                 // Commit
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation($"Outbound success: {request.Barcode} from {rackCode}");
+                logger.LogInformation($"Outbound success: {request.Barcode} from {rackCode}");
 
                 return new OperationResultDto
                 {
@@ -174,7 +164,7 @@ namespace Faraday.API.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Outbound transaction failed.");
+                logger.LogError(ex, "Outbound transaction failed.");
                 throw;
             }
         }
@@ -186,13 +176,13 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task<OperationResultDto> ProcessMovementAsync(OperationMovementDto request, int userId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
-                // Find the specific item at source location
+                // Find the specific item at the source location
                 // Look for an item in the specific rack/slot X/Y
-                var itemToMove = await _context.InventoryItems
+                var itemToMove = await context.InventoryItems
                     .Include(i => i.Product)
                     .Include(i => i.Slot)
                     .ThenInclude(s => s.Rack)
@@ -205,15 +195,15 @@ namespace Faraday.API.Services
                 if (itemToMove == null)
                     throw new KeyNotFoundException($"No item found at source location {request.SourceRackCode} [{request.SourceSlotX},{request.SourceSlotY}].");
 
-                // We check if the item matches the barcode provided - if it doesn't throw error at the user.
+                // We check if the item matches the barcode provided - if it doesn't throw an error at the user.
                 // This acts as a safety check to ensure the operator picked up the correct item.
                 if (itemToMove.Product.ScanCode != request.Barcode)
                 {
                     throw new InvalidOperationException($"Mismatch. Slot contains '{itemToMove.Product.Name}' ({itemToMove.Product.ScanCode}), but you scanned '{request.Barcode}'.");
                 }
 
-                // Find target slot
-                var targetRack = await _context.Racks
+                // Find the target slot
+                var targetRack = await context.Racks
                     .Include(r => r.Slots)
                     .ThenInclude(s => s.CurrentItem)
                     .ThenInclude(i => i!.Product)
@@ -236,7 +226,7 @@ namespace Faraday.API.Services
                 
                 var product = itemToMove.Product;
 
-                // Validation Block
+                // Validation Block.
                 // Since we are moving manually, we must re-validate all physical constraints 
                 // that the Algorithm usually handles during Inbound.
 
@@ -285,12 +275,12 @@ namespace Faraday.API.Services
                     RackCode = targetRack.Code,
                     Description = $"Moved from {request.SourceRackCode} [{request.SourceSlotX},{request.SourceSlotY}] to {targetRack.Code} [{targetSlot.X},{targetSlot.Y}]"
                 };
-                _context.OperationLogs.Add(log);
+                context.OperationLogs.Add(log);
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation($"Moved item {product.ScanCode} from {request.SourceRackCode} to {request.TargetRackCode}");
+                logger.LogInformation($"Moved item {product.ScanCode} from {request.SourceRackCode} to {request.TargetRackCode}");
 
                 return new OperationResultDto
                 {
@@ -305,15 +295,15 @@ namespace Faraday.API.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Movement failed.");
+                logger.LogError(ex, "Movement failed.");
                 throw;
             }
         }
 
         public async Task<IEnumerable<OperationLogDto>> GetOperationHistoryAsync(int? limit = null)
         {
-            _logger.LogDebug("Fetching operation history with limit: {Limit}", limit ?? -1);
-            var query = _context.OperationLogs
+            logger.LogDebug("Fetching operation history with limit: {Limit}", limit ?? -1);
+            var query = context.OperationLogs
                 .Include(l => l.User)
                 .OrderByDescending(l => l.Timestamp)
                 .AsQueryable();
@@ -324,13 +314,13 @@ namespace Faraday.API.Services
             }
 
             var logs = await query.ToListAsync();
-            _logger.LogDebug("Retrieved {Count} operation log entries", logs.Count);
+            logger.LogDebug("Retrieved {Count} operation log entries", logs.Count);
             return logs.Select(l => new OperationLogDto
             {
                 Id = l.Id,
                 Timestamp = l.Timestamp,
                 Type = l.Type.ToString(),
-                UserName = l.User?.Username ?? "System",
+                UserName = l.User.Username,
                 ProductDefinitionId = l.ProductDefinitionId,
                 ProductName = l.ProductName,
                 RackId = l.RackId,

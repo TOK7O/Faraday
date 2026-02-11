@@ -14,17 +14,8 @@ namespace Faraday.API.Services
     /// Handles the lifecycle of Racks, including automatic slot generation, 
     /// capacity validation, and bulk import operations.
     /// </summary>
-    public class RackService : IRackService
+    public class RackService(FaradayDbContext context, ILogger<RackService> logger) : IRackService
     {
-        private readonly FaradayDbContext _context;
-        private readonly ILogger<RackService> _logger;
-
-        public RackService(FaradayDbContext context, ILogger<RackService> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
-
         // Mapping Entity -> DTO
         private static RackDto MapToDto(Rack rack)
         {
@@ -48,8 +39,8 @@ namespace Faraday.API.Services
 
         public async Task<IEnumerable<RackDto>> GetAllRacksAsync()
         {
-            _logger.LogInformation("Retrieving all racks from database");
-            var racks = await _context.Racks
+            logger.LogInformation("Retrieving all racks from database");
+            var racks = await context.Racks
                 .Include(r => r.Slots)
                 .OrderBy(r => r.Code)
                 .ToListAsync();
@@ -59,14 +50,14 @@ namespace Faraday.API.Services
 
         public async Task<RackDto?> GetRackByIdAsync(int id)
         {
-            _logger.LogInformation("Fetching rack by ID: {RackId}", id);
-            var rack = await _context.Racks
+            logger.LogInformation("Fetching rack by ID: {RackId}", id);
+            var rack = await context.Racks
                 .Include(r => r.Slots)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (rack == null)
             {
-                _logger.LogWarning("Rack not found: {RackId}", id);
+                logger.LogWarning("Rack not found: {RackId}", id);
             }
 
             return rack == null ? null : MapToDto(rack);
@@ -77,7 +68,7 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task<RackDto> CreateRackAsync(RackCreateDto dto)
         {
-            if (await _context.Racks.AnyAsync(r => r.Code == dto.Code))
+            if (await context.Racks.AnyAsync(r => r.Code == dto.Code))
             {
                 throw new InvalidOperationException($"Rack with code {dto.Code} already exists.");
             }
@@ -112,10 +103,10 @@ namespace Faraday.API.Services
                 }
             }
 
-            _context.Racks.Add(rack);
-            await _context.SaveChangesAsync();
+            context.Racks.Add(rack);
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation($"Created rack {rack.Code} with {rack.Slots.Count} slots.");
+            logger.LogInformation($"Created rack {rack.Code} with {rack.Slots.Count} slots.");
             return MapToDto(rack);
         }
         
@@ -126,7 +117,7 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task<RackDto> UpdateRackAsync(int id, RackUpdateDto dto)
         {
-            var rack = await _context.Racks
+            var rack = await context.Racks
                 .Include(r => r.Slots)
                 .ThenInclude(s => s.CurrentItem)
                 .ThenInclude(i => i!.Product)
@@ -146,7 +137,7 @@ namespace Faraday.API.Services
 
             if (storedItems.Any())
             {
-                // Temperature validation - new range must cover all products
+                // Temperature validation - a new range must cover all products
                 foreach (var product in storedItems)
                 {
                     // Temperature constraints (Rack must be safe for the product)
@@ -177,7 +168,7 @@ namespace Faraday.API.Services
                     }
                 }
 
-                // Weight validation - new limit must handle current load
+                // Weight validation - a new limit must handle the current load
                 var currentTotalWeight = storedItems.Sum(p => p.WeightKg);
                 if (currentTotalWeight > dto.MaxWeightKg)
                 {
@@ -197,9 +188,9 @@ namespace Faraday.API.Services
             rack.Comment = dto.Comment;
             rack.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation($"Updated rack {rack.Code} (ID: {id})");
+            logger.LogInformation($"Updated rack {rack.Code} (ID: {id})");
             return MapToDto(rack);
         }
 
@@ -211,14 +202,14 @@ namespace Faraday.API.Services
         public async Task DeleteRackAsync(int id)
         {
             // Check if Rack is empty (cannot delete if not)
-            bool hasItems = await _context.Racks
+            bool hasItems = await context.Racks
                 .Where(r => r.Id == id)
                 .SelectMany(r => r.Slots)
                 .AnyAsync(s => s.CurrentItem != null);
 
             if (hasItems)
             {
-                var rackCode = await _context.Racks
+                var rackCode = await context.Racks
                     .Where(r => r.Id == id)
                     .Select(r => r.Code)
                     .FirstOrDefaultAsync() ?? "Unknown";
@@ -228,20 +219,20 @@ namespace Faraday.API.Services
                     "Please move items first.");
             }
 
-            var rack = await _context.Racks.FindAsync(id);
+            var rack = await context.Racks.FindAsync(id);
             if (rack != null)
             {
-                // Soft delete
+                // Softly delete
                 rack.IsActive = false;
 
-                // Rename to free up the code for future use
+                // Rename it to free up the code for future use
                 // Pattern: "ARCHIVED: R-01", then "ARCHIVED_1: R-01", "ARCHIVED_2: R-01", etc.
                 string originalCode = rack.Code;
                 string newCode = $"ARCHIVED: {originalCode}";
                 int counter = 1;
 
                 // We must use IgnoreQueryFilters to check against other archived items
-                while (await _context.Racks.IgnoreQueryFilters().AnyAsync(r => r.Code == newCode))
+                while (await context.Racks.IgnoreQueryFilters().AnyAsync(r => r.Code == newCode))
                 {
                     newCode = $"ARCHIVED_{counter}: {originalCode}";
                     counter++;
@@ -249,11 +240,11 @@ namespace Faraday.API.Services
 
                 rack.Code = newCode;
                 
-                // Add a comment about deletion date for clarity
+                // Add a comment about the deletion date for clarity
                 rack.Comment = $"{rack.Comment} - [Deleted at {DateTime.UtcNow}]".Trim();
 
-                await _context.SaveChangesAsync();
-                _logger.LogInformation($"Rack {id} soft-deleted and renamed to '{newCode}'.");
+                await context.SaveChangesAsync();
+                logger.LogInformation($"Rack {id} soft-deleted and renamed to '{newCode}'.");
             }
         }
 
@@ -319,9 +310,9 @@ namespace Faraday.API.Services
                 errorCount += removedCount;
             }
 
-            // Check against database
+            // Check against the database
             var newRackCodes = distinctDtos.Select(d => d.Code).ToList();
-            var existingRackCodes = await _context.Racks
+            var existingRackCodes = await context.Racks
                 .Where(r => newRackCodes.Contains(r.Code))
                 .Select(r => r.Code)
                 .ToListAsync();
@@ -373,16 +364,16 @@ namespace Faraday.API.Services
             // Insert Racks
             if (racksToAdd.Any())
             {
-                await _context.Racks.AddRangeAsync(racksToAdd);
-                await _context.SaveChangesAsync();
+                await context.Racks.AddRangeAsync(racksToAdd);
+                await context.SaveChangesAsync();
 
                 successCount += racksToAdd.Count;
-                _logger.LogInformation("Bulk imported {Count} racks from CSV. Success: {Success}, Errors: {Errors}", 
+                logger.LogInformation("Bulk imported {Count} racks from CSV. Success: {Success}, Errors: {Errors}", 
                     racksToAdd.Count, successCount, errorCount);
             }
             else
             {
-                _logger.LogWarning("No racks were imported. Total errors: {ErrorCount}", errorCount);
+                logger.LogWarning("No racks were imported. Total errors: {ErrorCount}", errorCount);
             }
             return (successCount, errorCount, errors);
         }

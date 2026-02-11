@@ -14,17 +14,8 @@ namespace Faraday.API.Services
     /// Handles creation, updates with physical validation against active inventory, 
     /// soft-deletion logic, and bulk CSV imports.
     /// </summary>
-    public class ProductService : IProductService
+    public class ProductService(FaradayDbContext context, ILogger<ProductService> logger) : IProductService
     {
-        private readonly FaradayDbContext _context;
-        private readonly ILogger<ProductService> _logger;
-
-        public ProductService(FaradayDbContext context, ILogger<ProductService> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
-
         private static ProductDto MapToDto(ProductDefinition p)
         {
             return new ProductDto
@@ -49,8 +40,8 @@ namespace Faraday.API.Services
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
-            _logger.LogInformation("Retrieving all products from database");
-            var products = await _context.Products
+            logger.LogInformation("Retrieving all products from database");
+            var products = await context.Products
                 .OrderBy(p => p.Name)
                 .ToListAsync();
             return products.Select(MapToDto);
@@ -58,24 +49,24 @@ namespace Faraday.API.Services
 
         public async Task<ProductDto?> GetProductByIdAsync(int id)
         {
-            _logger.LogInformation("Fetching product by ID: {ProductId}", id);
-            var product = await _context.Products.FindAsync(id);
+            logger.LogInformation("Fetching product by ID: {ProductId}", id);
+            var product = await context.Products.FindAsync(id);
     
             if (product == null)
             {
-                _logger.LogWarning("Product not found: {ProductId}", id);
+                logger.LogWarning("Product not found: {ProductId}", id);
             }
     
             return product == null ? null : MapToDto(product);
         }
         public async Task<ProductDto?> GetProductByScanCodeAsync(string scanCode)
         {
-            _logger.LogInformation("Fetching product by scan code: {ScanCode}", scanCode);
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ScanCode == scanCode);
+            logger.LogInformation("Fetching product by scan code: {ScanCode}", scanCode);
+            var product = await context.Products.FirstOrDefaultAsync(p => p.ScanCode == scanCode);
     
             if (product == null)
             {
-                _logger.LogWarning("Product not found for scan code: {ScanCode}", scanCode);
+                logger.LogWarning("Product not found for scan code: {ScanCode}", scanCode);
             }
     
             return product == null ? null : MapToDto(product);
@@ -84,7 +75,7 @@ namespace Faraday.API.Services
         public async Task<ProductDto> CreateProductAsync(ProductCreateDto dto)
         {
             // Enforce uniqueness on ScanCode/Barcode to prevent collisions.
-            if (await _context.Products.AnyAsync(p => p.ScanCode == dto.ScanCode))
+            if (await context.Products.AnyAsync(p => p.ScanCode == dto.ScanCode))
             {
                 throw new InvalidOperationException($"Product with scanCode {dto.ScanCode} already exists.");
             }
@@ -109,15 +100,15 @@ namespace Faraday.API.Services
 
             // Compliance logic: if IsHazardous=true, and HazardClassification is set to None, Other is set.
             // This ensures we don't have dangerous items floating around without a classification tag.
-            if (product.IsHazardous && product.HazardClassification == HazardType.None)
+            if (product is { IsHazardous: true, HazardClassification: HazardType.None })
             {
                 product.HazardClassification = HazardType.Other;
             }
 
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation($"Created product definition: {product.Name} ({product.ScanCode})");
+            logger.LogInformation($"Created product definition: {product.Name} ({product.ScanCode})");
             return MapToDto(product);
         }
         
@@ -128,7 +119,7 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task<ProductDto> UpdateProductAsync(int id, ProductUpdateDto dto)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await context.Products.FindAsync(id);
             if (product == null)
             {
                 throw new KeyNotFoundException($"Product with ID {id} not found.");
@@ -136,9 +127,10 @@ namespace Faraday.API.Services
 
             // Retrieve all active inventory items of this product to validate against their racks
             // We need to check every single instance of this product in the warehouse.
-            var itemsInStock = await _context.InventoryItems
+            var itemsInStock = await context.InventoryItems
                 .Include(i => i.Slot)
-                .ThenInclude(s => s.Rack)
+                .ThenInclude(s => s.Rack).ThenInclude(rack => rack.Slots).ThenInclude(rackSlot => rackSlot.CurrentItem!)
+                .ThenInclude(inventoryItem => inventoryItem.Product)
                 .Where(i => i.ProductDefinitionId == id && i.Status == ItemStatus.InStock)
                 .ToListAsync();
 
@@ -151,7 +143,7 @@ namespace Faraday.API.Services
 
                     // Temperature validation - rack must be able to maintain new product requirements
                     // The rack's range must be a subset of the product's temperature range.
-                    // Example: If product needs 2-8°C, a rack operating at 0-10°C is invalid.
+                    // Example: If a product needs 2-8°C, a rack operating at 0-10°C is invalid.
                     if (rack.MinTemperature < dto.RequiredMinTemp || 
                         rack.MaxTemperature > dto.RequiredMaxTemp)
                     {
@@ -189,7 +181,7 @@ namespace Faraday.API.Services
             }
 
             // Hazardous products must have classification
-            if (dto.IsHazardous && dto.HazardClassification == HazardType.None)
+            if (dto is { IsHazardous: true, HazardClassification: HazardType.None })
             {
                 dto.HazardClassification = HazardType.Other;
             }
@@ -209,9 +201,9 @@ namespace Faraday.API.Services
             product.Comment = dto.Comment;
             product.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation($"Updated product definition: {product.Name} (ID: {id})");
+            logger.LogInformation($"Updated product definition: {product.Name} (ID: {id})");
             return MapToDto(product);
         }
         
@@ -223,13 +215,13 @@ namespace Faraday.API.Services
         {
             // Check if there are any active items of this product in stock
             // We cannot delete a definition if physical items still exist in the warehouse.
-            bool hasActiveStock = await _context.InventoryItems
+            bool hasActiveStock = await context.InventoryItems
                 .AnyAsync(i => i.Product.Id == id && i.Status == ItemStatus.InStock);
 
             if (hasActiveStock)
             {
                 // Retrieve name only for the error message
-                var productName = await _context.Products
+                var productName = await context.Products
                     .Where(p => p.Id == id)
                     .Select(p => p.Name)
                     .FirstOrDefaultAsync() ?? "Unknown";
@@ -239,10 +231,10 @@ namespace Faraday.API.Services
                     "Please release items of this type first.");
             }
 
-            var product = await _context.Products.FindAsync(id);
+            var product = await context.Products.FindAsync(id);
             if (product != null)
             {
-                // Soft delete
+                // Softly delete
                 product.IsActive = false;
 
                 // Rename ScanCode to avoid Unique Constraint violation on re-import
@@ -252,7 +244,7 @@ namespace Faraday.API.Services
                 int counter = 1;
 
                 // Check loop to find a free archived name
-                while (await _context.Products.IgnoreQueryFilters().AnyAsync(p => p.ScanCode == newScanCode))
+                while (await context.Products.IgnoreQueryFilters().AnyAsync(p => p.ScanCode == newScanCode))
                 {
                     newScanCode = $"ARCHIVED_{counter}: {originalScanCode}";
                     counter++;
@@ -263,8 +255,8 @@ namespace Faraday.API.Services
                 // Rename the visible name too
                 product.Name = $"ARCHIVED: {product.Name}";
 
-                await _context.SaveChangesAsync();
-                _logger.LogInformation($"Product {id} soft-deleted. Code changed to '{newScanCode}'.");
+                await context.SaveChangesAsync();
+                logger.LogInformation($"Product {id} soft-deleted. Code changed to '{newScanCode}'.");
             }
         }
         
@@ -305,7 +297,7 @@ namespace Faraday.API.Services
                     var dto = csv.GetRecord<ProductCreateDto>();
 
                     // If a product is marked as hazardous but has no specific type, default to 'Other'.
-                    if (dto.IsHazardous && dto.HazardClassification == HazardType.None)
+                    if (dto is { IsHazardous: true, HazardClassification: HazardType.None })
                     {
                         dto.HazardClassification = HazardType.Other;
                     }
@@ -335,9 +327,9 @@ namespace Faraday.API.Services
                 errorCount += removedCount;
             }
 
-            // Check against database to avoid Unique Constraint violations
+            // Check against the database to avoid Unique Constraint violations
             var newScanCodes = distinctDtos.Select(d => d.ScanCode).ToList();
-            var existingScanCodes = await _context.Products
+            var existingScanCodes = await context.Products
                 .Where(p => newScanCodes.Contains(p.ScanCode))
                 .Select(p => p.ScanCode)
                 .ToListAsync();
@@ -378,16 +370,16 @@ namespace Faraday.API.Services
             // Bulk Insert
             if (productsToAdd.Any())
             {
-                await _context.Products.AddRangeAsync(productsToAdd);
-                await _context.SaveChangesAsync();
+                await context.Products.AddRangeAsync(productsToAdd);
+                await context.SaveChangesAsync();
                 
                 successCount += productsToAdd.Count;
-                _logger.LogInformation("Bulk imported {Count} products from CSV. Success: {Success}, Errors: {Errors}", 
+                logger.LogInformation("Bulk imported {Count} products from CSV. Success: {Success}, Errors: {Errors}", 
                     productsToAdd.Count, successCount, errorCount);
             }
             else
             {
-                _logger.LogWarning("No products were imported. Total errors: {ErrorCount}", errorCount);
+                logger.LogWarning("No products were imported. Total errors: {ErrorCount}", errorCount);
             }
 
             return (successCount, errorCount, errors);

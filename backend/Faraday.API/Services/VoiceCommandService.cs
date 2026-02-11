@@ -1,59 +1,34 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Faraday.API.Data;
 using Faraday.API.DTOs;
-using Faraday.API.Models;
 using Faraday.API.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace Faraday.API.Services
 {
-    public class VoiceCommandService : IVoiceCommandService
+    public class VoiceCommandService(
+        IProductService productService,
+        IOperationService operationService,
+        IRackService rackService,
+        IReportService reportService,
+        IConfiguration configuration,
+        ILogger<VoiceCommandService> logger,
+        IHttpClientFactory httpClientFactory)
+        : IVoiceCommandService
     {
-        private readonly IProductService _productService;
-        private readonly IOperationService _operationService;
-        private readonly IRackService _rackService;
-        private readonly IReportService _reportService;
-        private readonly FaradayDbContext _context;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<VoiceCommandService> _logger;
-        private readonly HttpClient _httpClient;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public VoiceCommandService(
-            IProductService productService,
-            IOperationService operationService,
-            IRackService rackService,
-            IReportService reportService,
-            FaradayDbContext context,
-            IConfiguration configuration,
-            ILogger<VoiceCommandService> logger,
-            IHttpClientFactory httpClientFactory,
-            IHttpContextAccessor httpContextAccessor)
-        {
-            _productService = productService;
-            _operationService = operationService;
-            _rackService = rackService;
-            _reportService = reportService;
-            _context = context;
-            _configuration = configuration;
-            _logger = logger;
-            _httpClient = httpClientFactory.CreateClient();
-            _httpContextAccessor = httpContextAccessor;
-        }
+        private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
 
         public async Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId)
         {
             try
             {
-                _logger.LogInformation("Processing voice command: {CommandText} for user {UserId}", commandText, userId);
+                logger.LogInformation("Processing voice command: {CommandText} for user {UserId}", commandText, userId);
                 
                 var executionPlan = await GetExecutionPlanFromGeminiAsync(commandText);
 
                 if (executionPlan == null || !executionPlan.Steps.Any())
                 {
-                    _logger.LogWarning("No execution plan generated for command: {CommandText}", commandText);
+                    logger.LogWarning("No execution plan generated for command: {CommandText}", commandText);
                     return new VoiceCommandResponseDto
                     {
                         Success = false,
@@ -66,7 +41,7 @@ namespace Faraday.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing voice command: {CommandText}", commandText);
+                logger.LogError(ex, "Error processing voice command: {CommandText}", commandText);
                 return new VoiceCommandResponseDto
                 {
                     Success = false,
@@ -79,14 +54,14 @@ namespace Faraday.API.Services
         {
             try
             {
-                var apiKey = _configuration["Gemini:ApiKey"];
+                var apiKey = configuration["Gemini:ApiKey"];
                 if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
                 {
-                    _logger.LogError("Gemini API Key is not configured properly");
+                    logger.LogError("Gemini API Key is not configured properly");
                     throw new InvalidOperationException("Gemini API Key is not configured");
                 }
 
-                var model = _configuration["Gemini:Model"] ?? "gemini-2.0-flash-exp";
+                var model = configuration["Gemini:Model"] ?? "gemini-2.0-flash-exp";
                 var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
                 var systemPrompt = BuildSystemPrompt();
@@ -114,16 +89,16 @@ namespace Faraday.API.Services
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                _logger.LogDebug("Calling Gemini API with enhanced prompt");
+                logger.LogDebug("Calling Gemini API with enhanced prompt");
 
                 var response = await _httpClient.PostAsync(url, content);
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                _logger.LogDebug("Gemini raw response: {Response}", responseBody);
+                logger.LogDebug("Gemini raw response: {Response}", responseBody);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
+                    logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
                     throw new InvalidOperationException($"Gemini API returned error: {response.StatusCode}");
                 }
 
@@ -137,7 +112,7 @@ namespace Faraday.API.Services
                 
                 generatedText = CleanJsonResponse(generatedText);
 
-                _logger.LogInformation("Gemini extracted plan: {Text}", generatedText);
+                logger.LogInformation("Gemini extracted plan: {Text}", generatedText);
 
                 var plan = JsonSerializer.Deserialize<VoiceExecutionPlanDto>(generatedText, new JsonSerializerOptions
                 {
@@ -148,22 +123,27 @@ namespace Faraday.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling Gemini API for command: {CommandText}", commandText);
+                logger.LogError(ex, "Error calling Gemini API for command: {CommandText}", commandText);
                 return null;
             }
         }
 
         private async Task<VoiceCommandResponseDto> ExecutePlanAsync(VoiceExecutionPlanDto plan, int userId)
         {
-            _logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
-            var context = new VoiceExecutionContextDto();
-            context.Variables["userId"] = userId;
+            logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
+            var context = new VoiceExecutionContextDto
+            {
+                Variables =
+                {
+                    ["userId"] = userId
+                }
+            };
 
             try
             {
                 foreach (var step in plan.Steps.OrderBy(s => s.StepNumber))
                 {
-                    _logger.LogInformation("Executing step {StepNumber}: {Description}", step.StepNumber, step.Description);
+                    logger.LogInformation("Executing step {StepNumber}: {Description}", step.StepNumber, step.Description);
                     
                     var stepResult = await ExecuteStepAsync(step, context, userId);
                     
@@ -201,7 +181,7 @@ namespace Faraday.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing plan");
+                logger.LogError(ex, "Error executing plan");
                 return new VoiceCommandResponseDto
                 {
                     Success = false,
@@ -221,7 +201,7 @@ namespace Faraday.API.Services
                 var endpoint = ReplaceVariables(step.Endpoint, context.Variables);
                 var parameters = ReplaceVariablesInDictionary(step.Parameters, context.Variables);
 
-                _logger.LogDebug("Executing {Method} {Endpoint} with params: {Params}", 
+                logger.LogDebug("Executing {Method} {Endpoint} with params: {Params}", 
                     step.Method, endpoint, JsonSerializer.Serialize(parameters));
                 
                 var result = await RouteToServiceAsync(step.Method, endpoint, parameters, userId);
@@ -230,7 +210,7 @@ namespace Faraday.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing step {StepNumber}", step.StepNumber);
+                logger.LogError(ex, "Error executing step {StepNumber}", step.StepNumber);
                 return (false, null, ex.Message);
             }
         }
@@ -242,7 +222,7 @@ namespace Faraday.API.Services
 
             var controller = parts[1].ToLower();
             var action = parts.Length > 2 ? parts[2].ToLower() : "";
-            _logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
+            logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
 
             switch (controller)
             {
@@ -253,7 +233,7 @@ namespace Faraday.API.Services
                     return await HandleOperationEndpoint(action, parameters, userId);
                 
                 case "rack":
-                    return await HandleRackEndpoint(method, action, parameters);
+                    return await HandleRackEndpoint(method, action);
                 
                 case "report":
                     return await HandleReportEndpoint(action, parameters);
@@ -268,19 +248,19 @@ namespace Faraday.API.Services
             switch (action)
             {
                 case "scancode":
-                    var scanCode = parameters.ContainsKey("scanCode") 
-                        ? parameters["scanCode"].ToString() 
+                    var scanCode = parameters.TryGetValue("scanCode", out var parameter) 
+                        ? parameter.ToString() 
                         : parameters.Values.FirstOrDefault()?.ToString();
-                    return await _productService.GetProductByScanCodeAsync(scanCode!);
+                    return await productService.GetProductByScanCodeAsync(scanCode!);
                 
                 case "":
                     if (method == "GET")
-                        return await _productService.GetAllProductsAsync();
+                        return await productService.GetAllProductsAsync();
                     break;
                 
                 default:
                     if (int.TryParse(action, out int productId))
-                        return await _productService.GetProductByIdAsync(productId);
+                        return await productService.GetProductByIdAsync(productId);
                     break;
             }
             
@@ -296,14 +276,14 @@ namespace Faraday.API.Services
                     { 
                         Barcode = GetParameter<string>(parameters, "barcode") 
                     };
-                    return await _operationService.ProcessInboundAsync(inboundDto, userId);
+                    return await operationService.ProcessInboundAsync(inboundDto, userId);
                 
                 case "outbound":
                     var outboundDto = new OperationOutboundDto 
                     { 
                         Barcode = GetParameter<string>(parameters, "barcode") 
                     };
-                    return await _operationService.ProcessOutboundAsync(outboundDto, userId);
+                    return await operationService.ProcessOutboundAsync(outboundDto, userId);
                 
                 case "move":
                     var moveDto = new OperationMovementDto
@@ -316,31 +296,31 @@ namespace Faraday.API.Services
                         TargetSlotX = GetParameter<int>(parameters, "targetSlotX"),
                         TargetSlotY = GetParameter<int>(parameters, "targetSlotY")
                     };
-                    return await _operationService.ProcessMovementAsync(moveDto, userId);
+                    return await operationService.ProcessMovementAsync(moveDto, userId);
                 
                 case "history":
-                    var limit = parameters.ContainsKey("limit") 
-                        ? Convert.ToInt32(parameters["limit"]) 
+                    var limit = parameters.TryGetValue("limit", out var parameter) 
+                        ? Convert.ToInt32(parameter) 
                         : (int?)null;
-                    return await _operationService.GetOperationHistoryAsync(limit);
+                    return await operationService.GetOperationHistoryAsync(limit);
                 
                 default:
                     throw new InvalidOperationException($"Unsupported operation action: {action}");
             }
         }
 
-        private async Task<object?> HandleRackEndpoint(string method, string action, Dictionary<string, object> parameters)
+        private async Task<object?> HandleRackEndpoint(string method, string action)
         {
             switch (action)
             {
                 case "":
                     if (method == "GET")
-                        return await _rackService.GetAllRacksAsync();
+                        return await rackService.GetAllRacksAsync();
                     break;
                 
                 default:
                     if (int.TryParse(action, out int rackId))
-                        return await _rackService.GetRackByIdAsync(rackId);
+                        return await rackService.GetRackByIdAsync(rackId);
                     break;
             }
             
@@ -352,25 +332,25 @@ namespace Faraday.API.Services
             switch (action)
             {
                 case "dashboard-stats":
-                    return await _reportService.GetDashboardStatsAsync();
+                    return await reportService.GetDashboardStatsAsync();
                 
                 case "inventory-summary":
-                    return await _reportService.GetInventorySummaryAsync();
+                    return await reportService.GetInventorySummaryAsync();
                 
                 case "expiring-items":
-                    var days = parameters.ContainsKey("days") 
-                        ? Convert.ToInt32(parameters["days"]) 
+                    var days = parameters.TryGetValue("days", out var parameter) 
+                        ? Convert.ToInt32(parameter) 
                         : 7;
-                    return await _reportService.GetExpiringItemsAsync(days);
+                    return await reportService.GetExpiringItemsAsync(days);
                 
                 case "rack-utilization":
-                    return await _reportService.GetRackUtilizationAsync();
+                    return await reportService.GetRackUtilizationAsync();
                 
                 case "full-inventory":
-                    return await _reportService.GetFullInventoryReportAsync();
+                    return await reportService.GetFullInventoryReportAsync();
                 
                 case "active-alerts":
-                    return await _reportService.GetActiveAlertsAsync();
+                    return await reportService.GetActiveAlertsAsync();
                 
                 default:
                     throw new InvalidOperationException($"Unsupported report action: {action}");
@@ -379,11 +359,9 @@ namespace Faraday.API.Services
         
         private T GetParameter<T>(Dictionary<string, object> parameters, string key)
         {
-            if (!parameters.ContainsKey(key))
+            if (!parameters.TryGetValue(key, out var value))
                 throw new InvalidOperationException($"Missing required parameter: {key}");
 
-            var value = parameters[key];
-            
             if (value is JsonElement jsonElement)
             {
                 return ConvertJsonElement<T>(jsonElement);
@@ -533,12 +511,11 @@ namespace Faraday.API.Services
         private object? GetNestedValue(Dictionary<string, object> variables, string path)
         {
             var parts = path.Split('.');
-            object? current = null;
-    
+
             if (!variables.ContainsKey(parts[0]))
                 return null;
     
-            current = variables[parts[0]];
+            var current = variables[parts[0]];
     
             for (int i = 1; i < parts.Length && current != null; i++)
             {
@@ -556,9 +533,9 @@ namespace Faraday.API.Services
                 
                 if (current is Dictionary<string, object> dict)
                 {
-                    if (dict.ContainsKey(property))
+                    if (dict.TryGetValue(property, out var value))
                     {
-                        current = dict[property];
+                        current = value;
                         continue;
                     }
                     return null;

@@ -9,25 +9,13 @@ namespace Faraday.API.Services
     /// Service responsible for processing real-time sensor data (IoT) and monitoring inventory health.
     /// Handles temperature and weight validation, anomaly detection, and automated alert generation.
     /// </summary>
-    public class MonitoringService : IMonitoringService
+    public class MonitoringService(
+        FaradayDbContext context,
+        ILogger<MonitoringService> logger,
+        IAlertNotificationService notificationService,
+        IConfiguration configuration)
+        : IMonitoringService
     {
-        private readonly FaradayDbContext _context;
-        private readonly ILogger<MonitoringService> _logger;
-        private readonly IAlertNotificationService _notificationService;
-        private readonly IConfiguration _configuration;
-
-        public MonitoringService(
-            FaradayDbContext context,
-            ILogger<MonitoringService> logger,
-            IAlertNotificationService notificationService,
-            IConfiguration configuration)
-        {
-            _context = context;
-            _logger = logger;
-            _notificationService = notificationService;
-            _configuration = configuration;
-        }
-
         /// <summary>
         /// Ingests real-time telemetry from a physical rack sensor.
         /// Updates Rack entity and triggers alerts if values deviate from expected baselines.
@@ -38,14 +26,14 @@ namespace Faraday.API.Services
         public async Task ProcessRackReadingAsync(int rackId, decimal temperature, decimal measuredWeight)
         {
             // Fetch current rack state including slots and products to calculate expected values
-            var rack = await _context.Racks
+            var rack = await context.Racks
                 .Include(r => r.Slots)
                 .ThenInclude(s => s.CurrentItem)
                 .ThenInclude(i => i!.Product)
                 .FirstOrDefaultAsync(r => r.Id == rackId);
             
-            _logger.LogDebug("Processing rack reading for Rack {RackCode}: Temp={Temperature}°C, Weight={Weight}kg", 
-                rack.Code, temperature, measuredWeight);
+            logger.LogDebug("Processing rack reading for Rack {RackCode}: Temp={Temperature}°C, Weight={Weight}kg", 
+                rack?.Code, temperature, measuredWeight);
             
             // If the rack is inactive or not found, we ignore the telemetry to prevent ghost data.
             if (rack == null || !rack.IsActive) return;
@@ -56,26 +44,26 @@ namespace Faraday.API.Services
             rack.LastTemperatureCheck = DateTime.UtcNow;
             rack.LastWeightCheck = DateTime.UtcNow;
 
-            // Calculate expected weight based on items currently stored in the database
+            // Calculate the expected weight based on items currently stored in the database
             // Sum of (Item Count * Product Weight) for all occupied slots.
             decimal expectedWeight = rack.Slots
                 .Where(s => s.CurrentItem != null)
                 .Sum(s => s.CurrentItem!.Product.WeightKg);
-            _logger.LogTrace("Rack {RackCode} expected weight: {ExpectedWeight}kg, measured: {MeasuredWeight}kg", 
+            logger.LogTrace("Rack {RackCode} expected weight: {ExpectedWeight}kg, measured: {MeasuredWeight}kg", 
                 rack.Code, expectedWeight, measuredWeight);
             
             rack.ExpectedTotalWeightKg = expectedWeight;
 
             // Log historical data into tables for reporting purposes
             // This enables historical trend analysis
-            _context.TemperatureReadings.Add(new TemperatureReading
+            context.TemperatureReadings.Add(new TemperatureReading
             {
                 RackId = rackId,
                 RecordedTemperature = temperature,
                 Timestamp = DateTime.UtcNow
             });
 
-            _context.WeightReadings.Add(new WeightReading
+            context.WeightReadings.Add(new WeightReading
             {
                 RackId = rackId,
                 MeasuredWeightKg = measuredWeight,
@@ -94,7 +82,7 @@ namespace Faraday.API.Services
             }
             else
             {
-                // Auto-resolve alert if temperature returns to normal range
+                // Auto-resolve alert if the temperature returns to normal range
                 // This prevents "stale" alerts from cluttering the dashboard.
                 await ResolveAlertIfExists(rackId, AlertType.TemperatureMismatch);
             }
@@ -109,18 +97,18 @@ namespace Faraday.API.Services
             }
             else
             {
-                // Auto-resolve if weight matches expectation (so item was legally removed or sensor recalibrated).
+                // Auto-resolve if weight matches expectation (so the item was legally removed or sensor recalibrated).
                 await ResolveAlertIfExists(rackId, AlertType.WeightMismatch);
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         // Helper method to prevent spamming the database with duplicate active alerts
         // Ensures we only have one active alert of a specific type per rack at any given time.
         private async Task CreateAlertIfNotExists(int rackId, AlertType type, string message)
         {
-            bool activeAlertExists = await _context.Alerts
+            bool activeAlertExists = await context.Alerts
                 .AnyAsync(a => a.RackId == rackId && a.Type == type && !a.IsResolved);
 
             if (!activeAlertExists)
@@ -134,21 +122,21 @@ namespace Faraday.API.Services
                     IsResolved = false
                 };
 
-                _context.Alerts.Add(alert);
-                await _context.SaveChangesAsync();
+                context.Alerts.Add(alert);
+                await context.SaveChangesAsync();
         
-                _logger.LogWarning($"Alert created for Rack {rackId}: {message}");
+                logger.LogWarning($"Alert created for Rack {rackId}: {message}");
         
                 // Send real-time notification to frontend via the notification service.
                 // This pushes the alert to connected clients immediately.
-                await _notificationService.SendNewAlertNotificationAsync(alert);
+                await notificationService.SendNewAlertNotificationAsync(alert);
             }
         }
         
         // Helper method to auto-resolve alerts when conditions improve
         private async Task ResolveAlertIfExists(int rackId, AlertType type)
         {
-            var activeAlert = await _context.Alerts
+            var activeAlert = await context.Alerts
                 .FirstOrDefaultAsync(a => a.RackId == rackId && a.Type == type && !a.IsResolved);
 
             if (activeAlert != null)
@@ -156,7 +144,7 @@ namespace Faraday.API.Services
                 activeAlert.IsResolved = true;
                 activeAlert.ResolvedAt = DateTime.UtcNow;
                 activeAlert.Message += " [RESOLVED: Sensor readings returned to normal]";
-                _logger.LogInformation($"Alert resolved for Rack {rackId}: {type}");
+                logger.LogInformation($"Alert resolved for Rack {rackId}: {type}");
             }
         }
         
@@ -166,14 +154,14 @@ namespace Faraday.API.Services
         /// </summary>
         public async Task CheckExpirationDatesAsync()
         {
-            var warningDays = _configuration.GetValue("Monitoring:ExpirationWarningDays", 7);
+            var warningDays = configuration.GetValue("Monitoring:ExpirationWarningDays", 7);
 
             var now = DateTime.UtcNow;
             var warningThreshold = now.AddDays(warningDays);
 
             // Group items by product and rack to avoid duplicate alerts
             // We want one alert per Product-Rack combination.
-            var itemsWithExpiration = await _context.InventoryItems
+            var itemsWithExpiration = await context.InventoryItems
                 .Include(i => i.Product)
                 .Include(i => i.Slot)
                 .ThenInclude(s => s.Rack)
@@ -182,7 +170,7 @@ namespace Faraday.API.Services
                 .Select(g => new
                 {
                     ProductId = g.Key.ProductDefinitionId,
-                    RackId = g.Key.RackId,
+                    g.Key.RackId,
                     Items = g.OrderBy(x => x.ExpirationDate).ToList() // Earliest expiration first
                 })
                 .ToListAsync();
@@ -195,7 +183,7 @@ namespace Faraday.API.Services
                 var product = earliestItem.Product;
                 var count = group.Items.Count;
 
-                // Check if product is already expired
+                // Check if the product is already expired
                 if (expirationDate < now)
                 {
                     var daysOverdue = (now - expirationDate).Days;
@@ -205,7 +193,7 @@ namespace Faraday.API.Services
 
                     await CreateAlertIfNotExists(rack.Id, AlertType.ExpirationExpired, message);
                 }
-                // Check if product is expiring soon (within warning threshold)
+                // Check if the product is expiring soon (within a warning threshold)
                 else if (expirationDate <= warningThreshold)
                 {
                     var daysRemaining = (expirationDate - now).Days;
@@ -223,20 +211,20 @@ namespace Faraday.API.Services
                 }
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         
-        // Helper method to auto-resolve expiration alerts when item is OK or removed
+        // Helper method to auto-resolve expiration alerts when an item is OK or removed
         private async Task ResolveExpirationAlertsForProduct(int productId, int rackId)
         {
-            var activeAlerts = await _context.Alerts
+            var activeAlerts = await context.Alerts
                 .Where(a => a.RackId == rackId &&
                             !a.IsResolved &&
                             (a.Type == AlertType.ExpirationWarning || a.Type == AlertType.ExpirationExpired))
                 .ToListAsync();
 
             // Get product info for matching to ensure we only resolve alerts for this specific product
-            var product = await _context.Products.FindAsync(productId);
+            var product = await context.Products.FindAsync(productId);
             if (product == null) return;
 
             foreach (var alert in activeAlerts.Where(a => a.Message.Contains(product.ScanCode)))
@@ -244,7 +232,7 @@ namespace Faraday.API.Services
                 alert.IsResolved = true;
                 alert.ResolvedAt = DateTime.UtcNow;
                 alert.Message += " [RESOLVED: Item status updated or removed from inventory]";
-                _logger.LogInformation($"Expiration alert {alert.Id} auto-resolved for product {productId} in rack {rackId}");
+                logger.LogInformation($"Expiration alert {alert.Id} auto-resolved for product {productId} in rack {rackId}");
             }
         }
     }

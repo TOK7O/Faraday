@@ -9,17 +9,9 @@ namespace Faraday.API.Services
     /// The "Brain" of the WMS. Determines the optimal storage location for incoming inventory.
     /// Implements specific strategies (like Bottom-Up filling) and validates physical/environmental constraints.
     /// </summary>
-    public class WarehouseAlgorithmService : IWarehouseAlgorithmService
+    public class WarehouseAlgorithmService(FaradayDbContext context, ILogger<WarehouseAlgorithmService> logger)
+        : IWarehouseAlgorithmService
     {
-        private readonly FaradayDbContext _context;
-        private readonly ILogger<WarehouseAlgorithmService> _logger;
-
-        public WarehouseAlgorithmService(FaradayDbContext context, ILogger<WarehouseAlgorithmService> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
-
         /// <summary>
         /// Scans the warehouse for the best available slot for a specific product.
         /// Considers dimensions, temperature compatibility, and rack weight capacity.
@@ -29,12 +21,12 @@ namespace Faraday.API.Services
         public async Task<RackSlot> FindBestSlotForProductAsync(int productDefinitionId)
         {
             // Fetch the product definition
-            var product = await _context.Products.FindAsync(productDefinitionId);
+            var product = await context.Products.FindAsync(productDefinitionId);
             if (product == null)
                 throw new KeyNotFoundException($"Product definition {productDefinitionId} not found.");
             
             // Fetch candidate racks
-            var candidateRacks = await _context.Racks
+            var candidateRacks = await context.Racks
                 .Include(r => r.Slots)
                     .ThenInclude(s => s.CurrentItem)
                         .ThenInclude(i => i!.Product)
@@ -68,7 +60,7 @@ namespace Faraday.API.Services
 
                 if (currentLoad + product.WeightKg > rack.MaxWeightKg)
                 {
-                    _logger.LogWarning($"Rack {rack.Code} skipped. Weight limit exceeded ({currentLoad + product.WeightKg}/{rack.MaxWeightKg} kg).");
+                    logger.LogWarning($"Rack {rack.Code} skipped. Weight limit exceeded ({currentLoad + product.WeightKg}/{rack.MaxWeightKg} kg).");
                     continue; 
                 }
 
@@ -81,12 +73,12 @@ namespace Faraday.API.Services
 
                 if (freeSlot != null)
                 {
-                    _logger.LogInformation($"Algorithm: Found slot {freeSlot.Id} (Rack {rack.Code}, Pos [{freeSlot.X},{freeSlot.Y}]) for Product '{product.Name}'");
+                    logger.LogInformation($"Algorithm: Found slot {freeSlot.Id} (Rack {rack.Code}, Pos [{freeSlot.X},{freeSlot.Y}]) for Product '{product.Name}'");
                     return freeSlot;
                 }
             }
             
-            _logger.LogWarning("No available slots found for product '{ProductName}' (ID: {ProductId}) " +
+            logger.LogWarning("No available slots found for product '{ProductName}' (ID: {ProductId}) " +
                                "after checking {RackCount} compatible racks. " +
                                "All racks are either full or would exceed weight limits",
                                 product.Name, productDefinitionId, candidateRacks.Count);

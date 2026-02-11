@@ -1,27 +1,18 @@
 ﻿using Faraday.API.Models;
 using Faraday.API.Services.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace Faraday.API.Services
 {
     /// <summary>
-    /// Provider required by the logging infrastructure to create instances of the custom SignalR logger.
+    /// Provider required by the logging infrastructure creating instances of the custom SignalR logger.
     /// This allows the application to inject the real-time logging capability into the standard .NET logging pipeline.
     /// </summary>
-    public class SignalRLoggerProvider : ILoggerProvider
+    public class SignalRLoggerProvider(IServiceProvider serviceProvider, LogLevel minLevel = LogLevel.Information)
+        : ILoggerProvider
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly LogLevel _minLevel;
-
-        public SignalRLoggerProvider(IServiceProvider serviceProvider, LogLevel minLevel = LogLevel.Information)
-        {
-            _serviceProvider = serviceProvider;
-            _minLevel = minLevel;
-        }
-
         public ILogger CreateLogger(string categoryName)
         {
-            return new SignalRLogger(categoryName, _serviceProvider, _minLevel);
+            return new SignalRLogger(categoryName, serviceProvider, minLevel);
         }
 
         public void Dispose() { }
@@ -32,22 +23,12 @@ namespace Faraday.API.Services
     /// to connected clients via SignalR. 
     /// Meant for live console monitoring on the frontend.
     /// </summary>
-    public class SignalRLogger : ILogger
+    public class SignalRLogger(string categoryName, IServiceProvider serviceProvider, LogLevel minLevel)
+        : ILogger
     {
-        private readonly string _categoryName;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly LogLevel _minLevel;
-
-        public SignalRLogger(string categoryName, IServiceProvider serviceProvider, LogLevel minLevel)
-        {
-            _categoryName = categoryName;
-            _serviceProvider = serviceProvider;
-            _minLevel = minLevel;
-        }
-
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-        public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= minLevel;
 
         public void Log<TState>(
             LogLevel logLevel,
@@ -63,7 +44,7 @@ namespace Faraday.API.Services
             {
                 Timestamp = DateTime.UtcNow,
                 Level = logLevel.ToString(),
-                Category = _categoryName,
+                Category = categoryName,
                 Message = formatter(state, exception),
                 Exception = exception?.ToString(),
                 EventId = eventId.Id
@@ -76,7 +57,7 @@ namespace Faraday.API.Services
             {
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
+                    using var scope = serviceProvider.CreateScope();
                     var logsService = scope.ServiceProvider.GetService<ILogsService>();
             
                     if (logsService != null)
