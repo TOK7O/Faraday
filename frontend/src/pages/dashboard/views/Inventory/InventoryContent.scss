@@ -52,7 +52,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 .rack-grid-container {
   isolation: auto;
   background-color: var(--bg-form);
-  //color: var(--bg-input);
 }
 
 .inventory-container {
@@ -861,7 +860,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-//operations
 .operations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));

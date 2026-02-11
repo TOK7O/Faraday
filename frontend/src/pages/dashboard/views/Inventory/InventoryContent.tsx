@@ -47,11 +47,9 @@ const InventoryContent = () => {
     const [editingRack, setEditingRack] = useState<Rack | null>(null);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-    // stany dla obslugi csv
     const [importResult, setImportResult] = useState<{ successCount: number, errorCount: number, errors: string[] } | null>(null);
     const [isImportResultModalOpen, setIsImportResultModalOpen] = useState(false);
 
-    // Nowe stany dla interaktywnego importu
     const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
     const [importType, setImportType] = useState<'racks' | 'products' | null>(null);
     const [isImportPreviewModalOpen, setIsImportPreviewModalOpen] = useState(false);
@@ -77,7 +75,6 @@ const InventoryContent = () => {
         if (!rawMsg) return invT.errors.server;
         const msg = formatMessageNumbers(rawMsg);
 
-        // No racks found meeting requirements for 'Mleko' (Dim: 20x20x20 mm, Temp: -10 to -5°C). Check rack definitions.
         const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
         if (noRacksMatch) {
             return (
@@ -92,7 +89,6 @@ const InventoryContent = () => {
             );
         }
 
-        // No available slots found in 4 compatible racks. Racks are either full or adding this item would exceed the rack's weight limit.
         if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
             return (
                 <div className="pretty-error">
@@ -102,7 +98,6 @@ const InventoryContent = () => {
             );
         }
 
-        // Product with barcode 1 not found.
         const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
         if (productNotFound) {
             return (
@@ -173,7 +168,6 @@ const InventoryContent = () => {
 
     const handleSlotClick = (barcode: string) => {
         setSearchQuery(barcode);
-        // Switch to stock tab
         const stockTabTrigger = document.querySelector('[data-value="stock"]') as HTMLElement;
         if (stockTabTrigger) stockTabTrigger.click();
     };

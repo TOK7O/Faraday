@@ -3,7 +3,6 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Stars, Float, Text, Edges, Bounds, useBounds } from "@react-three/drei";
 import { Activity, ShieldCheck, Box, MousePointer2 } from "lucide-react";
 
-// --- KOMPONENT REGAŁU Z INTERAKCJĄ ---
 const Rack3D = ({ position, code, rows = 3, columns = 4 }: { position: [number, number, number], code: string, rows?: number, columns?: number }) => {
     const [hovered, setHover] = useState(false);
     const api = useBounds(); // Pozwala na automatyczne centrowanie kamery po kliknięciu
@@ -63,7 +62,6 @@ const Rack3D = ({ position, code, rows = 3, columns = 4 }: { position: [number, 
     );
 };
 
-// --- WIZUALIZACJA ---
 const OverviewContent = () => {
     return (
         <div className="dashboard-content">

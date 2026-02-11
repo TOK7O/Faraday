@@ -7,24 +7,20 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Form from "@radix-ui/react-form";
 
-// API
 import {
     getAllUsers,
     updateUser,
     resetUserPassword,
     resetUser2FA,
-    deleteUser // dodane
+    deleteUser
 } from "@/api/axios";
 
-// UI Components
 import { AddUserModal } from "@/components/layouts/dashboard/personnel/AddUserModal";
 import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
 
-// Styles
 import "./PersonnelContent.scss";
 import "@/styles/_components-ui.scss";
 
-// --- TYPES ---
 interface UserListDto {
     id: number;
     username: string;
@@ -79,12 +75,10 @@ const PersonnelContent = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Modals state
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
     const [isEditUserOpen, setIsEditUserOpen] = useState(false);
     const [isResetPassOpen, setIsResetPassOpen] = useState(false);
 
-    // Selected user for Edit/Reset
     const [selectedUser, setSelectedUser] = useState<StaffMember | null>(null);
     const [newAdminPassword, setNewAdminPassword] = useState("");
     const [editFormData, setEditFormData] = useState({
@@ -120,7 +114,6 @@ const PersonnelContent = () => {
         fetchStaff();
     }, []);
 
-    // --- ADMIN ACTIONS ---
 
     const handleToggleStatus = async (userId: number, isCurrentlyActive: boolean) => {
         const action = isCurrentlyActive ? "deactivate" : "activate";
@@ -305,7 +298,6 @@ const PersonnelContent = () => {
 
             <AddUserModal open={isAddUserOpen} onOpenChange={setIsAddUserOpen} onSuccess={fetchStaff} />
 
-            {/* EDIT MODAL */}
             <Dialog.Root open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="dialog-overlay-ht" />
@@ -336,7 +328,6 @@ const PersonnelContent = () => {
                 </Dialog.Portal>
             </Dialog.Root>
 
-            {/* RESET PASSWORD MODAL */}
             <Dialog.Root open={isResetPassOpen} onOpenChange={setIsResetPassOpen}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="dialog-overlay-ht" />
