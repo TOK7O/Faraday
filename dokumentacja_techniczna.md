@@ -271,7 +271,7 @@ Klasyfikacja zagrożeń wykorzystuje enumerację flagową `HazardType`, co pozwa
 
 Encja `Rack` reprezentuje fizyczny regał magazynowy z unikalnym kodem identyfikacyjnym. Definiuje ograniczenia fizyczne: maksymalne wymiary przedmiotów (szerokość, wysokość, głębokość), zakres dopuszczalnych temperatur, maksymalną nośność w kilogramach oraz wymiary siatki slotów (liczba wierszy i kolumn).
 
-Przy tworzeniu regału system automatycznie generuje siatkę obiektów `RackSlot` o wymiarach `Rows × Columns`. Każdy slot jest identyfikowany przez współrzędne `X` (kolumna) i `Y` (wiersz) i posiada status: `Available` (dostępny) lub `Reserved` (zarezerwowany).
+Przy tworzeniu regału system automatycznie generuje siatkę obiektów `RackSlot` o wymiarach `Rows × Columns`. Każdy slot jest identyfikowany przez współrzędne `X` (kolumna) i `Y` (wiersz). Maksymalna liczba wierszy i kolumn to 25 (maksymalny rozmiar regału to 25x25).
 
 Regał przechowuje bieżące odczyty sensorów: aktualną temperaturę (`CurrentTemperature`), zmierzoną wagę całkowitą (`CurrentTotalWeightKg`) oraz obliczoną wagę oczekiwaną (`ExpectedTotalWeightKg`).
 
