@@ -19,6 +19,8 @@ import {
   Move,
   PackageMinus,
   X,
+  BrainCircuit,
+  Upload
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
@@ -35,13 +37,16 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  recognizeProduct // <--- NOWA FUNKCJA API
 } from "@/api/axios";
 
+// POPRAWIONY IMPORT TYPÓW (TS1484)
 import type {
   Rack,
   Product,
   FullInventoryItem,
 } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
+
 import { RackCard } from "@/components/layouts/dashboard/inventory/RackCard";
 import { ProductCatalog } from "@/components/layouts/dashboard/inventory/ProductCatalog";
 import { RackModal } from "@/components/layouts/dashboard/inventory/modals/RackModal";
@@ -49,6 +54,7 @@ import { ProductModal } from "@/components/layouts/dashboard/inventory/modals/Pr
 import { MoveModal } from "@/components/layouts/dashboard/inventory/modals/MoveModal";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
+import { CameraSnapshot } from "@/components/ui/CameraSnapshot"; // <--- NOWY KOMPONENT
 
 import "./InventoryContent.scss";
 import "./StatsTab.scss";
@@ -113,6 +119,62 @@ const InventoryContent = () => {
   const [moveBarcode, setMoveBarcode] = useState("");
   const [movingItem, setMovingItem] = useState<FullInventoryItem | null>(null);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+
+  // --- AI SCANNER STATE ---
+  const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
+
+  const aiFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAiFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Wykorzystujemy tę samą funkcję co przy kamerze
+      await handleAiCapture(file);
+    }
+    // Reset inputa, aby można było wybrać ten sam plik ponownie
+    e.target.value = "";
+  };
+
+  // --- LOGIKA AI SCANNER ---
+  const handleAiCapture = async (file: File) => {
+    setIsAiScannerOpen(false); // Zamknij modal kamery
+    setAiProcessing(true); // Pokaż loader
+
+    try {
+      const result = await recognizeProduct(file);
+
+      if (result.success && result.product) {
+        const code = result.product.scanCode;
+
+        // Automatyczne wypełnienie pola w zależności od aktywnego trybu
+        if (scannerMode === "inbound") {
+          setInboundBarcode(code);
+        } else if (scannerMode === "outbound") {
+          setOutboundBarcode(code);
+        } else if (scannerMode === "move") {
+          setMoveBarcode(code);
+          // Dla trybu 'move' od razu szukamy przedmiotu w inwentarzu
+          const item = inventoryData.find((i) => i.barcode === code);
+          if (item) {
+            setMovingItem(item);
+            setIsMoveModalOpen(true);
+            setMoveBarcode("");
+          }
+        }
+
+        // Opcjonalne potwierdzenie (możesz usunąć, jeśli wolisz ciche działanie)
+        // alert(`AI Recognized: ${result.product.name} (${(result.confidenceScore * 100).toFixed(0)}%)`);
+      } else {
+        alert(invT.errors.notFound || "Product not recognized");
+      }
+    } catch (error) {
+      console.error("AI Recognition failed", error);
+      alert("Recognition failed. Please check your internet connection.");
+    } finally {
+      setAiProcessing(false);
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const productFileInputRef = useRef<HTMLInputElement>(null);
@@ -573,7 +635,7 @@ const InventoryContent = () => {
     setIsImportResultModalOpen(true);
     setBatchProgress(null);
     setIsLoading(false);
-    fetchData();
+    await fetchData();
   };
 
   // scanner
@@ -624,7 +686,7 @@ const InventoryContent = () => {
 
         scanner.render(
           async (decodedText) => {
-            handleScanResult(decodedText);
+            await handleScanResult(decodedText);
 
             if (scanner) {
               try {
@@ -659,7 +721,7 @@ const InventoryContent = () => {
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
-      fetchData();
+      await fetchData();
     } catch (e: any) {
       setInboundResult({
         success: false,
@@ -680,7 +742,7 @@ const InventoryContent = () => {
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
-      fetchData();
+      await fetchData();
     } catch (e: any) {
       setOutboundResult({
         success: false,
@@ -717,7 +779,7 @@ const InventoryContent = () => {
       });
       setIsMoveModalOpen(false);
       setMovingItem(null);
-      fetchData();
+      await fetchData();
     } catch (e: any) {
       setMoveResult({
         success: false,
@@ -736,7 +798,7 @@ const InventoryContent = () => {
     setIsLoading(true);
     try {
       await deleteRack(id);
-      fetchData();
+      await fetchData();
     } catch (e) {
       alert(invT.errors.deleteRack);
     } finally {
@@ -749,7 +811,7 @@ const InventoryContent = () => {
     setIsLoading(true);
     try {
       await deleteProduct(id);
-      fetchData();
+      await fetchData();
     } catch (e) {
       alert(invT.errors.deleteProduct);
     } finally {
@@ -792,7 +854,7 @@ const InventoryContent = () => {
       } else {
         await createProduct(dto);
       }
-      fetchData();
+      await fetchData();
       closeModal();
     } catch (error: any) {
       alert(error.response?.data?.message || invT.errors.connection);
@@ -827,7 +889,7 @@ const InventoryContent = () => {
       } else {
         await createRack(dto);
       }
-      fetchData();
+      await fetchData();
       closeModal();
     } catch (error: any) {
       alert(error.response?.data?.message || invT.errors.connection);
@@ -839,6 +901,14 @@ const InventoryContent = () => {
   return (
     <Tooltip.Provider delayDuration={100} skipDelayDuration={0}>
       <div className="personnel-view-container">
+        {/* UKRYTY INPUT DO UPLOADU ZDJĘĆ DLA AI */}
+        <input
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            ref={aiFileInputRef}
+            hidden
+            onChange={handleAiFileSelect}
+        />
         <Tabs.Root defaultValue="racks" className="inventory-tabs-root">
           <header className="content-header">
             <div className="header-brand">
@@ -1116,7 +1186,7 @@ const InventoryContent = () => {
 
           <Tabs.Content value="operations">
             <div className="operations-grid">
-              {/* Przyjęcia */}
+              {/* Przyjęcia (Inbound) */}
               <div className="glass-card inbound">
                 <div className="card-header">
                   <h2>
@@ -1129,28 +1199,58 @@ const InventoryContent = () => {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleInbound(e);
-                  }}
-                  className="ht-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleInbound(e);
+                    }}
+                    className="ht-form"
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                        value={inboundBarcode}
-                        onChange={(e) => setInboundBarcode(e.target.value)}
-                        placeholder={invT.operations.inbound.placeholder}
+                          value={inboundBarcode}
+                          onChange={(e) => setInboundBarcode(e.target.value)}
+                          placeholder={invT.operations.inbound.placeholder}
                       />
+                      {/* Standard Barcode */}
                       <button
-                        type="button"
-                        onClick={() => {
-                          setScannerMode("inbound");
-                          setIsScannerOpen(true);
-                        }}
-                        className="btn-action-ht"
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("inbound");
+                            setIsScannerOpen(true);
+                          }}
+                          className="btn-action-ht"
+                          title="Scan Barcode"
                       >
                         <Camera size={18} />
+                      </button>
+
+                      {/* AI Camera */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("inbound");
+                            setIsAiScannerOpen(true);
+                          }}
+                          className="btn-action-ht ai-btn"
+                          title="Scan with AI Camera"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
+                      >
+                        <BrainCircuit size={18} />
+                      </button>
+
+                      {/* AI Upload (NOWE) */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("inbound");
+                            aiFileInputRef.current?.click();
+                          }}
+                          className="btn-action-ht ai-btn"
+                          title="Upload Image for AI"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
+                      >
+                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
@@ -1160,38 +1260,23 @@ const InventoryContent = () => {
                 </form>
 
                 {inboundResult && (
-                  <div
-                    className={`operation-result-mini ${inboundResult.success ? "success" : "error"}`}
-                  >
-                    <div className="result-status">
-                      {inboundResult.success ? (
-                        <CheckCircle2 size={16} className="icon-success" />
-                      ) : (
-                        <AlertTriangle size={16} className="icon-error" />
-                      )}
-                      <span>
-                        {inboundResult.success
-                          ? invT.operations.inbound.success
-                          : invT.operations.inbound.error}
-                      </span>
+                    <div className={`operation-result-mini ${inboundResult.success ? "success" : "error"}`}>
+                      <div className="result-status">
+                        {inboundResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                        <span>{inboundResult.success ? invT.operations.inbound.success : invT.operations.inbound.error}</span>
+                      </div>
+                      <div className="result-details">
+                        {inboundResult.success ? (
+                            <span className="location-badge">{inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]</span>
+                        ) : (
+                            <span className="error-text">{prettifyBackendError(inboundResult.message)}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="result-details">
-                      {inboundResult.success ? (
-                        <span className="location-badge">
-                          {inboundResult.rackCode} [{inboundResult.slotX},{" "}
-                          {inboundResult.slotY}]
-                        </span>
-                      ) : (
-                        <span className="error-text">
-                          {prettifyBackendError(inboundResult.message)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 )}
               </div>
 
-              {/* Przesunięcia */}
+              {/* Przesunięcia (Move) */}
               <div className="glass-card move">
                 <div className="card-header">
                   <h2>
@@ -1205,98 +1290,102 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                        type="text"
-                        placeholder={invT.operations.move.placeholder}
-                        value={moveBarcode}
-                        onChange={(e) => setMoveBarcode(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            const item = inventoryData.find(
-                              (i) => i.barcode === moveBarcode,
-                            );
-                            if (item) {
-                              setMovingItem(item);
-                              setIsMoveModalOpen(true);
-                              setMoveBarcode("");
-                            } else {
-                              setMoveResult({
-                                success: false,
-                                message: invT.errors.notFound,
-                              });
+                          type="text"
+                          placeholder={invT.operations.move.placeholder}
+                          value={moveBarcode}
+                          onChange={(e) => setMoveBarcode(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const item = inventoryData.find(
+                                  (i) => i.barcode === moveBarcode,
+                              );
+                              if (item) {
+                                setMovingItem(item);
+                                setIsMoveModalOpen(true);
+                                setMoveBarcode("");
+                              } else {
+                                setMoveResult({
+                                  success: false,
+                                  message: invT.errors.notFound,
+                                });
+                              }
                             }
-                          }
-                        }}
+                          }}
                       />
                       <button
-                        type="button"
-                        onClick={() => {
-                          setScannerMode("move");
-                          setIsScannerOpen(true);
-                        }}
-                        className="btn-action-ht"
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("move");
+                            setIsScannerOpen(true);
+                          }}
+                          className="btn-action-ht"
                       >
                         <Camera size={18} />
+                      </button>
+
+                      {/* AI Camera */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("move");
+                            setIsAiScannerOpen(true);
+                          }}
+                          className="btn-action-ht ai-btn"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
+                      >
+                        <BrainCircuit size={18} />
+                      </button>
+
+                      {/* AI Upload (NOWE) */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("move");
+                            aiFileInputRef.current?.click();
+                          }}
+                          className="btn-action-ht ai-btn"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
+                      >
+                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
                   <button
-                    type="button"
-                    className="btn-primary-ht btn-submit"
-                    onClick={() => {
-                      const item = inventoryData.find(
-                        (i) => i.barcode === moveBarcode,
-                      );
-                      if (item) {
-                        setMovingItem(item);
-                        setIsMoveModalOpen(true);
-                        setMoveBarcode("");
-                      } else {
-                        setMoveResult({
-                          success: false,
-                          message: invT.errors.notFound,
-                        });
-                      }
-                    }}
+                      type="button"
+                      className="btn-primary-ht btn-submit"
+                      onClick={() => {
+                        const item = inventoryData.find((i) => i.barcode === moveBarcode);
+                        if (item) {
+                          setMovingItem(item);
+                          setIsMoveModalOpen(true);
+                          setMoveBarcode("");
+                        } else {
+                          setMoveResult({ success: false, message: invT.errors.notFound });
+                        }
+                      }}
                   >
                     {invT.operations.move.submit}
                   </button>
                 </div>
 
                 {moveResult && (
-                  <div
-                    className={`operation-result-mini ${moveResult.success ? "success" : "error"}`}
-                  >
-                    <div className="result-status">
-                      {moveResult.success ? (
-                        <CheckCircle2 size={16} className="icon-success" />
-                      ) : (
-                        <AlertTriangle size={16} className="icon-error" />
-                      )}
-                      <span>
-                        {moveResult.success
-                          ? invT.operations.move.success
-                          : invT.operations.move.error}
-                      </span>
+                    <div className={`operation-result-mini ${moveResult.success ? "success" : "error"}`}>
+                      <div className="result-status">
+                        {moveResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                        <span>{moveResult.success ? invT.operations.move.success : invT.operations.move.error}</span>
+                      </div>
+                      <div className="result-details">
+                        {moveResult.success ? (
+                            <><span className="location-badge">→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span></>
+                        ) : (
+                            <span className="error-text">{moveResult.message}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="result-details">
-                      {moveResult.success ? (
-                        <>
-                          {moveResult.productName}
-                          <br />
-                          <span className="location-badge">
-                            → {moveResult.rackCode} [{moveResult.slotX},{" "}
-                            {moveResult.slotY}]
-                          </span>
-                        </>
-                      ) : (
-                        <span className="error-text">{moveResult.message}</span>
-                      )}
-                    </div>
-                  </div>
                 )}
               </div>
 
-              {/* Wydania */}
+              {/* Wydania (Outbound) */}
               <div className="glass-card outbound">
                 <div className="card-header">
                   <h2>
@@ -1309,61 +1398,75 @@ const InventoryContent = () => {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleOutbound(e);
-                  }}
-                  className="ht-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleOutbound(e);
+                    }}
+                    className="ht-form"
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                        value={outboundBarcode}
-                        onChange={(e) => setOutboundBarcode(e.target.value)}
-                        placeholder={invT.operations.outbound.placeholder}
+                          value={outboundBarcode}
+                          onChange={(e) => setOutboundBarcode(e.target.value)}
+                          placeholder={invT.operations.outbound.placeholder}
                       />
                       <button
-                        type="button"
-                        onClick={() => {
-                          setScannerMode("outbound");
-                          setIsScannerOpen(true);
-                        }}
-                        className="btn-action-ht"
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("outbound");
+                            setIsScannerOpen(true);
+                          }}
+                          className="btn-action-ht"
                       >
                         <Camera size={18} />
+                      </button>
+
+                      {/* AI Camera */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("outbound");
+                            setIsAiScannerOpen(true);
+                          }}
+                          className="btn-action-ht ai-btn"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
+                      >
+                        <BrainCircuit size={18} />
+                      </button>
+
+                      {/* AI Upload (NOWE) */}
+                      <button
+                          type="button"
+                          onClick={() => {
+                            setScannerMode("outbound");
+                            aiFileInputRef.current?.click();
+                          }}
+                          className="btn-action-ht ai-btn"
+                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
+                      >
+                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
                   <button
-                    type="submit"
-                    className="btn-primary-ht btn-submit btn-danger"
+                      type="submit"
+                      className="btn-primary-ht btn-submit btn-danger"
                   >
                     {invT.operations.outbound.submit}
                   </button>
                 </form>
 
                 {outboundResult && (
-                  <div
-                    className={`operation-result-mini ${outboundResult.success ? "success" : "error"}`}
-                  >
-                    <div className="result-status">
-                      {outboundResult.success ? (
-                        <CheckCircle2 size={16} className="icon-success" />
-                      ) : (
-                        <AlertTriangle size={16} className="icon-error" />
-                      )}
-                      <span>
-                        {outboundResult.success
-                          ? invT.operations.outbound.success
-                          : invT.operations.outbound.error}
-                      </span>
+                    <div className={`operation-result-mini ${outboundResult.success ? "success" : "error"}`}>
+                      <div className="result-status">
+                        {outboundResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                        <span>{outboundResult.success ? invT.operations.outbound.success : invT.operations.outbound.error}</span>
+                      </div>
+                      <div className="result-details">
+                        {outboundResult.success ? invT.operations.outbound.details : outboundResult.message}
+                      </div>
                     </div>
-                    <div className="result-details">
-                      {outboundResult.success
-                        ? invT.operations.outbound.details
-                        : outboundResult.message}
-                    </div>
-                  </div>
                 )}
               </div>
             </div>
@@ -1705,6 +1808,43 @@ const InventoryContent = () => {
             : false
         }
       />
+
+      {/* LOADER DLA AI */}
+      {aiProcessing && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.8)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            flexDirection: 'column', gap: '1rem', color: 'white'
+          }}>
+            <BrainCircuit size={48} className="animate-pulse" style={{ color: 'var(--accent-primary)' }} />
+            <p style={{ fontFamily: 'Space Grotesk', fontSize: '1.2rem' }}>Analyzing Image...</p>
+          </div>
+      )}
+
+      {/* AI SCANNER SNAPSHOT MODAL */}
+      <Dialog.Root open={isAiScannerOpen} onOpenChange={setIsAiScannerOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="modal-overlay" style={{ background: 'black' }} />
+          <Dialog.Content
+              className="modal-content"
+              style={{
+                padding: 0,
+                overflow: 'hidden',
+                background: '#000',
+                border: 'none',
+                maxWidth: '100vw',
+                height: '100vh',
+                width: '100vw'
+              }}
+          >
+            <CameraSnapshot
+                onCapture={handleAiCapture}
+                onClose={() => setIsAiScannerOpen(false)}
+            />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </Tooltip.Provider>
   );
 };
