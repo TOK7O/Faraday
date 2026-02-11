@@ -922,7 +922,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 0;
 }
 
-
 .import-modal-ht {
   &.dialog-content-ht {
     max-width: 1000px;
@@ -1030,7 +1029,11 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
         .progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, var(--accent-primary), var(--success-color));
+          background: linear-gradient(
+            90deg,
+            var(--accent-primary),
+            var(--success-color)
+          );
           box-shadow: 0 0 15px var(--accent-primary);
           transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -1134,7 +1137,9 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 0.8rem;
             cursor: pointer;
             outline: none;
-            &:focus { border-color: var(--accent-primary); }
+            &:focus {
+              border-color: var(--accent-primary);
+            }
           }
         }
 
@@ -1182,7 +1187,9 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         grid-template-columns: 1fr 1fr;
         gap: 1.5rem;
 
-        @media (max-width: 768px) { grid-template-columns: 1fr; }
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+        }
       }
 
       .diff-card {
@@ -1209,7 +1216,9 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           font-size: 0.85rem;
 
-          .label { color: var(--text-muted); }
+          .label {
+            color: var(--text-muted);
+          }
           .value {
             font-weight: 600;
             &.changed {
@@ -1253,7 +1262,10 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 8px 25px var(--shadow-btn);
   }
 
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .btn-secondary {
@@ -1269,17 +1281,32 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   transition: all 0.2s;
 
-  &:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+  &:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .result-modal-content {
@@ -1334,12 +1361,16 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
       &.success {
         border-bottom: 4px solid var(--success-color);
-        .stat-number { color: var(--success-color); }
+        .stat-number {
+          color: var(--success-color);
+        }
       }
 
       &.error {
         border-bottom: 4px solid var(--error-color);
-        .stat-number { color: var(--error-color); }
+        .stat-number {
+          color: var(--error-color);
+        }
       }
     }
   }
@@ -1365,8 +1396,13 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
       padding: 1rem;
 
-      &::-webkit-scrollbar { width: 4px; }
-      &::-webkit-scrollbar-thumb { background: var(--error-color); border-radius: 10px; }
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: var(--error-color);
+        border-radius: 10px;
+      }
 
       ul {
         list-style: none;
@@ -1387,7 +1423,9 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 900;
           }
 
-          &:last-child { border-bottom: none; }
+          &:last-child {
+            border-bottom: none;
+          }
         }
       }
     }

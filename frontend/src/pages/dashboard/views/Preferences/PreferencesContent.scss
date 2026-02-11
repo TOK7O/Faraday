@@ -76,7 +76,6 @@
       transform: translateY(-2px);
     }
 
-    // Active State Styling
     &.active {
       background: rgba(var(--accent-primary-rgb), 0.1);
       background: color-mix(in srgb, var(--accent-primary), transparent 85%);
@@ -157,7 +156,6 @@
   overflow: hidden;
   animation: fadeIn 0.4s ease-out;
 
-  // Akcent wizualny na górze panelu
   &::before {
     content: "";
     position: absolute;
@@ -231,7 +229,6 @@
     font-weight: 500;
   }
 
-  // --- SETUP AREA ---
   .setup-area {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 16px;
@@ -315,7 +312,6 @@
     }
   }
 
-  // --- BUTTONS ---
   .btn-primary {
     height: 3.2rem;
     padding: 0 2rem;

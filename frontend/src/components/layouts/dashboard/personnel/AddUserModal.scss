@@ -1,9 +1,7 @@
-﻿// --- LOCAL VARIABLES ---
-$transition-base: all 0.2s ease-in-out;
+﻿$transition-base: all 0.2s ease-in-out;
 $radius-input: 10px;
 $radius-modal: 24px;
 
-// --- ANIMATIONS ---
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -24,7 +22,6 @@ $radius-modal: 24px;
   }
 }
 
-// --- OVERLAY ---
 .dialog-overlay-ht {
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
@@ -112,7 +109,6 @@ $radius-modal: 24px;
     }
   }
 
-  // --- FORM ---
   .ht-form {
     display: flex;
     flex-direction: column;
@@ -169,7 +165,6 @@ $radius-modal: 24px;
         font-family: inherit;
         color: var(--text-main);
 
-        // Visuals
         background-color: var(--bg-input);
         border: 1px solid var(--border-input);
         border-radius: $radius-input;
@@ -283,7 +278,6 @@ $radius-modal: 24px;
       margin-top: 1rem;
       height: 3.2rem;
       width: 100%;
-      // Using hex fallback for darken()
       background: var(
         --btn-grad-1,
         linear-gradient(135deg, var(--accent-primary) 0%, #008cb3 100%)

@@ -1,5 +1,5 @@
-.FormLabelRow{
-  width:100%;
+.FormLabelRow {
+  width: 100%;
 }
 .Input {
   display: block;
@@ -63,7 +63,7 @@
 
     position: absolute;
     justify-content: center;
-    align-items:center;
+    align-items: center;
   }
 
   .PasswordToggleBtn {
@@ -99,37 +99,6 @@
     }
   }
 }
-
-//.Button {
-//  width: 100%;
-//  padding: 1rem;
-//  margin-top: 10px;
-//  border: none;
-//  border-radius: 10px;
-//  font-size: 1rem;
-//  font-weight: 700;
-//  color: #fff;
-//  cursor: pointer;
-//  background: linear-gradient(
-//    150deg,
-//    var(--btn-grad-1) 0%,
-//    var(--btn-grad-2) 100%
-//  );
-//  transition:
-//    transform 0.1s,
-//    box-shadow 0.2s,
-//    opacity 0.2s;
-//
-//  &:hover {
-//    box-shadow: 0 0.25rem 0.75rem var(--shadow-btn);
-//    transform: translateY(-1px);
-//  }
-//
-//  &:disabled {
-//    opacity: 0.6;
-//    cursor: not-allowed;
-//  }
-//}
 
 .FormFooter {
   margin-top: 1.8rem;
