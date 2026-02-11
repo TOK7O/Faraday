@@ -36,10 +36,30 @@ Do uruchomienia systemu potrzebny jest wyłącznie **Docker Desktop** — silnik
 Otwórz terminal (PowerShell lub Wiersz poleceń) w katalogu rozpakowanego projektu i wykonaj:
 
 ```
-docker compose up --build
+docker compose up -d
 ```
 
-Pierwsze uruchomienie może potrwać kilka minut — Docker pobierze potrzebne obrazy i zbuduje kontenery. Po zakończeniu w terminalu pojawią się logi ze wszystkich usług.
+następnie
+
+```
+docker compose up -d --build
+```
+
+Pierwsze uruchomienie może potrwać kilka minut — Docker pobierze potrzebne obrazy i zbuduje kontenery.
+
+Następnie należy upewnić się, że folder `faraday\backend\Faraday.API\Migrations`, a następnie  przejść do `faraday\backend\Faraday.API` i wykonać:
+
+`dotnet ef database drop`, a następnie nacisnąć y
+
+`dotnet ef migrations add InitMig`
+
+`dotnet ef database update`
+
+Ostatecznie wracamy do folderu `faraday` i wykonujemy polecenie: 
+
+`docker compose up --build`
+
+Teraz mamy pewność, że utworzyliśmy dokładnie taką migrację jaką wymagają modele. System powienien działać!
 
 ### 1.4. Dostęp do aplikacji
 
