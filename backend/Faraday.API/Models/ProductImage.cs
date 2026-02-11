@@ -16,7 +16,7 @@ namespace Faraday.API.Models
         
         [Required]
         [MaxLength(30000)]
-        public required string FeatureVector { get; set; }F
+        public required string FeatureVector { get; set; }
 
         public int UploadedByUserId { get; set; }
         public virtual User UploadedByUser { get; set; } = null!;

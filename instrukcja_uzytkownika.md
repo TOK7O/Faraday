@@ -49,14 +49,13 @@ Po pomyślnym uruchomieniu system jest dostępny pod adresami:
 |---|---|---|
 | **Aplikacja** | [http://localhost:5173](http://localhost:5173) | Główny interfejs Faraday WMS |
 | **API** | [http://localhost:5000](http://localhost:5000) | Backend (REST API) |
-| **pgAdmin** | [http://localhost:5050](http://localhost:5050) | Panel administracyjny bazy danych |
 
 Przy pierwszym uruchomieniu system automatycznie utworzy strukturę bazy danych i konto domyślnego administratora.
 
 ### 1.5. Zatrzymywanie i ponowne uruchamianie
 
 - **Zatrzymanie:** naciśnij `Ctrl+C` w terminalu z uruchomionym Docker Compose, lub wykonaj `docker compose down`.
-- **Ponowne uruchomienie:** `docker compose up` (bez `--build`, jeśli nie zmieniano kodu).
+- **Ponowne uruchomienie:** `docker compose up`.
 - **Pełny reset danych:** `docker compose down -v` — usunie wolumeny z danymi bazy. Przy następnym uruchomieniu baza zostanie utworzona od nowa.
 
 ---
