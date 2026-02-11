@@ -120,51 +120,38 @@ const InventoryContent = () => {
   const [movingItem, setMovingItem] = useState<FullInventoryItem | null>(null);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
-  // --- AI SCANNER STATE ---
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
+  const [identifiedProduct, setIdentifiedProduct] = useState<any | null>(null);
 
   const aiFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAiFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Wykorzystujemy tę samą funkcję co przy kamerze
       await handleAiCapture(file);
     }
-    // Reset inputa, aby można było wybrać ten sam plik ponownie
     e.target.value = "";
   };
 
-  // --- LOGIKA AI SCANNER ---
   const handleAiCapture = async (file: File) => {
-    setIsAiScannerOpen(false); // Zamknij modal kamery
-    setAiProcessing(true); // Pokaż loader
+    setIsAiScannerOpen(false);
+    setAiProcessing(true);
+    setIdentifiedProduct(null); // Reset poprzedniego wyniku
 
     try {
       const result = await recognizeProduct(file);
 
       if (result.success && result.product) {
-        const code = result.product.scanCode;
+        setIdentifiedProduct({
+          ...result.product,
+          confidenceScore: result.confidenceScore,
+          confidenceLevel: result.confidenceLevel
+        });
 
-        // Automatyczne wypełnienie pola w zależności od aktywnego trybu
-        if (scannerMode === "inbound") {
-          setInboundBarcode(code);
-        } else if (scannerMode === "outbound") {
-          setOutboundBarcode(code);
-        } else if (scannerMode === "move") {
-          setMoveBarcode(code);
-          // Dla trybu 'move' od razu szukamy przedmiotu w inwentarzu
-          const item = inventoryData.find((i) => i.barcode === code);
-          if (item) {
-            setMovingItem(item);
-            setIsMoveModalOpen(true);
-            setMoveBarcode("");
-          }
-        }
+        const identifyTabTrigger = document.querySelector('[data-value="identify"]') as HTMLElement;
+        if (identifyTabTrigger) identifyTabTrigger.click();
 
-        // Opcjonalne potwierdzenie (możesz usunąć, jeśli wolisz ciche działanie)
-        // alert(`AI Recognized: ${result.product.name} (${(result.confidenceScore * 100).toFixed(0)}%)`);
       } else {
         alert(invT.errors.notFound || "Product not recognized");
       }
@@ -919,33 +906,17 @@ const InventoryContent = () => {
               <h1>
                 Inventory <span className="outline-text">Hub</span>
               </h1>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
-              >
-                <Tabs.List
-                  className="ht-tabs-list"
-                  style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}
-                >
-                  <Tabs.Trigger value="racks" className="ht-tabs-trigger">
-                    {invT.racksStructure}
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="products" className="ht-tabs-trigger">
-                    {invT.productCatalog}
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="stock" className="ht-tabs-trigger">
-                    {invT.stockTab}
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="operations" className="ht-tabs-trigger">
-                    {invT.operationsTab}
+              <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                <Tabs.List className="ht-tabs-list" style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}>
+                  <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
+                  <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
+                  <Tabs.Trigger value="stock" className="ht-tabs-trigger">{invT.stockTab}</Tabs.Trigger>
+                  <Tabs.Trigger value="operations" className="ht-tabs-trigger">{invT.operationsTab}</Tabs.Trigger>
+                  <Tabs.Trigger value="identify" className="ht-tabs-trigger" style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
+                    <BrainCircuit size={16} style={{ marginRight: 6 }}/> Identify
                   </Tabs.Trigger>
                 </Tabs.List>
-                <button
-                  onClick={fetchData}
-                  className="btn-action-ht"
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}
-                </button>
+                <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>{isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}</button>
               </div>
             </div>
           </header>
@@ -1183,7 +1154,109 @@ const InventoryContent = () => {
               )}
             </div>
           </Tabs.Content>
+          <Tabs.Content value="identify">
+            <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
+              <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: 'rgba(var(--accent-primary-rgb), 0.1)', padding: '1rem', borderRadius: '50%' }}>
+                  <BrainCircuit size={48} style={{ color: 'var(--accent-primary)' }} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>AI Product Identification</h2>
+                  <p className="text-muted">Take a photo or upload an image to identify a product and view its specifications.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button
+                      className="btn-primary-ht"
+                      style={{ padding: '0.8rem 2rem', fontSize: '1rem' }}
+                      onClick={() => setIsAiScannerOpen(true)}
+                  >
+                    <Camera size={20} /> Use Camera
+                  </button>
+                  <button
+                      className="btn-secondary"
+                      style={{ padding: '0.8rem 2rem', fontSize: '1rem', display: 'flex', gap: '8px', alignItems: 'center' }}
+                      onClick={() => aiFileInputRef.current?.click()}
+                  >
+                    <Upload size={20} /> Upload Image
+                  </button>
+                </div>
+              </div>
+
+              {identifiedProduct && (
+                  <div className="glass-card" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                    <div className="card-header" style={{ borderBottom: '1px solid var(--border-input)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <h2 style={{ fontSize: '1.8rem', color: 'white', margin: 0 }}>{identifiedProduct.name}</h2>
+                          <span style={{ fontFamily: 'monospace', color: 'var(--accent-primary)', fontSize: '1.1rem' }}>
+                                        #{identifiedProduct.scanCode}
+                                    </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className={`status-badge ${identifiedProduct.confidenceLevel === 'Excellent' ? 'new' : 'conflict'}`} style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
+                            Match: {(identifiedProduct.confidenceScore * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
+                        {identifiedProduct.photoUrl ? (
+                            <img src={identifiedProduct.photoUrl} alt="Product" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                        ) : (
+                            <div style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+                              <Box size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                              <p>No preview image</p>
+                            </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignContent: 'start' }}>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Dimensions (WxHxD)</label>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                            {identifiedProduct.widthMm} x {identifiedProduct.heightMm} x {identifiedProduct.depthMm} mm
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Weight</label>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                            {identifiedProduct.weightKg} kg
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Storage Temp.</label>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <RefreshCw size={16} />
+                            {identifiedProduct.requiredMinTemp}°C - {identifiedProduct.requiredMaxTemp}°C
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Safety</label>
+                          {identifiedProduct.isHazardous ? (
+                              <div style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                                <AlertTriangle size={18} /> HAZARDOUS (ADR)
+                              </div>
+                          ) : (
+                              <div style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <CheckCircle2 size={18} /> Standard
+                              </div>
+                          )}
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Comments</label>
+                          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px', fontSize: '0.9rem' }}>
+                            {identifiedProduct.comment || "No additional comments."}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              )}
+            </div>
+          </Tabs.Content>
           <Tabs.Content value="operations">
             <div className="operations-grid">
               {/* Przyjęcia (Inbound) */}
@@ -1212,7 +1285,6 @@ const InventoryContent = () => {
                           onChange={(e) => setInboundBarcode(e.target.value)}
                           placeholder={invT.operations.inbound.placeholder}
                       />
-                      {/* Standard Barcode */}
                       <button
                           type="button"
                           onClick={() => {
@@ -1223,34 +1295,6 @@ const InventoryContent = () => {
                           title="Scan Barcode"
                       >
                         <Camera size={18} />
-                      </button>
-
-                      {/* AI Camera */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("inbound");
-                            setIsAiScannerOpen(true);
-                          }}
-                          className="btn-action-ht ai-btn"
-                          title="Scan with AI Camera"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
-                      >
-                        <BrainCircuit size={18} />
-                      </button>
-
-                      {/* AI Upload (NOWE) */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("inbound");
-                            aiFileInputRef.current?.click();
-                          }}
-                          className="btn-action-ht ai-btn"
-                          title="Upload Image for AI"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
-                      >
-                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
@@ -1276,7 +1320,6 @@ const InventoryContent = () => {
                 )}
               </div>
 
-              {/* Przesunięcia (Move) */}
               <div className="glass-card move">
                 <div className="card-header">
                   <h2>
@@ -1296,18 +1339,13 @@ const InventoryContent = () => {
                           onChange={(e) => setMoveBarcode(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              const item = inventoryData.find(
-                                  (i) => i.barcode === moveBarcode,
-                              );
+                              const item = inventoryData.find((i) => i.barcode === moveBarcode);
                               if (item) {
                                 setMovingItem(item);
                                 setIsMoveModalOpen(true);
                                 setMoveBarcode("");
                               } else {
-                                setMoveResult({
-                                  success: false,
-                                  message: invT.errors.notFound,
-                                });
+                                setMoveResult({ success: false, message: invT.errors.notFound });
                               }
                             }
                           }}
@@ -1321,32 +1359,6 @@ const InventoryContent = () => {
                           className="btn-action-ht"
                       >
                         <Camera size={18} />
-                      </button>
-
-                      {/* AI Camera */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("move");
-                            setIsAiScannerOpen(true);
-                          }}
-                          className="btn-action-ht ai-btn"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
-                      >
-                        <BrainCircuit size={18} />
-                      </button>
-
-                      {/* AI Upload (NOWE) */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("move");
-                            aiFileInputRef.current?.click();
-                          }}
-                          className="btn-action-ht ai-btn"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
-                      >
-                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
@@ -1385,7 +1397,6 @@ const InventoryContent = () => {
                 )}
               </div>
 
-              {/* Wydania (Outbound) */}
               <div className="glass-card outbound">
                 <div className="card-header">
                   <h2>
@@ -1420,32 +1431,6 @@ const InventoryContent = () => {
                           className="btn-action-ht"
                       >
                         <Camera size={18} />
-                      </button>
-
-                      {/* AI Camera */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("outbound");
-                            setIsAiScannerOpen(true);
-                          }}
-                          className="btn-action-ht ai-btn"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)" }}
-                      >
-                        <BrainCircuit size={18} />
-                      </button>
-
-                      {/* AI Upload (NOWE) */}
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("outbound");
-                            aiFileInputRef.current?.click();
-                          }}
-                          className="btn-action-ht ai-btn"
-                          style={{ color: "var(--accent-primary)", borderColor: "var(--accent-primary)", marginLeft: '-8px' }}
-                      >
-                        <Upload size={18} />
                       </button>
                     </div>
                   </div>
@@ -1822,7 +1807,6 @@ const InventoryContent = () => {
           </div>
       )}
 
-      {/* AI SCANNER SNAPSHOT MODAL */}
       <Dialog.Root open={isAiScannerOpen} onOpenChange={setIsAiScannerOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="modal-overlay" style={{ background: 'black' }} />
