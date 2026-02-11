@@ -25,12 +25,10 @@ const LogsContent = () => {
     const { t } = useTranslation();
     const logsT: any = t.dashboardPage.content.logs;
 
-    // Data State
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [isConnected, setIsConnected] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
 
-    // Filters & Pagination
     const [filterLevel, setFilterLevel] = useState<string>("All");
     const [searchText, setSearchText] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState<number>(50);

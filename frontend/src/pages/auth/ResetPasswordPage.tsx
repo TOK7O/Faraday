@@ -35,7 +35,6 @@ const ResetPasswordPage = () => {
         setIsLoading(true);
 
         const formData = new FormData(event.currentTarget);
-        // UWAGA: Komponent RegisterPasswordFieldPair ustawia name="password" i "confirmPassword"
         const newPassword = formData.get("password") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
 

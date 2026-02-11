@@ -3,10 +3,9 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Stars, Float, Text, Edges, Bounds, useBounds } from "@react-three/drei";
 import { Activity, ShieldCheck, Box, MousePointer2 } from "lucide-react";
 
-// --- KOMPONENT REGAŁU Z INTERAKCJĄ ---
 const Rack3D = ({ position, code, rows = 3, columns = 4 }: { position: [number, number, number], code: string, rows?: number, columns?: number }) => {
     const [hovered, setHover] = useState(false);
-    const api = useBounds(); // Pozwala na automatyczne centrowanie kamery po kliknięciu
+    const api = useBounds(); // Centruje kamery po kliknięciu
 
     const shelfWidth = columns * 1.4;
     const shelfHeight = 1.2;
@@ -63,7 +62,6 @@ const Rack3D = ({ position, code, rows = 3, columns = 4 }: { position: [number, 
     );
 };
 
-// --- WIZUALIZACJA ---
 const OverviewContent = () => {
     return (
         <div className="dashboard-content">
@@ -101,8 +99,8 @@ const OverviewContent = () => {
                                     enableDamping={true}
                                     dampingFactor={0.05}
                                     maxPolarAngle={Math.PI / 2.1} // Blokada widoku "od dołu"
-                                    minDistance={5}  // Minimalny zoom
-                                    maxDistance={30} // Maksymalny zoom
+                                    minDistance={5}
+                                    maxDistance={30}
                                 />
 
                                 <ambientLight intensity={0.7} />
@@ -110,7 +108,6 @@ const OverviewContent = () => {
 
                                 <Stars radius={50} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
 
-                                {/* Bounds pozwala na automatyczne wyśrodkowanie kamery na obiekcie */}
                                 <Bounds fit clip observe margin={1.2}>
                                     <group position={[-4, 0, 2]}>
                                         <Rack3D position={[0, 0, 0]} code="ZONE-A1" rows={4} columns={4} />

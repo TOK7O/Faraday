@@ -2,10 +2,8 @@
 import * as Form from "@radix-ui/react-form";
 import { Loader2, CheckCircle, AlertCircle, Save } from "lucide-react";
 
-// Import the Simple component for "Old Password"
 import { SignInPasswordField } from "@/components/ui/SignInPasswordField";
 
-// Import the Pair component for "New Password" & "Confirm"
 import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
 
 import { changePassword } from '@/api/axios';
@@ -19,7 +17,6 @@ export const ChangePasswordForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // Configuration for the fields
     const fieldConfig = {
         oldPassword: {
             label: securityT.fields.current,
@@ -68,8 +65,6 @@ export const ChangePasswordForm = () => {
         try {
             await changePassword(oldPassword, newPassword);
             setMessage({ type: 'success', text: securityT.status.success });
-
-            // Reset form logic
             form.reset();
         } catch (err: any) {
             const errorMsg = err.response?.data?.message || err.message || securityT.status.error;
@@ -88,7 +83,6 @@ export const ChangePasswordForm = () => {
 
             <Form.Root className="settings-form" onSubmit={handleSubmit}>
 
-                {/* Old Password: Uses SignInPasswordField (Simple, no checks) */}
                 <SignInPasswordField
                     data={fieldConfig.oldPassword}
                     name="oldPassword"
@@ -96,13 +90,11 @@ export const ChangePasswordForm = () => {
 
                 <div className="form-divider" />
 
-                {/* New Password Pair: Handles both new password and confirmation with validation */}
                 <RegisterPasswordFieldPair
                     passwordData={fieldConfig.newPassword}
                     confirmData={fieldConfig.confirmPassword}
                 />
 
-                {/* Status Messages */}
                 {message && (
                     <div className={`status-banner ${message.type}`}>
                         {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
@@ -110,7 +102,6 @@ export const ChangePasswordForm = () => {
                     </div>
                 )}
 
-                {/* Submit Button */}
                 <div className="form-actions">
                     <Form.Submit asChild>
                         <button type="submit" className="save-btn" disabled={isLoading}>

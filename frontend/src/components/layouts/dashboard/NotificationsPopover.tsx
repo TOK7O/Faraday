@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Bell, Info, AlertTriangle } from "lucide-react";
 import "./NotificationsPopover.scss";

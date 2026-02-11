@@ -101,14 +101,12 @@ export const VoiceControlFAB = () => {
         console.log("[Faraday Voice] Sending command...");
         SpeechRecognition.stopListening();
         setIsWaitingForProcessing(true);
-
         setTimeout(async () => {
             const currentTranscript = transcript;
             if (!currentTranscript) {
                 setIsWaitingForProcessing(false);
                 return;
             }
-
             setIsProcessing(true);
             setIsWaitingForProcessing(false);
             try {
@@ -116,21 +114,16 @@ export const VoiceControlFAB = () => {
                 console.log("[Faraday Voice] API Result:", result);
 
                 const spokenSummary = summarizeResponseForSpeech(result);
-
                 if (result.success) {
-                    // Use FULL message for UI as requested
                     setFeedback({ type: 'success', msg: result.message || (lang === 'pl' ? "Sukces" : "Success") });
-
-                    // Improved Data Discovery
                     let dataToDisplay = null;
                     if (result.data?.results) {
-                        // Check if result.data.results has a direct array or object
                         const res = result.data.results;
                         const arrayKey = Object.keys(res).find(k => Array.isArray(res[k]));
                         if (arrayKey) {
                             dataToDisplay = res[arrayKey];
                         } else {
-                            dataToDisplay = res; // Could be a stats object
+                            dataToDisplay = res;
                         }
                     } else if (result.data?.inventory) {
                         dataToDisplay = result.data.inventory;
@@ -139,7 +132,6 @@ export const VoiceControlFAB = () => {
                     } else if (result.data && typeof result.data === 'object') {
                         dataToDisplay = result.data;
                     }
-
                     if (dataToDisplay) setResponseData(dataToDisplay);
                     speak(spokenSummary);
                     setIsExpanded(true);
@@ -190,7 +182,6 @@ export const VoiceControlFAB = () => {
             return (
                 <ul className="data-list stats-mode">
                     {Object.entries(data).map(([key, value]: [string, any], i: number) => {
-                        // Skip complex nesting for now or display as label
                         if (typeof value === 'object' && value !== null) return null;
                         return (
                             <li key={i} className="data-item stat">
@@ -241,7 +232,6 @@ export const VoiceControlFAB = () => {
                             )}
                         </div>
                     </div>
-
                     {responseData && isExpanded && (
                         <div className="bubble-data-container">
                             <div className="data-list-wrapper">
@@ -251,7 +241,6 @@ export const VoiceControlFAB = () => {
                     )}
                 </div>
             )}
-
             <button
                 id="voice-assistant-trigger"
                 onClick={() => (listening ? handleStopAndSend() : handleStartListening())}
@@ -272,3 +261,4 @@ export const VoiceControlFAB = () => {
 };
 
 export default VoiceControlFAB;
+

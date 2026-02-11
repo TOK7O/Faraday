@@ -92,7 +92,6 @@ const InventoryContent = () => {
             );
         }
 
-        // No available slots found in 4 compatible racks. Racks are either full or adding this item would exceed the rack's weight limit.
         if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
             return (
                 <div className="pretty-error">
@@ -102,7 +101,6 @@ const InventoryContent = () => {
             );
         }
 
-        // Product with barcode 1 not found.
         const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
         if (productNotFound) {
             return (
@@ -495,8 +493,7 @@ const InventoryContent = () => {
 
                         setIsScannerOpen(false);
                     },
-                    (error) => {
-                    }
+                    (error) => {}
                 );
             }, 500);
 

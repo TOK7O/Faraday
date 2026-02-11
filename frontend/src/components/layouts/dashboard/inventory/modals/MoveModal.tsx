@@ -120,7 +120,6 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                                     const isCurrent = item?.rackCode === targetRackCode && item.slotX === colNum && item.slotY === rowNum;
                                                     const isTarget = targetSlotX === colNum && targetSlotY === rowNum;
 
-                                                    // Compatibility checks
                                                     const tooTall = product ? product.heightMm > selectedRack.maxHeight : false;
                                                     const tooWide = product ? product.widthMm > selectedRack.maxWidth : false;
                                                     const tooDeep = product ? product.depthMm > selectedRack.maxDepth : false;

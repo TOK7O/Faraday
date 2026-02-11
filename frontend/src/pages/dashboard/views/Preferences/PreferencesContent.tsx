@@ -21,19 +21,15 @@ const PreferencesContent = () => {
     const { lang, setLang, t } = useTranslation();
     const { theme, toggleTheme } = useTheme();
 
-    // --- 2FA STATE ---
     const [is2faEnabled, setIs2faEnabled] = useState<boolean>(false);
     const [setupData, setSetupData] = useState<{ manualEntryKey: string, qrCodeImage: string } | null>(null);
     const [verifyCode, setVerifyCode] = useState("");
     const [loading2fa, setLoading2fa] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // Translations fallback
     const prefT: any = t.dashboardPage.content.preferences;
 
-    // --- 2FA LOGIC ---
 
-    // 1. Check Status on Mount
     useEffect(() => {
         const fetch2faStatus = async () => {
             try {
@@ -46,13 +42,12 @@ const PreferencesContent = () => {
         fetch2faStatus();
     }, []);
 
-    // 2. Start Setup (Get QR Code)
     const handleStartSetup = async () => {
         setLoading2fa(true);
         setMessage(null);
         try {
             const data = await setup2fa();
-            setSetupData(data); // Contains qrCodeImage and manualEntryKey
+            setSetupData(data);
         } catch (error) {
             setMessage({ type: 'error', text: prefT.security.twoFactor.messages.setupError });
         } finally {
@@ -60,14 +55,13 @@ const PreferencesContent = () => {
         }
     };
 
-    // 3. Confirm Setup (Verify Code)
     const handleEnable2fa = async () => {
         setLoading2fa(true);
         setMessage(null);
         try {
             await enable2fa(verifyCode);
             setIs2faEnabled(true);
-            setSetupData(null); // Close setup window
+            setSetupData(null);
             setVerifyCode("");
             setMessage({ type: 'success', text: prefT.security.twoFactor.messages.enableSuccess });
         } catch (error: any) {
@@ -77,7 +71,6 @@ const PreferencesContent = () => {
         }
     };
 
-    // 4. Disable 2FA
     const handleDisable2fa = async () => {
         if (!confirm(prefT.security.twoFactor.messages.disableConfirm)) return;
         setLoading2fa(true);
@@ -92,7 +85,6 @@ const PreferencesContent = () => {
         }
     };
 
-    // --- THEME LOGIC ---
     const handleThemeChange = (selectedTheme: 'light' | 'dark') => {
         if (theme !== selectedTheme) {
             toggleTheme();
@@ -233,7 +225,6 @@ const PreferencesContent = () => {
                             </div>
                         )}
 
-                        {/* Setup Mode: QR Code Display */}
                         {setupData && !is2faEnabled && (
                             <div className="setup-area">
                                 <div className="qr-container">
@@ -273,7 +264,6 @@ const PreferencesContent = () => {
                             </div>
                         )}
 
-                        {/* Enabled State */}
                         {is2faEnabled && (
                             <div>
                                 <button

@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import "./DashboardPage.scss";
 import { Link, useNavigate } from "react-router-dom";
-
-// Views
 import OverviewContent from "./views/OverviewContent";
 import InventoryContent from "./views/Inventory/InventoryContent";
 import PersonnelContent from "./views/Personnel/PersonnelContent";
@@ -12,42 +10,30 @@ import ReportsContent from "./views/Reports/ReportsContent";
 import BackupsContent from "./views/Backups/BackupsContent";
 import PreferencesContent from "./views/Preferences/PreferencesContent";
 import LogsContent from "./views/Logs/LogsContent";
-
-// Components
 import Sidebar from "@/components/layouts/dashboard/Sidebar";
 import DashboardNavbar from "@/components/layouts/dashboard/DashboardNavbar";
 import MobileNavbar from "@/components/layouts/dashboard/MobileNavbar";
-
-// Utils & Context
 import { isSessionExpired, clearSession } from "@/utils/auth.utils";
 
 const DashboardPage = () => {
     const [activeTab, setActiveTab] = useState("overview");
     const navigate = useNavigate();
 
-    // --- LOGIKA AUTOMATYCZNEGO WYLOGOWANIA ---
     useEffect(() => {
         const checkSession = () => {
             if (isSessionExpired()) {
-                console.warn("Sesja wygasła. Wylogowywanie...");
                 clearSession();
                 navigate("/login", { replace: true });
             }
         };
-
-        // Sprawdź natychmiast po załadowaniu
         checkSession();
-
-        // Sprawdzaj co sekundę (lub rzadziej, np. co 10s)
         const intervalId = setInterval(checkSession, 1000);
-
         return () => clearInterval(intervalId);
     }, [navigate]);
 
     return (
         <div className="dashboard-container">
             <div className="dashboard-grid-bg"></div>
-
             <Tabs.Root
                 className="dashboard-wrapper"
                 value={activeTab}
@@ -55,7 +41,6 @@ const DashboardPage = () => {
                 orientation="vertical"
             >
                 <MobileNavbar />
-
                 <aside className="dashboard-sidebar desktop-only">
                     <div className="sidebar-logo">
                         <Link to="/">
@@ -64,7 +49,6 @@ const DashboardPage = () => {
                     </div>
                     <Sidebar />
                 </aside>
-
                 <main className="dashboard-main">
                     <DashboardNavbar activeTab={activeTab} />
 
