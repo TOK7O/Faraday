@@ -8,7 +8,6 @@
     align-items: center;
     padding: 1rem;
     background: var(--bg-input);
-    //border: 1px solid var(--border-input);
     border-left: 4px solid var(--accent-primary);
     border-radius: 8px;
     position: relative;
@@ -85,7 +84,6 @@
 
       .action-btn {
         background: transparent;
-        //border: 1px solid var(--border-input);
         padding: 5px;
         color: var(--text-muted);
         cursor: pointer;

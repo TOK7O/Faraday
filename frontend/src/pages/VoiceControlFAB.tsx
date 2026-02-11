@@ -36,7 +36,6 @@ export const VoiceControlFAB = () => {
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
 
-  // Auto-send logic when user stops speaking
   useEffect(() => {
     if (
       !listening &&
@@ -97,7 +96,6 @@ export const VoiceControlFAB = () => {
 
     const { actionPerformed, data } = response;
 
-    // Truncate for speech to be concise, but keep full for UI
     if (
       actionPerformed === "multi_step_execution" &&
       data?.results?.inventory

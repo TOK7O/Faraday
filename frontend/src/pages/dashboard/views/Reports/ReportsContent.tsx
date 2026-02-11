@@ -290,7 +290,6 @@ const ReportsContent = () => {
         </table>
       </div>
 
-      {/* Full Inventory Table */}
       <div className="table-container">
         <h3>{reportsT.inventory.fullTitle}</h3>
         <table className="data-table">
@@ -420,7 +419,6 @@ const ReportsContent = () => {
 
   const renderSensorsView = () => (
     <div className="view-container">
-      {/* Violations */}
       <div className="table-container">
         <h3>{reportsT.sensors.violationsTitle}</h3>
         <table className="data-table">
@@ -665,7 +663,6 @@ const ReportsContent = () => {
         </div>
       )}
 
-      {/* Navigation */}
       <div className="report-tabs">
         <button
           className={activeTab === "inventory" ? "active" : ""}
@@ -693,7 +690,6 @@ const ReportsContent = () => {
         </button>
       </div>
 
-      {/* Filters (Conditional based on tab) */}
       {(activeTab === "sensors" || activeTab === "alerts") && (
         <div className="filters-bar">
           <div className="filter-group">
@@ -727,7 +723,6 @@ const ReportsContent = () => {
         </div>
       )}
 
-      {/* Content Switch */}
       {isLoading ? (
         <div className="loading-overlay">{reportsT.loading}</div>
       ) : (

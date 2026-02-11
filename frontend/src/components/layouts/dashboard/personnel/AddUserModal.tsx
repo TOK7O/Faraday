@@ -34,12 +34,10 @@ export const AddUserModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Stany potrzebne do walidacji haseł
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<UserRole>(UserRole.WarehouseWorker);
 
-  // Dynamic configuration based on language
   const fieldsData = useMemo(
     () => ({
       username: {
@@ -81,9 +79,8 @@ export const AddUserModal = ({
     event.preventDefault();
     setError(null);
 
-    // Dodatkowe zabezpieczenie: sprawdzenie czy hasła są identyczne przed wysłaniem
     if (password !== confirmPassword) {
-      return; // Komponent RegisterPasswordField wyświetli błąd walidacji, tu przerywamy
+      return;
     }
 
     setIsLoading(true);
@@ -92,7 +89,7 @@ export const AddUserModal = ({
     const payload = {
       username: formData.get("username") as string,
       email: formData.get("email") as string,
-      password: formData.get("password") as string, // Bierzemy pierwsze hasło
+      password: formData.get("password") as string,
       role: role,
     };
 
@@ -101,7 +98,6 @@ export const AddUserModal = ({
       onSuccess();
       onOpenChange(false);
 
-      // Reset formularza po sukcesie
       setPassword("");
       setConfirmPassword("");
       setRole(UserRole.WarehouseWorker);
@@ -137,13 +133,10 @@ export const AddUserModal = ({
           </div>
 
           <Form.Root className="ht-form" onSubmit={handleSubmit}>
-            {/* 1. Username Field */}
             <SignInLoginField data={fieldsData.username} name="username" />
 
-            {/* 2. Email Field */}
             <RegisterEmailField data={fieldsData.email} />
 
-            {/* 3. Password Field (Główne) */}
             <RegisterPasswordFieldPair
               passwordData={fieldsData.password}
               confirmData={fieldsData.confirmPassword}
@@ -153,7 +146,6 @@ export const AddUserModal = ({
               }}
             />
 
-            {/* 5. Role Select */}
             <div className="input-group">
               <label
                 style={{
