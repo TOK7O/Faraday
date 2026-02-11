@@ -1,4 +1,4 @@
- .auth-container {
+.auth-container {
   display: flex;
   height: 100vh;
   width: 100vw;
@@ -30,8 +30,8 @@
 
     background-color: #1a1a1a;
     background-image:
-            linear-gradient(var(--overlay-start), var(--overlay-end)),
-            url("../../../assets/lightGradient.jpg");
+      linear-gradient(var(--overlay-start), var(--overlay-end)),
+      url("../../../assets/lightGradient.jpg");
     background-size: cover;
     background-position: center;
 
@@ -53,8 +53,8 @@
       width: 100%;
       height: 100%;
       background-image:
-              linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
       background-size: 50px 50px;
       mask-image: linear-gradient(to top, black, transparent);
       pointer-events: none;
@@ -151,7 +151,6 @@
       gap: 1.5rem;
     }
 
-
     // Celujemy w klasę .input-group (zastąpiła FormField)
     .input-group {
       display: flex;
@@ -211,7 +210,8 @@
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         outline: none;
 
-        &[type="password"], &[type="text"]:not([autocomplete="username"]) {
+        &[type="password"],
+        &[type="text"]:not([autocomplete="username"]) {
           padding-right: 45px !important;
         }
 
@@ -241,7 +241,8 @@
     }
 
     /* Przycisk Submit */
-    .submit-btn, button[type="submit"] {
+    .submit-btn,
+    button[type="submit"] {
       margin-top: 1.5rem;
       padding: 1rem;
       width: 100%;
@@ -253,7 +254,9 @@
       font-weight: 800;
       letter-spacing: 0.5px;
       cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.2s;
+      transition:
+        transform 0.1s,
+        box-shadow 0.2s;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -301,13 +304,23 @@
 
 /* Animacje */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .fade-in {

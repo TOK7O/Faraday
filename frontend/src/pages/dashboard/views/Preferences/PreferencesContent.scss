@@ -128,14 +128,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
   }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .security-panel {
@@ -153,10 +159,18 @@
 
   // Akcent wizualny na górze panelu
   &::before {
-    content: '';
+    content: "";
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 4px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent-primary),
+      transparent
+    );
     opacity: 0.5;
   }
 
@@ -198,7 +212,9 @@
         background: rgba(34, 197, 94, 0.1);
         color: #4ade80;
         border-color: rgba(34, 197, 94, 0.2);
-        .status-icon { filter: drop-shadow(0 0 3px #4ade80); }
+        .status-icon {
+          filter: drop-shadow(0 0 3px #4ade80);
+        }
       }
 
       &.inactive {
@@ -252,13 +268,16 @@
 
       .instructions {
         flex: 1;
-        p { margin-bottom: 8px; font-size: 0.9rem; }
+        p {
+          margin-bottom: 8px;
+          font-size: 0.9rem;
+        }
 
         .secret-key {
           background: var(--bg-form);
           padding: 10px 15px;
           border-radius: 8px;
-          font-family: 'JetBrains Mono', monospace;
+          font-family: "JetBrains Mono", monospace;
           font-size: 1rem;
           color: var(--accent-primary);
           border: 1px dashed var(--border-input);
@@ -280,7 +299,7 @@
             border-radius: 10px;
             padding: 0 1rem;
             color: var(--text-main);
-            font-family: 'JetBrains Mono', monospace;
+            font-family: "JetBrains Mono", monospace;
             font-size: 1.4rem;
             letter-spacing: 4px;
             text-align: center;
@@ -345,6 +364,12 @@
 }
 
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

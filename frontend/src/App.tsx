@@ -17,11 +17,21 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/docs" element={<Documentation />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="*" element={<div>{t.dashboardPage.content.pageNotFound}</div>} />
+        <Route
+          path="*"
+          element={<div>{t.dashboardPage.content.pageNotFound}</div>}
+        />
       </Routes>
       <VoiceControlFAB />
     </div>

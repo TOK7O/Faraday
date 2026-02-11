@@ -13,8 +13,8 @@
     position: absolute;
     inset: 0;
     background-image:
-            linear-gradient(var(--border-input) 1px, transparent 1px),
-            linear-gradient(90deg, var(--border-input) 1px, transparent 1px);
+      linear-gradient(var(--border-input) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-input) 1px, transparent 1px);
     background-size: 60px 60px;
     opacity: 0.15;
     pointer-events: none;
@@ -103,7 +103,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-
 }
 
 .dashboard-content {

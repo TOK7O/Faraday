@@ -5,13 +5,23 @@ $radius-modal: 24px;
 
 // --- ANIMATIONS ---
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalContentShow {
-  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 // --- OVERLAY ---
@@ -28,7 +38,8 @@ $radius-modal: 24px;
 // --- MODAL CONTAINER ---
 .dialog-content-ht {
   position: fixed;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   width: 90vw;
   max-width: 520px;
@@ -54,8 +65,16 @@ $radius-modal: 24px;
   // Decorative Line
   .modal-accent-line {
     position: absolute;
-    top: 0; left: 20%; right: 20%; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent-primary),
+      transparent
+    );
   }
 
   // --- HEADER ---
@@ -110,7 +129,8 @@ $radius-modal: 24px;
 
     // --- INPUT GROUP (WRAPPER) ---
     .input-group,
-    .FormField { // Added .FormField to match Radix UI structure if used
+    .FormField {
+      // Added .FormField to match Radix UI structure if used
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -119,7 +139,9 @@ $radius-modal: 24px;
       margin-bottom: 0 !important; // Override component margins
 
       // LABELS & ERRORS
-      label, .ht-label, .FormLabel {
+      label,
+      .ht-label,
+      .FormLabel {
         font-size: 0.7rem;
         font-weight: 800;
         text-transform: uppercase;
@@ -133,7 +155,8 @@ $radius-modal: 24px;
       }
 
       // ERROR MESSAGES
-      .error-text, .FormMessage {
+      .error-text,
+      .FormMessage {
         color: var(--error-color, #ef4444);
         font-size: 0.85rem;
         font-weight: 500;
@@ -174,7 +197,11 @@ $radius-modal: 24px;
         }
 
         &:hover {
-          border-color: color-mix(in srgb, var(--accent-primary), transparent 50%);
+          border-color: color-mix(
+            in srgb,
+            var(--accent-primary),
+            transparent 50%
+          );
         }
 
         &:focus {
@@ -220,7 +247,8 @@ $radius-modal: 24px;
         }
 
         // Eye Button
-        button[type="button"], .PasswordToggleBtn {
+        button[type="button"],
+        .PasswordToggleBtn {
           position: absolute;
           right: 0;
           top: 0;
@@ -234,8 +262,12 @@ $radius-modal: 24px;
           align-items: center;
           justify-content: center;
 
-          &:hover { color: var(--text-main) !important; }
-          &:focus { outline: none; }
+          &:hover {
+            color: var(--text-main) !important;
+          }
+          &:focus {
+            outline: none;
+          }
         }
       }
 
@@ -264,7 +296,9 @@ $radius-modal: 24px;
       gap: 10px;
       font-weight: 500;
 
-      svg { color: #ef4444; }
+      svg {
+        color: #ef4444;
+      }
     }
 
     // --- SUBMIT BUTTON ---
@@ -273,7 +307,10 @@ $radius-modal: 24px;
       height: 3.2rem;
       width: 100%;
       // Using hex fallback for darken()
-      background: var(--btn-grad-1, linear-gradient(135deg, var(--accent-primary) 0%, #008cb3 100%));
+      background: var(
+        --btn-grad-1,
+        linear-gradient(135deg, var(--accent-primary) 0%, #008cb3 100%)
+      );
       color: var(--btn-text, #000);
       border: none;
       border-radius: $radius-input;

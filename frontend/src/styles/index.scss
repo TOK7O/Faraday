@@ -27,8 +27,8 @@ body {
   display: flex;
   place-items: center;
   //font-family: "Inter", sans-serif;
-   width: 100vw;
-   height: 100vh;
+  width: 100vw;
+  height: 100vh;
 }
 
 h1 {
@@ -53,7 +53,9 @@ a:hover {
   text-decoration: none;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   -webkit-appearance: none;
   appearance: none;
   outline: none;

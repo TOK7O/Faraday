@@ -19,9 +19,12 @@
     overflow: hidden;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
-      top: 0; left: 0; width: 4px; height: 100%;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
       background: var(--accent-primary);
       opacity: 0.5;
     }
@@ -32,7 +35,9 @@
       background: rgba(var(--bg-input-rgb), 0.4);
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 
-      &::before { opacity: 1; }
+      &::before {
+        opacity: 1;
+      }
     }
 
     &.highlight {
@@ -56,7 +61,7 @@
         }
 
         .barcode-tag {
-          font-family: 'JetBrains Mono', monospace;
+          font-family: "JetBrains Mono", monospace;
           font-size: 0.7rem;
           color: var(--accent-primary);
           background: rgba(var(--accent-primary-rgb), 0.1);
@@ -103,9 +108,15 @@
           text-transform: uppercase;
           font-size: 0.7rem;
 
-          &.instock { color: var(--success-color); }
-          &.blocked { color: var(--error-color); }
-          &.reserved { color: #facc15; }
+          &.instock {
+            color: var(--success-color);
+          }
+          &.blocked {
+            color: var(--error-color);
+          }
+          &.reserved {
+            color: #facc15;
+          }
         }
       }
     }
@@ -140,7 +151,10 @@
         border-top: 1px solid var(--border-input);
         padding-top: 10px;
 
-        strong { color: var(--text-main); font-weight: 700; }
+        strong {
+          color: var(--text-main);
+          font-weight: 700;
+        }
       }
 
       .btn-action-ht {
@@ -168,7 +182,13 @@
 }
 
 @keyframes pulseHighlight {
-  0% { box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(var(--accent-primary-rgb), 0); }
-  100% { box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--accent-primary-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0);
+  }
 }

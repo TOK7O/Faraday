@@ -18,7 +18,10 @@
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.2);
       color: #ffaaaa;
-      svg { color: #ef4444; flex-shrink: 0; }
+      svg {
+        color: #ef4444;
+        flex-shrink: 0;
+      }
     }
   }
 
@@ -31,8 +34,12 @@
 
       &.flex-layout {
         display: flex;
-        .flex-2 { flex: 2; }
-        .flex-1 { flex: 1; }
+        .flex-2 {
+          flex: 2;
+        }
+        .flex-1 {
+          flex: 1;
+        }
       }
 
       &.align-end {
@@ -43,8 +50,13 @@
     .multi-input-group {
       display: flex;
       gap: 8px;
-      &.compact { gap: 4px; }
-      input { flex: 1; min-width: 0; }
+      &.compact {
+        gap: 4px;
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+      }
     }
 
     .file-input-wrapper {
@@ -61,13 +73,17 @@
         cursor: pointer;
         font-size: 0.85rem;
 
-        &:hover { background: rgba(255, 255, 255, 0.08); }
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
         .file-name {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        input { display: none; }
+        input {
+          display: none;
+        }
       }
     }
 
@@ -94,7 +110,10 @@
       opacity: 0.6;
       cursor: not-allowed !important;
       background: rgba(0, 0, 0, 0.2);
-      &:focus { border-color: var(--border-input) !important; box-shadow: none !important; }
+      &:focus {
+        border-color: var(--border-input) !important;
+        box-shadow: none !important;
+      }
     }
 
     .error-text {

@@ -97,7 +97,11 @@
 
     .alert-text {
       flex: 1;
-      p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+      p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.8;
+      }
     }
 
     .close-alert {
@@ -130,7 +134,12 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        h2 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
+        h2 {
+          margin: 0;
+          font-size: 1.2rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
       }
     }
 
@@ -152,7 +161,10 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         font-size: 0.9rem;
 
-        &.mono-text { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        &.mono-text {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.8rem;
+        }
       }
 
       .action-cell {
@@ -185,7 +197,9 @@
 }
 
 .dialog-content-ht.danger-theme {
-  .modal-accent-line { background: var(--error-color); }
+  .modal-accent-line {
+    background: var(--error-color);
+  }
 
   .warning-panel {
     background: rgba(239, 68, 68, 0.05);
@@ -207,7 +221,11 @@
     ul {
       margin: 0;
       padding-left: 1.2rem;
-      li { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 5px; }
+      li {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+      }
     }
   }
 

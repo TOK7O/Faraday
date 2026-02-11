@@ -11,12 +11,12 @@
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background-image:
-            linear-gradient(var(--border-input) 1px, transparent 1px),
-            linear-gradient(90deg, var(--border-input) 1px, transparent 1px);
+      linear-gradient(var(--border-input) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-input) 1px, transparent 1px);
     background-size: 60px 60px;
     opacity: 0.15;
     pointer-events: none;
@@ -196,8 +196,16 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
-        .date { font-weight: 700; color: var(--text-main); font-size: 0.85rem; }
-        .time { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+        .date {
+          font-weight: 700;
+          color: var(--text-main);
+          font-size: 0.85rem;
+        }
+        .time {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          font-family: monospace;
+        }
       }
 
       .op-badge {
@@ -224,12 +232,17 @@
           font-size: 0.85rem;
           color: var(--text-muted);
 
-          svg { opacity: 0.6; }
+          svg {
+            opacity: 0.6;
+          }
 
           &.highlight {
             color: var(--accent-primary);
             font-weight: 600;
-            svg { color: var(--accent-primary); opacity: 1; }
+            svg {
+              color: var(--accent-primary);
+              opacity: 1;
+            }
           }
         }
       }
@@ -238,11 +251,21 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
