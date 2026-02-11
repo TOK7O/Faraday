@@ -83,7 +83,7 @@ const DashboardPage = () => {
           </section>
         </main>
       </Tabs.Root>
-        <VoiceControlFAB />
+      <VoiceControlFAB />
     </div>
   );
 };

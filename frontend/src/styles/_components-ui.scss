@@ -47,7 +47,6 @@
       &:focus {
         border-color: var(--accent-primary);
 
-        //background: color-mix(in srgb, var(--bg-input), transparent 45%);
         box-shadow: 0 0 0 0.25rem var(--focus-ring);
 
         & + .search-icon {
@@ -196,7 +195,6 @@
   }
 }
 .glass-table-wrapper {
-  //background: rgba(var(--bg-input-rgb), 0.2);
   border: 1px solid var(--border-input);
   border-radius: 20px;
   overflow: auto;
@@ -440,7 +438,7 @@
 .ht-input {
   width: 100%;
   height: 3rem;
-  padding: 0 3.5rem 0 1rem; // Większy padding z prawej na ikonę
+  padding: 0 3.5rem 0 1rem;
   background: var(--bg-input);
   border: 1px solid var(--border-input);
   border-radius: 10px;
@@ -455,58 +453,3 @@
     opacity: 0.5;
   }
 }
-//.PasswordInputContainer {
-//  display: flex;
-//  align-items: center;
-//  position: relative;
-//  width: 100%;
-//
-//  .Input {
-//    padding-right: 3rem;
-//    all: unset;
-//    width: 100%;
-//    height: 3rem;
-//    padding: 0 3.5rem 0 1rem;
-//    background: var(--bg-input);
-//    border: 1px solid var(--border-input);
-//    border-radius: 10px;
-//    color: var(--text-main);
-//    font-family: inherit;
-//    font-size: 0.95rem;
-//    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-//    box-sizing: border-box;
-//  }
-//
-//  .PasswordToggleBtn {
-//    position: absolute;
-//    right: 6px;
-//    display: flex;
-//    align-items: center;
-//    justify-content: center;
-//    width: 2rem;
-//    height: 2rem;
-//    border: none;
-//    background: transparent;
-//    cursor: pointer;
-//    border-radius: 0.5rem;
-//    transition: all 0.2s;
-//    padding: 0;
-//
-//    svg {
-//      width: 1.25rem;
-//      height: 1.25rem;
-//      display: block;
-//      color: var(--placeholder-color);
-//      transition: color 0.2s ease;
-//    }
-//
-//    &:hover svg {
-//      color: var(--accent-secondary);
-//    }
-//
-//    &:focus-visible {
-//      outline: 2px solid var(--accent-primary);
-//      outline-offset: -2px;
-//    }
-//  }
-//}
