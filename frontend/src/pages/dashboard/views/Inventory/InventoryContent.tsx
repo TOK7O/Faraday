@@ -1418,505 +1418,268 @@ const InventoryContent = () => {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root
-        open={isImportPreviewModalOpen}
-        onOpenChange={setIsImportPreviewModalOpen}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-ht" />
-          <Dialog.Content className="dialog-content-ht import-modal-ht">
-            <div className="modal-header">
-              <Dialog.Title>
-                Import:{" "}
-                {importType === "racks"
-                  ? invT.import.racksTitle
-                  : invT.import.productsTitle}
-              </Dialog.Title>
-              <Dialog.Close asChild>
-                <button className="close-btn">
-                  <X size={20} />
-                </button>
-              </Dialog.Close>
-            </div>
+        <Dialog.Root
+            open={isImportPreviewModalOpen}
+            onOpenChange={setIsImportPreviewModalOpen}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay-ht" />
+                <Dialog.Content className="dialog-content-ht import-modal-ht">
 
-            <div className="import-preview-container">
-              {batchProgress ? (
-                <div
-                  style={{
-                    padding: "3rem",
-                    textAlign: "center",
-                    background: "rgba(0,0,0,0.2)",
-                    borderRadius: "24px",
-                  }}
-                >
-                  <Spinner size={40} />
-                  <p
-                    style={{
-                      marginTop: "1.5rem",
-                      fontWeight: 600,
-                      fontSize: "1.1rem",
-                    }}
-                  >
-                    {invT.import.processing}
-                  </p>
-                  <p style={{ opacity: 0.6, fontSize: "0.9rem" }}>
-                    {invT.import.processed
-                      .replace("{current}", batchProgress.current.toString())
-                      .replace("{total}", batchProgress.total.toString())}
-                  </p>
-                  <div
-                    style={{
-                      width: "100%",
-                      maxWidth: "400px",
-                      height: "6px",
-                      background: "rgba(255,255,255,0.05)",
-                      borderRadius: "10px",
-                      margin: "2rem auto 0",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${(batchProgress.current / batchProgress.total) * 100}%`,
-                        height: "100%",
-                        background:
-                          "linear-gradient(90deg, var(--accent-primary), #4ade80)",
-                        boxShadow: "0 0 15px var(--accent-primary)",
-                        transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="import-summary-strip">
-                    <div className="summary-item">
-                      <span className="label">{invT.import.summary.total}</span>
-                      <span className="value">{importPreviewData.length}</span>
+                    <div className="modal-header">
+                        <Dialog.Title>
+                            Import:{" "}
+                            {importType === "racks"
+                                ? invT.import.racksTitle
+                                : invT.import.productsTitle}
+                        </Dialog.Title>
+                        <Dialog.Close asChild>
+                            <button className="close-btn">
+                                <X size={20} />
+                            </button>
+                        </Dialog.Close>
                     </div>
-                    <div className="summary-item">
-                      <span className="label">{invT.import.summary.new}</span>
-                      <span className="value" style={{ color: "#4ade80" }}>
-                        {
-                          importPreviewData.filter((i) => i.status === "new")
-                            .length
-                        }
-                      </span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="label">
-                        {invT.import.summary.conflicts}
-                      </span>
-                      <span className="value" style={{ color: "#facc15" }}>
-                        {
-                          importPreviewData.filter(
-                            (i) => i.status === "conflict",
-                          ).length
-                        }
-                      </span>
-                    </div>
-                    <div
-                      className="summary-item"
-                      style={{ marginLeft: "auto" }}
-                    >
-                      <span className="label">
-                        {invT.import.summary.toSave}
-                      </span>
-                      <span className="value">
-                        {
-                          importPreviewData.filter((i) => i.action !== "skip")
-                            .length
-                        }
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="import-table-wrapper">
-                    <div style={{ maxHeight: "350px", overflowY: "auto" }}>
-                      <table className="import-table">
-                        <thead>
-                          <tr>
-                            <th>{invT.import.table.status}</th>
-                            <th>{invT.import.table.code}</th>
-                            <th>{invT.import.table.decision}</th>
-                            <th>{invT.import.table.action}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {importPreviewData.map((item, idx) => (
-                            <tr
-                              key={idx}
-                              style={{
-                                background:
-                                  selectedPreviewItem === item
-                                    ? "rgba(var(--accent-primary-rgb), 0.08)"
-                                    : "transparent",
-                              }}
-                            >
-                              <td>
-                                <span
-                                  className={`status-badge ${item.status === "conflict" ? "conflict" : "new"}`}
-                                >
-                                  {item.status === "conflict" ? (
-                                    <AlertTriangle size={12} />
-                                  ) : (
-                                    <CheckCircle2 size={12} />
-                                  )}
-                                  {item.status === "conflict"
-                                    ? invT.import.table.conflict
-                                    : invT.import.table.new}
-                                </span>
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  fontFamily: "Space Grotesk",
-                                }}
-                              >
-                                {item.data.code || item.data.scanCode}
-                              </td>
-                              <td>
-                                <select
-                                  value={item.action}
-                                  onChange={(e) => {
-                                    const newData = [...importPreviewData];
-                                    newData[idx].action = e.target.value;
-                                    setImportPreviewData(newData);
-                                  }}
-                                  style={{
-                                    background: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    padding: "4px 8px",
-                                    color: "white",
-                                    fontSize: "0.8rem",
-                                    outline: "none",
-                                  }}
-                                >
-                                  {item.status === "conflict" ? (
-                                    <>
-                                      <option value="skip">
-                                        {invT.import.actions.skip}
-                                      </option>
-                                      <option value="update">
-                                        {invT.import.actions.update}
-                                      </option>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <option value="create">
-                                        {invT.import.actions.create}
-                                      </option>
-                                      <option value="skip">
-                                        {invT.import.actions.skip}
-                                      </option>
-                                    </>
-                                  )}
-                                </select>
-                              </td>
-                              <td>
-                                <button
-                                  className={`btn-action-ht ${selectedPreviewItem === item ? "active" : ""}`}
-                                  onClick={() =>
-                                    setSelectedPreviewItem(
-                                      selectedPreviewItem === item
-                                        ? null
-                                        : item,
-                                    )
-                                  }
-                                  title={invT.import.actions.showDiff}
-                                >
-                                  {selectedPreviewItem === item ? (
-                                    <X size={16} />
-                                  ) : (
-                                    <Search size={16} />
-                                  )}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {selectedPreviewItem && (
-                    <div className="diff-view-master-detail">
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "1rem",
-                        }}
-                      >
-                        {selectedPreviewItem.validationErrors &&
-                          selectedPreviewItem.validationErrors.length > 0 && (
-                            <div className="validation-warning">
-                              <div className="warning-header">
-                                <AlertTriangle size={18} />{" "}
-                                {invT.import.warnings.critical}
-                              </div>
-                              <ul>
-                                {selectedPreviewItem.validationErrors.map(
-                                  (err: string, i: number) => (
-                                    <li key={i}>{err}</li>
-                                  ),
-                                )}
-                              </ul>
-                            </div>
-                          )}
-
-                        {selectedPreviewItem.hasItems &&
-                          (!selectedPreviewItem.validationErrors ||
-                            selectedPreviewItem.validationErrors.length ===
-                              0) && (
-                            <div
-                              className="validation-warning"
-                              style={{
-                                background: "rgba(59, 130, 246, 0.1)",
-                                borderColor: "rgba(59, 130, 246, 0.3)",
-                                color: "#93c5fd",
-                              }}
-                            >
-                              <div
-                                className="warning-header"
-                                style={{ color: "#60a5fa" }}
-                              >
-                                <Box size={18} />{" "}
-                                {invT.import.warnings.contentInfo}
-                              </div>
-                              <p
-                                style={{
-                                  fontSize: "0.85rem",
-                                  margin: 0,
-                                  paddingLeft: "1.5rem",
-                                }}
-                              >
-                                {invT.import.warnings.contentWarning}
-                              </p>
-                            </div>
-                          )}
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: "1rem",
-                        }}
-                      >
-                        <div className="diff-card">
-                          <div className="card-title" style={{ opacity: 0.5 }}>
-                            <LayoutGrid size={14} /> {invT.import.diff.current}
-                          </div>
-                          {selectedPreviewItem.existingData ? (
-                            Object.entries(
-                              selectedPreviewItem.existingData,
-                            ).map(([key, val]: [string, any]) => (
-                              <div key={key} className="diff-row">
-                                <span className="label">{key}</span>
-                                <span className="value">{String(val)}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div
-                              style={{
-                                padding: "2rem",
-                                textAlign: "center",
-                                opacity: 0.3,
-                                fontStyle: "italic",
-                              }}
-                            >
-                              {invT.import.diff.noData}
-                            </div>
-                          )}
-                        </div>
-
-                        <div
-                          className="diff-card"
-                          style={{
-                            borderLeft: "2px solid var(--accent-primary)",
-                          }}
-                        >
-                          <div
-                            className="card-title"
-                            style={{ color: "var(--accent-primary)" }}
-                          >
-                            <FileUp size={14} /> {invT.import.diff.csv}
-                          </div>
-                          {Object.entries(selectedPreviewItem.data).map(
-                            ([key, val]: [string, any]) => {
-                              const isDifferent =
-                                selectedPreviewItem.existingData &&
-                                String(val) !==
-                                  String(selectedPreviewItem.existingData[key]);
-                              return (
-                                <div key={key} className="diff-row">
-                                  <span className="label">{key}</span>
-                                  <span
-                                    className={`value ${isDifferent ? "changed" : ""}`}
-                                  >
-                                    {String(val)}
-                                  </span>
+                    <div className="import-preview-container">
+                        {batchProgress ? (
+                            <div className="batch-progress-panel">
+                                <Spinner size={40} />
+                                <p className="progress-title">{invT.import.processing}</p>
+                                <p className="progress-count">
+                                    {batchProgress.current} / {batchProgress.total}
+                                </p>
+                                <div className="progress-bar-container">
+                                    <div
+                                        className="progress-bar-fill"
+                                        style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                                    />
                                 </div>
-                              );
-                            },
-                          )}
-                        </div>
-                      </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="import-summary-strip">
+                                    <div className="summary-item">
+                                        <span className="label">{invT.import.summary.total}</span>
+                                        <span className="value">{importPreviewData.length}</span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span className="label">{invT.import.summary.new}</span>
+                                        <span className="value success-text">
+                      {importPreviewData.filter((i) => i.status === "new").length}
+                    </span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span className="label">{invT.import.summary.conflicts}</span>
+                                        <span className="value warning-text">
+                      {importPreviewData.filter((i) => i.status === "conflict").length}
+                    </span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span className="label">{invT.import.summary.toSave}</span>
+                                        <span className="value">
+                      {importPreviewData.filter((i) => i.action !== "skip").length}
+                    </span>
+                                    </div>
+                                </div>
+
+                                <div className="import-table-wrapper">
+                                    <table className="import-table">
+                                        <thead>
+                                        <tr>
+                                            <th>{invT.import.table.status}</th>
+                                            <th>{invT.import.table.code}</th>
+                                            <th>{invT.import.table.decision}</th>
+                                            <th>{invT.import.table.action}</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {importPreviewData.map((item, idx) => (
+                                            <tr key={idx} className={selectedPreviewItem === item ? 'row-selected' : ''}>
+                                                <td>
+                            <span className={`status-badge ${item.status === "conflict" ? "conflict" : "new"}`}>
+                              {item.status === "conflict" ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
+                                {item.status === "conflict" ? invT.import.table.conflict : invT.import.table.new}
+                            </span>
+                                                </td>
+                                                <td className="mono-text">{item.data.code || item.data.scanCode}</td>
+                                                <td>
+                                                    <select
+                                                        value={item.action}
+                                                        onChange={(e) => {
+                                                            const newData = [...importPreviewData];
+                                                            newData[idx].action = e.target.value;
+                                                            setImportPreviewData(newData);
+                                                        }}
+                                                    >
+                                                        {item.status === "conflict" ? (
+                                                            <>
+                                                                <option value="skip">{invT.import.actions.skip}</option>
+                                                                <option value="update">{invT.import.actions.update}</option>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <option value="create">{invT.import.actions.create}</option>
+                                                                <option value="skip">{invT.import.actions.skip}</option>
+                                                            </>
+                                                        )}
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        className={`btn-action-ht ${selectedPreviewItem === item ? "active" : ""}`}
+                                                        onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
+                                                    >
+                                                        {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {selectedPreviewItem && (
+                                    <div className="diff-view-master-detail">
+                                        <div className="validation-section">
+                                            {selectedPreviewItem.validationErrors?.length > 0 && (
+                                                <div className="validation-warning critical">
+                                                    <div className="warning-header">
+                                                        <AlertTriangle size={18} /> {invT.import.warnings.critical}
+                                                    </div>
+                                                    <ul>
+                                                        {selectedPreviewItem.validationErrors.map((err: string, i: number) => (
+                                                            <li key={i}>{err}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="diff-grid">
+                                            <div className="diff-card">
+                                                <div className="card-title">
+                                                    <LayoutGrid size={14} /> {invT.import.diff.current}
+                                                </div>
+                                                <div className="diff-content">
+                                                    {selectedPreviewItem.existingData ? (
+                                                        Object.entries(selectedPreviewItem.existingData).map(([key, val]) => (
+                                                            <div key={key} className="diff-row">
+                                                                <span className="label">{key}</span>
+                                                                <span className="value">{String(val)}</span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="no-data-placeholder">{invT.import.diff.noData}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="diff-card changed-data">
+                                                <div className="card-title">
+                                                    <FileUp size={14} /> {invT.import.diff.csv}
+                                                </div>
+                                                <div className="diff-content">
+                                                    {Object.entries(selectedPreviewItem.data).map(([key, val]) => {
+                                                        const isDifferent = selectedPreviewItem.existingData &&
+                                                            String(val) !== String(selectedPreviewItem.existingData[key]);
+                                                        return (
+                                                            <div key={key} className="diff-row">
+                                                                <span className="label">{key}</span>
+                                                                <span className={`value ${isDifferent ? "changed" : ""}`}>
+                                    {String(val)}
+                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "1rem",
-              }}
-            >
-              <button
-                className="btn-secondary"
-                onClick={() => setIsImportPreviewModalOpen(false)}
-              >
-                {invT.import.cancel}
-              </button>
-              <button
-                className="btn-primary-ht"
-                onClick={handleConfirmImport}
-                disabled={!!batchProgress || importPreviewData.length === 0}
-              >
-                {invT.import.submit.replace(
-                  "{count}",
-                  importPreviewData
-                    .filter((i) => i.action !== "skip")
-                    .length.toString(),
-                )}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-
-      <Dialog.Root
-        open={isImportResultModalOpen}
-        onOpenChange={setIsImportResultModalOpen}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-ht" />
-          <Dialog.Content
-            className="dialog-content-ht"
-            style={{ maxWidth: "600px" }}
-          >
-            <div className="modal-header">
-              <Dialog.Title>{invT.import.result.title}</Dialog.Title>
-              <Dialog.Close asChild>
-                <button className="close-btn">
-                  <X size={20} />
-                </button>
-              </Dialog.Close>
-            </div>
-            <div style={{ margin: "1.5rem 0" }}>
-              <div
-                style={{ display: "flex", gap: "20px", marginBottom: "1.5rem" }}
-              >
-                <div
-                  style={{
-                    flex: 1,
-                    padding: "1rem",
-                    background: "rgba(34, 197, 94, 0.1)",
-                    borderRadius: "8px",
-                    textAlign: "center",
-                    border: "1px solid rgba(34, 197, 94, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "1.5rem",
-                      fontWeight: "bold",
-                      color: "#4ade80",
-                    }}
-                  >
-                    {importResult?.successCount}
-                  </div>
-                  <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>
-                    {invT.import.result.successes}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    padding: "1rem",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderRadius: "8px",
-                    textAlign: "center",
-                    border: "1px solid rgba(239, 68, 68, 0.2)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "1.5rem",
-                      fontWeight: "bold",
-                      color: "#f87171",
-                    }}
-                  >
-                    {importResult?.errorCount}
-                  </div>
-                  <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>
-                    {invT.import.result.failures}
-                  </div>
-                </div>
-              </div>
-
-              {importResult && importResult.errors.length > 0 && (
-                <div style={{ marginTop: "1rem" }}>
-                  <p
-                    style={{
-                      fontSize: "0.9rem",
-                      marginBottom: "0.5rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {invT.import.result.details}
-                  </p>
-                  <div
-                    style={{
-                      maxHeight: "250px",
-                      overflowY: "auto",
-                      background: "rgba(0,0,0,0.2)",
-                      padding: "1rem",
-                      borderRadius: "8px",
-                      fontSize: "0.85rem",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                    }}
-                  >
-                    <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
-                      {importResult.errors.map((err, i) => (
-                        <li
-                          key={i}
-                          style={{ marginBottom: "4px", color: "#f87171" }}
+                    <div className="modal-footer">
+                        <button
+                            className="btn-secondary"
+                            onClick={() => setIsImportPreviewModalOpen(false)}
                         >
-                          {err}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
-                className="btn-primary"
-                onClick={() => setIsImportResultModalOpen(false)}
-              >
-                {invT.import.close}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+                            {invT.import.cancel}
+                        </button>
+                        <button
+                            className="btn-primary-ht"
+                            onClick={handleConfirmImport}
+                            disabled={!!batchProgress || importPreviewData.length === 0}
+                        >
+                            {invT.import.submit.replace(
+                                "{count}",
+                                importPreviewData.filter((i) => i.action !== "skip").length.toString()
+                            )}
+                        </button>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+
+        <Dialog.Root
+            open={isImportResultModalOpen}
+            onOpenChange={setIsImportResultModalOpen}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay-ht" />
+                <Dialog.Content className="dialog-content-ht result-modal-content">
+                    <div className="modal-header">
+                        <Dialog.Title>
+                            <span className="outline-text">IMPORT</span> RESULT
+                        </Dialog.Title>
+                        <Dialog.Close asChild>
+                            <button className="btn-ht">
+                                <X size={20} />
+                            </button>
+                        </Dialog.Close>
+                    </div>
+
+                    <div className="modal-body">
+                        <div className="result-stats-grid">
+                            <div className="stat-card success">
+                                <span className="stat-number">{importResult?.successCount}</span>
+                                <span className="stat-label">{invT.import.result.successes}</span>
+                            </div>
+
+                            <div className="stat-card error">
+                                <span className="stat-number">{importResult?.errorCount}</span>
+                                <span className="stat-label">{invT.import.result.failures}</span>
+                            </div>
+                        </div>
+
+                        {importResult && importResult.errors.length > 0 && (
+                            <div className="error-details-container">
+                                <p className="details-title">
+                                    <AlertTriangle size={14} /> {invT.import.result.details}
+                                </p>
+                                <div className="error-scroll-area">
+                                    <ul>
+                                        {importResult.errors.map((err, i) => (
+                                            <li key={i}>{err}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="modal-footer">
+                        <button
+                            className="btn-primary-ht"
+                            onClick={() => setIsImportResultModalOpen(false)}
+                        >
+                            {invT.import.close}
+                        </button>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
 
       <RackModal
         open={isModalOpen}

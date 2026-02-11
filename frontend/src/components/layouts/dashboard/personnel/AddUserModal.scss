@@ -35,16 +35,13 @@ $radius-modal: 24px;
   animation: modalFadeIn 0.2s ease-out;
 }
 
-// --- MODAL CONTAINER ---
 .dialog-content-ht {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90vw;
-  max-width: 520px;
 
-  // Background & Border
   background: var(--bg-form, #121212);
   border: 1px solid var(--border-input, #333);
   border-radius: $radius-modal;
@@ -53,16 +50,13 @@ $radius-modal: 24px;
   z-index: 1001;
   box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
 
-  // Glassmorphism
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
 
-  // Typography
   font-family: "Space Grotesk", sans-serif;
   color: var(--text-main);
   animation: modalContentShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  // Decorative Line
   .modal-accent-line {
     position: absolute;
     top: 0;
@@ -77,7 +71,6 @@ $radius-modal: 24px;
     );
   }
 
-  // --- HEADER ---
   .modal-header {
     display: flex;
     justify-content: space-between;
@@ -127,18 +120,15 @@ $radius-modal: 24px;
     width: 100%;
     box-sizing: border-box;
 
-    // --- INPUT GROUP (WRAPPER) ---
     .input-group,
     .FormField {
-      // Added .FormField to match Radix UI structure if used
       display: flex;
       flex-direction: column;
       gap: 8px;
       width: 100%;
       position: relative;
-      margin-bottom: 0 !important; // Override component margins
+      margin-bottom: 0 !important;
 
-      // LABELS & ERRORS
       label,
       .ht-label,
       .FormLabel {
@@ -149,12 +139,11 @@ $radius-modal: 24px;
         letter-spacing: 1.5px;
         display: flex;
         align-items: center;
-        justify-content: space-between; // Push error to right
+        justify-content: space-between;
         width: 100%;
         margin-bottom: 0;
       }
 
-      // ERROR MESSAGES
       .error-text,
       .FormMessage {
         color: var(--error-color, #ef4444);
@@ -167,8 +156,6 @@ $radius-modal: 24px;
         width: max-content;
       }
 
-      // --- UNIFIED INPUT STYLES ---
-      // Targets standard inputs, selects, and specific classes
       input:not([type="checkbox"]):not([type="radio"]),
       select,
       .ht-input,
@@ -189,7 +176,7 @@ $radius-modal: 24px;
 
         outline: none;
         transition: all 0.2s ease-in-out;
-        -webkit-appearance: none; // Remove browser defaults
+        -webkit-appearance: none;
 
         &::placeholder {
           color: var(--text-muted);
@@ -210,7 +197,6 @@ $radius-modal: 24px;
           box-shadow: 0 0 0 4px var(--focus-ring, rgba(0, 242, 255, 0.15));
         }
 
-        // Auto-fill style fix
         &:-webkit-autofill {
           -webkit-box-shadow: 0 0 0 30px #1e1e20 inset !important;
           -webkit-text-fill-color: var(--text-main) !important;
@@ -218,11 +204,9 @@ $radius-modal: 24px;
         }
       }
 
-      // --- SELECT SPECIFIC ---
       select {
         cursor: pointer;
         padding-right: 2.5rem;
-        // Chevron Icon
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 1rem center;
@@ -234,8 +218,6 @@ $radius-modal: 24px;
         }
       }
 
-      // --- PASSWORD WRAPPER FIXES ---
-      // Handles Radix/Custom wrappers for password eyes
       div[style*="position: relative"],
       .PasswordInputContainer {
         width: 100%;
@@ -243,10 +225,9 @@ $radius-modal: 24px;
 
         input {
           width: 100%;
-          padding-right: 3rem; // Space for eye icon
+          padding-right: 3rem;
         }
 
-        // Eye Button
         button[type="button"],
         .PasswordToggleBtn {
           position: absolute;
@@ -271,7 +252,6 @@ $radius-modal: 24px;
         }
       }
 
-      // Fix for Radix Label row layout
       .FormLabelRow {
         display: flex;
         justify-content: space-between;
@@ -283,7 +263,6 @@ $radius-modal: 24px;
       }
     }
 
-    // --- GLOBAL ERROR BANNER ---
     .error-banner {
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.3);
@@ -300,8 +279,6 @@ $radius-modal: 24px;
         color: #ef4444;
       }
     }
-
-    // --- SUBMIT BUTTON ---
     .btn-submit-ht {
       margin-top: 1rem;
       height: 3.2rem;
