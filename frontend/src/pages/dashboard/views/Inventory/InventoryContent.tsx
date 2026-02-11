@@ -20,10 +20,12 @@ import {
   PackageMinus,
   X,
   BrainCircuit,
-  Upload
+  Upload,
+  Database
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { ReferenceImageManager } from "@/components/layouts/dashboard/inventory/modals/ReferenceMediaManager";
 import {
   getRacks,
   getProducts,
@@ -54,7 +56,7 @@ import { ProductModal } from "@/components/layouts/dashboard/inventory/modals/Pr
 import { MoveModal } from "@/components/layouts/dashboard/inventory/modals/MoveModal";
 import { Spinner } from "@/components/ui/Spinner";
 import { SkeletonGrid } from "@/components/layouts/dashboard/inventory/InventorySkeletons";
-import { CameraSnapshot } from "@/components/ui/CameraSnapshot"; // <--- NOWY KOMPONENT
+import { CameraSnapshot } from "@/components/ui/CameraSnapshot";
 
 import "./InventoryContent.scss";
 import "./StatsTab.scss";
@@ -72,6 +74,7 @@ const InventoryContent = () => {
   const isAdmin = userRole === "Administrator";
 
   const [racks, setRacks] = useState<Rack[]>([]);
+  const [trainingProduct, setTrainingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [inventoryData, setInventoryData] = useState<FullInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1155,106 +1158,127 @@ const InventoryContent = () => {
             </div>
           </Tabs.Content>
           <Tabs.Content value="identify">
-            <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
 
-              <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ background: 'rgba(var(--accent-primary-rgb), 0.1)', padding: '1rem', borderRadius: '50%' }}>
-                  <BrainCircuit size={48} style={{ color: 'var(--accent-primary)' }} />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>AI Product Identification</h2>
-                  <p className="text-muted">Take a photo or upload an image to identify a product and view its specifications.</p>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button
-                      className="btn-primary-ht"
-                      style={{ padding: '0.8rem 2rem', fontSize: '1rem' }}
-                      onClick={() => setIsAiScannerOpen(true)}
-                  >
-                    <Camera size={20} /> Use Camera
-                  </button>
-                  <button
-                      className="btn-secondary"
-                      style={{ padding: '0.8rem 2rem', fontSize: '1rem', display: 'flex', gap: '8px', alignItems: 'center' }}
-                      onClick={() => aiFileInputRef.current?.click()}
-                  >
-                    <Upload size={20} /> Upload Image
-                  </button>
+              {/* LEWA KOLUMNA: IDENTYFIKACJA */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', height: '100%' }}>
+                  <div style={{ background: 'rgba(var(--accent-primary-rgb), 0.1)', padding: '1rem', borderRadius: '50%' }}>
+                    <BrainCircuit size={48} style={{ color: 'var(--accent-primary)' }} />
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Identify Product</h2>
+                    <p className="text-muted">Take a photo to identify an existing product.</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button
+                        className="btn-primary-ht"
+                        style={{ padding: '0.8rem 1.5rem' }}
+                        onClick={() => setIsAiScannerOpen(true)}
+                    >
+                      <Camera size={20} /> Camera
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        style={{ padding: '0.8rem 1.5rem', display: 'flex', gap: '8px', alignItems: 'center' }}
+                        onClick={() => aiFileInputRef.current?.click()}
+                    >
+                      <Upload size={20} /> Upload
+                    </button>
+                  </div>
+
+                  {/* WYNIK IDENTYFIKACJI */}
+                  {identifiedProduct && (
+                      <div style={{ marginTop: '2rem', width: '100%', textAlign: 'left', borderTop: '1px solid var(--border-input)', paddingTop: '1rem', animation: 'fadeIn 0.3s ease' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>RESULT</span>
+                          <span className={`status-badge ${identifiedProduct.confidenceLevel === 'Excellent' ? 'new' : 'conflict'}`}>
+                                        {identifiedProduct.confidenceLevel} ({(identifiedProduct.confidenceScore * 100).toFixed(0)}%)
+                                    </span>
+                        </div>
+                        <h3 style={{ fontSize: '1.4rem', color: 'var(--accent-primary)', margin: '0 0 5px 0' }}>{identifiedProduct.name}</h3>
+                        <div style={{ fontFamily: 'monospace', fontSize: '1rem', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', display: 'inline-block' }}>
+                          {identifiedProduct.scanCode}
+                        </div>
+                        <div style={{ marginTop: '1rem', fontSize: '0.9rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>Weight: <strong>{identifiedProduct.weightKg} kg</strong></div>
+                          <div>Hazardous: <strong>{identifiedProduct.isHazardous ? 'Yes' : 'No'}</strong></div>
+                        </div>
+                      </div>
+                  )}
                 </div>
               </div>
 
-              {identifiedProduct && (
-                  <div className="glass-card" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-                    <div className="card-header" style={{ borderBottom: '1px solid var(--border-input)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <h2 style={{ fontSize: '1.8rem', color: 'white', margin: 0 }}>{identifiedProduct.name}</h2>
-                          <span style={{ fontFamily: 'monospace', color: 'var(--accent-primary)', fontSize: '1.1rem' }}>
-                                        #{identifiedProduct.scanCode}
-                                    </span>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className={`status-badge ${identifiedProduct.confidenceLevel === 'Excellent' ? 'new' : 'conflict'}`} style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
-                            Match: {(identifiedProduct.confidenceScore * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                      <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
-                        {identifiedProduct.photoUrl ? (
-                            <img src={identifiedProduct.photoUrl} alt="Product" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
-                        ) : (
-                            <div style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-                              <Box size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-                              <p>No preview image</p>
-                            </div>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignContent: 'start' }}>
-                        <div>
-                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Dimensions (WxHxD)</label>
-                          <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                            {identifiedProduct.widthMm} x {identifiedProduct.heightMm} x {identifiedProduct.depthMm} mm
-                          </div>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Weight</label>
-                          <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                            {identifiedProduct.weightKg} kg
-                          </div>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Storage Temp.</label>
-                          <div style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <RefreshCw size={16} />
-                            {identifiedProduct.requiredMinTemp}°C - {identifiedProduct.requiredMaxTemp}°C
-                          </div>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Safety</label>
-                          {identifiedProduct.isHazardous ? (
-                              <div style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                                <AlertTriangle size={18} /> HAZARDOUS (ADR)
-                              </div>
-                          ) : (
-                              <div style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <CheckCircle2 size={18} /> Standard
-                              </div>
-                          )}
-                        </div>
-                        <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Comments</label>
-                          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px', fontSize: '0.9rem' }}>
-                            {identifiedProduct.comment || "No additional comments."}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+              {/* PRAWA KOLUMNA: TRENING / ZARZĄDZANIE OBRAZAMI */}
+              <div className="glass-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-input)', paddingBottom: '1rem' }}>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                    <Database size={24} />
                   </div>
-              )}
+                  <div>
+                    <h2 style={{ fontSize: '1.3rem', margin: 0 }}>AI Training Studio</h2>
+                    <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0 }}>Attach reference images to barcodes.</p>
+                  </div>
+                </div>
+
+                <div className="ht-form">
+                  <div className="input-group">
+                    <label>Select Product to Train</label>
+                    <select
+                        className="ht-input"
+                        value={trainingProduct?.id || ""}
+                        onChange={(e) => {
+                          const prod = products.find(p => p.id === Number(e.target.value));
+                          setTrainingProduct(prod || null);
+                        }}
+                    >
+                      <option value="">-- Choose a product --</option>
+                      {products.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.scanCode})
+                          </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {trainingProduct ? (
+                      <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                        <div style={{
+                          background: 'rgba(var(--accent-primary-rgb), 0.05)',
+                          border: '1px solid rgba(var(--accent-primary-rgb), 0.2)',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem',
+                          marginTop: '1rem'
+                        }}>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', fontWeight: 600, marginBottom: '4px' }}>
+                            Active Context:
+                          </div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{trainingProduct.name}</div>
+                          <div style={{ fontFamily: 'monospace', opacity: 0.8 }}>Barcode: {trainingProduct.scanCode}</div>
+                        </div>
+
+                        {/* Tutaj wstawiamy komponent zarządzania zdjęciami */}
+                        <ReferenceImageManager
+                            productId={trainingProduct.id}
+                            scanCode={trainingProduct.scanCode}
+                        />
+                      </div>
+                  ) : (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '3rem 1rem',
+                        color: 'var(--text-muted)',
+                        border: '2px dashed var(--border-input)',
+                        borderRadius: '12px',
+                        marginTop: '1rem'
+                      }}>
+                        <Search size={32} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+                        <p>Select a product from the list above to manage its AI reference images.</p>
+                      </div>
+                  )}
+                </div>
+              </div>
             </div>
           </Tabs.Content>
           <Tabs.Content value="operations">
