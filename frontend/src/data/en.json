@@ -484,58 +484,22 @@
         },
         "status": {
           "active": "Active",
-          "offline": "Offline",
-          "never": "Never",
-          "twoFactorOn": "2FA ON"
+          "offline": "Offline"
         },
         "actions": {
           "edit": "Edit User",
           "resetPass": "Reset Password",
           "reset2fa": "Reset 2FA",
           "activate": "Activate",
-          "deactivate": "Deactivate",
-          "delete": "Delete User"
+          "deactivate": "Deactivate"
         },
         "messages": {
           "confirmStatusChange": "Are you sure you want to change this user's status?",
           "confirmReset2fa": "Are you sure you want to reset 2FA for this user?",
-          "confirmActivate": "Are you sure you want to activate this user?",
-          "confirmDeactivate": "Are you sure you want to deactivate this user?",
-          "confirmDelete": "Are you sure you want to permanently delete this user? This action cannot be undone.",
           "reset2faSuccess": "2FA has been reset.",
           "resetPassSuccess": "Password reset successfully.",
           "updateSuccess": "User updated.",
-          "updateError": "Failed to update user.",
-          "resetPassError": "Failed to reset password.",
           "error": "An error occurred."
-        },
-        "modals": {
-          "editUser": {
-            "title": "Edit User",
-            "username": "Username (Read Only)",
-            "email": "Email",
-            "role": "Role",
-            "save": "Save Changes"
-          },
-          "resetPassword": {
-            "title": "Reset Password",
-            "description": "Override password for",
-            "submit": "Override Password",
-            "newPassword": "New Password",
-            "confirmPassword": "Confirm New Password",
-            "placeholders": {
-              "newPassword": "Min 8 chars, number, symbol",
-              "confirm": "Repeat password"
-            },
-            "errors": {
-              "required": "Password is required",
-              "confirmRequired": "Confirmation is required",
-              "tooShort": "Min 8 chars",
-              "noNumber": "Need number",
-              "noSpecial": "Need symbol",
-              "mismatch": "Passwords do not match"
-            }
-          }
         }
       },
       "operations": {
