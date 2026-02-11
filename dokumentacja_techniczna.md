@@ -2,7 +2,7 @@
 
 ## 1. Wprowadzenie
 
-Faraday WMS (Warehouse Management System) to kompleksowy system zarządzania magazynem, zaprojektowany do obsługi pełnego cyklu życia towarów w środowisku magazynowym. System umożliwia przyjmowanie, wydawanie i przemieszczanie towarów, monitorowanie warunków środowiskowych (temperatura, waga), zarządzanie alertami, generowanie raportów analitycznych oraz automatyczne tworzenie kopii zapasowych bazy danych. Dodatkowo system oferuje rozpoznawanie produktów na podstawie obrazu (AI) oraz przetwarzanie poleceń głosowych z wykorzystaniem modelu Gemini.
+Faraday WMS (Warehouse Management System) to kompleksowy system zarządzania magazynem, zaprojektowany do obsługi pełnego cyklu życia towarów w środowisku magazynowym. System umożliwia przyjmowanie, wydawanie i przemieszczanie towarów, monitorowanie warunków środowiskowych (temperatura, waga), zarządzanie alertami, generowanie raportów analitycznych oraz automatyczne tworzenie kopii zapasowych bazy danych. Dodatkowo system oferuje rozpoznawanie produktów na podstawie obrazu oraz przetwarzanie poleceń głosowych z wykorzystaniem modelu Gemini.
 
 Aplikacja została zbudowana w architekturze klient-serwer, gdzie backend oparty jest na platformie ASP.NET Core, a frontend wykorzystuje Vite z TypeScript. Całość jest orkiestrowana za pomocą Docker Compose.
 
@@ -26,7 +26,7 @@ graph TB
 
     subgraph "Docker Compose — faraday-network"
         subgraph "Frontend — port 5173"
-            FE["Vite Dev Server<br/>Node.js Alpine<br/>React + TypeScript"]
+            FE["Vite Server<br/>Node.js Alpine<br/>React + TypeScript"]
         end
 
         subgraph "Backend — port 5000 wew. 8080"
@@ -75,7 +75,7 @@ graph TB
 
 Backend wykorzystuje wieloetapowy obraz Docker (multi-stage build) — w pierwszym etapie kompiluje aplikację przy użyciu SDK .NET 10.0, a w drugim uruchamia ją na lekkim obrazie runtime. Dodatkowo instaluje klienta PostgreSQL (`postgresql-client`), który jest wymagany do operacji tworzenia i przywracania kopii zapasowych za pomocą narzędzi `pg_dump` i `pg_restore`.
 
-Frontend uruchamiany jest w trybie deweloperskim (`npm run dev --host`) na obrazie Node.js Alpine.
+Frontend uruchamiany jest  na obrazie Node.js Alpine.
 
 Połączenie z bazą danych jest szyfrowane za pomocą SSL — certyfikat (`server.crt`) i klucz prywatny (`server.key`) są montowane jako wolumeny do kontenera PostgreSQL. Klucz prywatny jest kopiowany wewnątrz kontenera w celu ustawienia odpowiednich uprawnień (chmod 600).
 
@@ -472,12 +472,37 @@ Wszystkie endpointy wymagają autoryzacji tokenem JWT (nagłówek `Authorization
 | GET | `/history` | Historia kopii |
 | POST | `/restore` | Przywracanie kopii |
 
-### 6.7. Pozostałe endpointy
+### 6.7. Rozpoznawanie obrazem (`/api/image-recognition`)
 
-- **Rozpoznawanie obrazem** (`/api/image-recognition`) — przesyłanie obrazów referencyjnych, rozpoznawanie produktów, zarządzanie obrazami.
-- **Polecenia głosowe** (`/api/voice`) — przetwarzanie poleceń tekstowych.
-- **Logi** (`/api/logs`) — pobieranie i czyszczenie logów (tylko Administrator).
-- **Symulacja** (`/api/simulation`) — manualne wywoływanie anomalii temperatury i wagi (tylko Administrator, cel demonstracyjny).
+| Metoda | Endpoint | Opis | Dostęp |
+|---|---|---|---|
+| POST | `/upload-reference` | Przesyłanie obrazów referencyjnych produktu (po scan code) | Zalogowany |
+| POST | `/recognize` | Rozpoznawanie produktu na podstawie przesłanego obrazu | Zalogowany |
+| GET | `/references/product/{productId}` | Obrazy referencyjne po ID produktu | Zalogowany |
+| GET | `/references/scancode/{scanCode}` | Obrazy referencyjne po kodzie skanowania | Zalogowany |
+| GET | `/references/count/{productId}` | Liczba obrazów referencyjnych produktu | Zalogowany |
+| DELETE | `/reference/{imageId}` | Usunięcie obrazu referencyjnego | Administrator |
+| GET | `/image/{imageGuid}` | Pobranie pliku obrazu po GUID | Publiczny |
+
+### 6.8. Polecenia głosowe (`/api/voice`)
+
+| Metoda | Endpoint | Opis |
+|---|---|---|
+| POST | `/command` | Przetwarzanie polecenia tekstowego/głosowego przez Gemini API |
+
+### 6.9. Logi (`/api/logs`) — tylko Administrator
+
+| Metoda | Endpoint | Opis |
+|---|---|---|
+| GET | `/recent` | Pobranie ostatnich logów z bufora pamięciowego (maks. 1000) |
+| DELETE | `/clear` | Wyczyszczenie bufora logów |
+
+### 6.10. Symulacja (`/api/simulation`) — tylko Administrator
+
+| Metoda | Endpoint | Opis |
+|---|---|---|
+| POST | `/trigger-temp-failure/{rackId}` | Symulacja awarii temperatury na wybranym regale (cel demonstracyjny) |
+| POST | `/trigger-theft/{rackId}` | Symulacja rozbieżności wagowej/kradzieży na wybranym regale (cel demonstracyjny) |
 
 ---
 
@@ -551,25 +576,18 @@ Wrażliwe dane konfiguracyjne są przechowywane w pliku `.env` i nie są commito
 
 ## 10. Frontend
 
-Aplikacja frontendowa jest zbudowana w oparciu o React z TypeScript, wykorzystując bundler Vite. Komunikuje się z backendem poprzez REST API (zmienna `VITE_API_URL`).
+Aplikacja kliencka to SPA (Single Page Application). Główne sekcje:
 
-### Struktura modułowa
-
-| Katalog | Zawartość |
+| Widok | Opis |
 |---|---|
-| `pages/auth` | Strony logowania, resetowania i przypominania hasła |
-| `pages/dashboard` | Główny dashboard z widokami: przegląd, inwentaryzacja, personel, logi, kopie zapasowe, raporty, preferencje, historia operacji |
-| `pages/home` | Strona główna |
-| `pages/docs` | Strona dokumentacji |
-| `components/layouts/dashboard` | Komponenty layoutu: sidebar, nawigacja, powiadomienia, formularz zmiany hasła, wizualizacja regałów, karty produktów, modale |
-| `components/ui` | Atomowe komponenty UI (pola formularzy, spinner) |
-| `components/ProtectedRoute` | Komponent chroniący trasy wymagające autoryzacji |
-| `context` | Konteksty React (prawdopodobnie autoryzacja) |
-| `api` | Klient API |
-| `types` | Definicje typów TypeScript |
-| `styles` | Globalne arkusze stylów |
-
-Frontend zawiera interaktywną wizualizację regałów (`RackVisualGrid`, `RackCard`), modale do operacji na produktach i regałach (`ProductModal`, `RackModal`, `MoveModal`), system powiadomień w czasie rzeczywistym (`NotificationsPopover`) oraz pływający przycisk sterowania głosowego (`VoiceControlFAB`).
+| Dashboard | Statystyki zajętości, wagi, operacji dziennych |
+| Inwentarz | Interaktywna siatka regałów, katalog produktów, operacje |
+| Personel | Zarządzanie użytkownikami, rolami, 2FA |
+| Historia operacji | Chronologiczny log operacji magazynowych |
+| Raporty | 4 zakładki: Inwentarz, Utylizacja, Czujniki, Alarmy |
+| Kopie zapasowe | Tworzenie, pobieranie, przywracanie backupów |
+| Terminal logów | Konsola logów systemowych w czasie rzeczywistym (SignalR) |
+| Preferencje | Motyw, język (PL/EN), zmiana hasła, konfiguracja 2FA |
 
 ---
 
