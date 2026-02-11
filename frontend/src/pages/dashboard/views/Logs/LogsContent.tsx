@@ -73,7 +73,6 @@ const LogsContent = () => {
         return () => { connectionRef.current?.stop(); };
     }, [initSignalR]);
 
-    // Resetuj stronę przy zmianie filtrów lub limitu
     useEffect(() => { setCurrentPage(1); }, [filterLevel, searchText, itemsPerPage]);
 
     const getLevelClass = (level: string) => {

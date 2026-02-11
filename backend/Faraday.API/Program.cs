@@ -125,13 +125,6 @@ builder.Services.AddCors(options =>
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
-            //For testing Logging Subscription use this code instead:
-            /*
-            policy.SetIsOriginAllowed(origin => true)
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
-            */
         });
 });
 
@@ -174,8 +167,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-// Registration of WMS services.
-// --- SERVICE REGISTRATION ---
 builder.Services.Configure<EmailSettings>(builder.Configuration);
 
 // Register Services (Scoped)

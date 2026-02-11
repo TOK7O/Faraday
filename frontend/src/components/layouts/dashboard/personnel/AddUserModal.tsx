@@ -172,7 +172,6 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
                             </select>
                         </div>
 
-                        {/* Global Error Banner */}
                         {error && (
                             <div className="error-banner" style={{
                                 background: 'rgba(239, 68, 68, 0.1)',

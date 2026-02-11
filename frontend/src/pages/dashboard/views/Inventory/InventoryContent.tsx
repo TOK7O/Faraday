@@ -47,11 +47,9 @@ const InventoryContent = () => {
     const [editingRack, setEditingRack] = useState<Rack | null>(null);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-    // stany dla obslugi csv
     const [importResult, setImportResult] = useState<{ successCount: number, errorCount: number, errors: string[] } | null>(null);
     const [isImportResultModalOpen, setIsImportResultModalOpen] = useState(false);
 
-    // Nowe stany dla interaktywnego importu
     const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
     const [importType, setImportType] = useState<'racks' | 'products' | null>(null);
     const [isImportPreviewModalOpen, setIsImportPreviewModalOpen] = useState(false);
@@ -77,7 +75,6 @@ const InventoryContent = () => {
         if (!rawMsg) return invT.errors.server;
         const msg = formatMessageNumbers(rawMsg);
 
-        // No racks found meeting requirements for 'Mleko' (Dim: 20x20x20 mm, Temp: -10 to -5°C). Check rack definitions.
         const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
         if (noRacksMatch) {
             return (
@@ -171,7 +168,6 @@ const InventoryContent = () => {
 
     const handleSlotClick = (barcode: string) => {
         setSearchQuery(barcode);
-        // Switch to stock tab
         const stockTabTrigger = document.querySelector('[data-value="stock"]') as HTMLElement;
         if (stockTabTrigger) stockTabTrigger.click();
     };
@@ -394,11 +390,9 @@ const InventoryContent = () => {
                 let payload = { ...item.data };
                 if (item.action === 'update') {
                     if (importType === 'racks') {
-                        // RackUpdateDto nie ma Code, Rows, Columns
                         const { code, rows, columns, ...updateData } = payload;
                         payload = updateData;
                     } else {
-                        // ProductUpdateDto nie ma ScanCode
                         const { scanCode, ...updateData } = payload;
                         payload = updateData;
                     }
@@ -1028,14 +1022,11 @@ const InventoryContent = () => {
 
             <Dialog.Root open={isScannerOpen} onOpenChange={setIsScannerOpen}>
                 <Dialog.Portal>
-                    {/* Upewnij się, że klasa modal-overlay ma w CSS:
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); */}
                     <Dialog.Overlay className="modal-overlay" />
 
                     <Dialog.Content className="modal-content" aria-describedby="scanner-description">
                         <div className="modal-header">
                             <Dialog.Title>{invT.scanner.title}</Dialog.Title>
-                            {/* To naprawi błąd "Missing Description" */}
                             <Dialog.Description id="scanner-description" className="visually-hidden">
                                 {invT.scanner.description}
                             </Dialog.Description>

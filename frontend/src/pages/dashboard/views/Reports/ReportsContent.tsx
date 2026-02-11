@@ -235,7 +235,6 @@ const ReportsContent = () => {
                 </div>
             </div>
 
-            {/* Expiring Items Table */}
             <div className="table-container" style={{ marginBottom: '2rem' }}>
                 <h3>{reportsT.inventory.expiringTitle}</h3>
                 <table className="data-table">

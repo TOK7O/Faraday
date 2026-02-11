@@ -30,6 +30,12 @@
     gap: 1rem;
     .nav-actions {
       color: #fff;
+      display: flex;
+      flex-direction: row;
+      gap: 2rem;
+      button{
+        scale: 1.2;
+      }
     }
     .brand-name {
       font-weight: 800;

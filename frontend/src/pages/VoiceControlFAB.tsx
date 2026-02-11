@@ -98,7 +98,6 @@ export const VoiceControlFAB = () => {
     };
 
     const handleStopAndSend = async () => {
-        console.log("[Faraday Voice] Sending command...");
         SpeechRecognition.stopListening();
         setIsWaitingForProcessing(true);
         setTimeout(async () => {

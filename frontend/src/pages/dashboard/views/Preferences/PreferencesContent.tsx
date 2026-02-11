@@ -100,7 +100,6 @@ const PreferencesContent = () => {
 
             <div className="preferences-grid">
 
-                {/* --- Theme Section --- */}
                 <div className="pref-section">
                     <div className="section-header">
                         <Palette size={20} className="icon-accent" />
@@ -138,7 +137,6 @@ const PreferencesContent = () => {
                     </div>
                 </div>
 
-                {/* --- Language Section --- */}
                 <div className="pref-section">
                     <div className="section-header">
                         <Languages size={20} className="icon-accent" />
@@ -174,19 +172,16 @@ const PreferencesContent = () => {
                     </div>
                 </div>
 
-                {/* --- Security Section --- */}
                 <div className="pref-section full-width">
                     <div className="section-header">
                         <Shield size={20} className="icon-accent" />
                         <h3>{prefT.security.title}</h3>
                     </div>
 
-                    {/* Change Password Sub-Component */}
                     <div style={{ marginBottom: '2rem' }}>
                         <ChangePasswordForm />
                     </div>
 
-                    {/* 2FA Implementation */}
                     <div className="security-panel">
                         <div className="panel-header">
                             <h4>

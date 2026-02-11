@@ -297,7 +297,6 @@ const PersonnelContent = () => {
 
             <AddUserModal open={isAddUserOpen} onOpenChange={setIsAddUserOpen} onSuccess={fetchStaff} />
 
-            {/* EDIT MODAL */}
             <Dialog.Root open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="dialog-overlay-ht" />
@@ -328,7 +327,6 @@ const PersonnelContent = () => {
                 </Dialog.Portal>
             </Dialog.Root>
 
-            {/* RESET PASSWORD MODAL */}
             <Dialog.Root open={isResetPassOpen} onOpenChange={setIsResetPassOpen}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="dialog-overlay-ht" />
