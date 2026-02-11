@@ -113,13 +113,15 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddControllers();
 
 // Configure CORS
+var clientUrl = Environment.GetEnvironmentVariable("CLIENT_APP_BASE_URL") ?? "http://localhost:5173";
+Console.WriteLine($"[CORS] Allowing origin: {clientUrl}");
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         policy =>
         {
             
-            policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+            policy.WithOrigins(clientUrl, "http://localhost:5173", "http://localhost:3000")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -241,17 +243,16 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// HTTP Request Pipeline Configuration
-if (app.Environment.IsDevelopment())
+// Swagger on VPS also enabled
+// if (app.Environment.IsDevelopment())
+// {
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Faraday WMS API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
-
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Faraday WMS API v1");
+    c.RoutePrefix = "swagger";
+});
+// }
 // Enable CORS
 app.UseCors("AllowAll");
 
