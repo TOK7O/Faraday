@@ -29,6 +29,7 @@ import {
 
 import { AddUserModal } from "@/components/layouts/dashboard/personnel/AddUserModal";
 import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
+import { useTranslation } from "@/context/LanguageContext";
 
 import "./PersonnelContent.scss";
 import "@/styles/_components-ui.scss";
@@ -61,26 +62,33 @@ const UserRole = {
 } as const;
 type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
-const fieldsData = {
-  password: {
-    label: "New Password",
-    placeholder: "Min 8 chars, number, symbol",
-    validation: {
-      required: "Password is required",
-      tooShort: "Min 8 chars",
-      noNumber: "Need number",
-      noSpecialChar: "Need symbol",
+const { t } = useTranslation();
+const tPers = t.dashboardPage.content.personnel;
+const tModals = t.dashboardPage.content.personnel.modals;
+
+const fieldsData = useMemo(
+  () => ({
+    password: {
+      label: tModals.resetPassword.newPassword,
+      placeholder: tModals.resetPassword.placeholders.newPassword,
+      validation: {
+        required: tModals.resetPassword.errors.required,
+        tooShort: tModals.resetPassword.errors.tooShort,
+        noNumber: tModals.resetPassword.errors.noNumber,
+        noSpecialChar: tModals.resetPassword.errors.noSpecial,
+      },
     },
-  },
-  confirmPassword: {
-    label: "Confirm New Password",
-    placeholder: "Repeat password",
-    validation: {
-      required: "Confirmation is required",
-      mismatch: "Passwords do not match",
+    confirmPassword: {
+      label: tModals.resetPassword.confirmPassword,
+      placeholder: tModals.resetPassword.placeholders.confirm,
+      validation: {
+        required: tModals.resetPassword.errors.confirmRequired,
+        mismatch: tModals.resetPassword.errors.mismatch,
+      },
     },
-  },
-};
+  }),
+  [tModals],
+);
 
 const PersonnelContent = () => {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -130,41 +138,38 @@ const PersonnelContent = () => {
     userId: number,
     isCurrentlyActive: boolean,
   ) => {
-    const action = isCurrentlyActive ? "deactivate" : "activate";
-    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    const actionMsg = isCurrentlyActive
+      ? tPers.messages.confirmDeactivate
+      : tPers.messages.confirmActivate;
+    if (!confirm(actionMsg)) return;
     try {
       await updateUser(userId, { isActive: !isCurrentlyActive });
       await fetchStaff();
     } catch (error) {
-      alert("Failed to update status.");
+      alert(tPers.messages.updateError);
     }
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (
-      !confirm(
-        "Czy na pewno chcesz trwale usunąć tego użytkownika? Tej operacji nie można cofnąć.",
-      )
-    )
-      return;
+    if (!confirm(tPers.messages.confirmDelete)) return;
     try {
       await deleteUser(userId);
       await fetchStaff();
     } catch (error: any) {
       alert(
-        error?.response?.data?.message || "Nie udało się usunąć użytkownika.",
+        error?.response?.data?.message || tPers.messages.error,
       );
     }
   };
 
   const handleReset2FA = async (userId: number) => {
-    if (!confirm("Are you sure you want to reset 2FA for this user?")) return;
+    if (!confirm(tPers.messages.confirmReset2fa)) return;
     try {
       await resetUser2FA(userId);
-      alert("2FA has been reset.");
+      alert(tPers.messages.reset2faSuccess);
       await fetchStaff();
     } catch (error) {
-      alert("Failed to reset 2FA.");
+      alert(tPers.messages.error);
     }
   };
 
@@ -192,7 +197,7 @@ const PersonnelContent = () => {
       setIsEditUserOpen(false);
       await fetchStaff();
     } catch (error) {
-      alert("Failed to update user.");
+      alert(tPers.messages.updateError);
     }
   };
 
@@ -211,10 +216,10 @@ const PersonnelContent = () => {
 
     try {
       await resetUserPassword(selectedUser.realId, passwordToSet);
-      alert("Password reset successfully.");
+      alert(tPers.messages.resetPassSuccess);
       setIsResetPassOpen(false);
     } catch (error) {
-      alert("Failed to reset password.");
+      alert(tPers.messages.resetPassError);
     }
   };
 
@@ -248,11 +253,11 @@ const PersonnelContent = () => {
         <div className="header-brand">
           <div className="system-tag">
             <Users size={14} className="icon-glow" />
-            <span>System Administration</span>
+            <span>{tPers.tag}</span>
           </div>
-          <h1>Personnel Management</h1>
+          <h1>{tPers.title}</h1>
           <p className="lead-text">
-            Manage system access, user roles, and account statuses.
+            {tPers.description}
           </p>
         </div>
       </header>
@@ -289,7 +294,7 @@ const PersonnelContent = () => {
           />
           <input
             type="text"
-            placeholder="Search personnel..."
+            placeholder={tPers.search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="ht-input"
@@ -309,7 +314,7 @@ const PersonnelContent = () => {
             onClick={() => setIsAddUserOpen(true)}
           >
             <Plus size={20} />
-            <span>Add User</span>
+            <span>{tPers.addUser}</span>
           </button>
         )}
       </div>
@@ -330,13 +335,13 @@ const PersonnelContent = () => {
           <table className="ht-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Security</th>
-                <th>Last Login</th>
-                {isAdmin && <th className="text-right">Action</th>}
+                <th>{tPers.table.id}</th>
+                <th>{tPers.table.user}</th>
+                <th>{tPers.table.role}</th>
+                <th>{tPers.table.status}</th>
+                <th>{tPers.table.security}</th>
+                <th>{tPers.table.lastLogin}</th>
+                {isAdmin && <th className="text-right">{tPers.table.action}</th>}
               </tr>
             </thead>
             <tbody>
@@ -384,7 +389,7 @@ const PersonnelContent = () => {
                       ) : (
                         <User size={12} />
                       )}
-                      {person.role.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                      {person.role === "Administrator" ? tPers.roles.admin : tPers.roles.worker}
                     </span>
                   </td>
                   <td>
@@ -399,14 +404,14 @@ const PersonnelContent = () => {
                           fontWeight: 700,
                         }}
                       >
-                        {person.status}
+                        {person.status === "active" ? tPers.status.active : tPers.status.offline}
                       </span>
                     </div>
                   </td>
                   <td>
                     {person.is2faEnabled && (
                       <span style={{ color: "#4ade80", fontSize: "0.75rem" }}>
-                        <Smartphone size={12} /> 2FA ON
+                        <Smartphone size={12} /> {tPers.status.twoFactorOn}
                       </span>
                     )}
                   </td>
@@ -415,7 +420,7 @@ const PersonnelContent = () => {
                   >
                     {person.lastLogin
                       ? new Date(person.lastLogin).toLocaleString()
-                      : "Never"}
+                      : tPers.status.never}
                   </td>
                   {isAdmin && (
                     <td className="text-right">
@@ -434,20 +439,20 @@ const PersonnelContent = () => {
                               className="dd-item"
                               onClick={() => openEditModal(person)}
                             >
-                              <Edit size={16} /> Edit User
+                              <Edit size={16} /> {tPers.actions.edit}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                               className="dd-item"
                               onClick={() => openResetPassModal(person)}
                             >
-                              <Key size={16} /> Reset Password
+                              <Key size={16} /> {tPers.actions.resetPass}
                             </DropdownMenu.Item>
                             {person.is2faEnabled && (
                               <DropdownMenu.Item
                                 className="dd-item danger"
                                 onClick={() => handleReset2FA(person.realId)}
                               >
-                                <Smartphone size={16} /> Reset 2FA
+                                <Smartphone size={16} /> {tPers.actions.reset2fa}
                               </DropdownMenu.Item>
                             )}
                             <div className="dd-divider" />
@@ -462,11 +467,11 @@ const PersonnelContent = () => {
                             >
                               {person.status === "active" ? (
                                 <>
-                                  <Ban size={16} /> Deactivate
+                                  <Ban size={16} /> {tPers.actions.deactivate}
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle size={16} /> Activate
+                                  <CheckCircle size={16} /> {tPers.actions.activate}
                                 </>
                               )}
                             </DropdownMenu.Item>
@@ -474,7 +479,7 @@ const PersonnelContent = () => {
                               className="dd-item danger"
                               onClick={() => handleDeleteUser(person.realId)}
                             >
-                              <X size={16} /> Usuń użytkownika
+                              <X size={16} /> {tPers.actions.delete}
                             </DropdownMenu.Item>
                           </DropdownMenu.Content>
                         </DropdownMenu.Portal>
@@ -500,7 +505,7 @@ const PersonnelContent = () => {
           <Dialog.Content className="dialog-content-ht">
             <div className="modal-header">
               <h2>
-                <Edit size={24} className="icon-accent" /> Edit User
+                <Edit size={24} className="icon-accent" /> {tModals.editUser.title}
               </h2>
               <button
                 className="btn-close"
@@ -511,7 +516,7 @@ const PersonnelContent = () => {
             </div>
             <form onSubmit={handleSaveEdit} className="ht-form">
               <div className="input-group">
-                <label>Username (Read Only)</label>
+                <label>{tModals.editUser.username}</label>
                 <input
                   className="ht-input"
                   disabled
@@ -520,7 +525,7 @@ const PersonnelContent = () => {
                 />
               </div>
               <div className="input-group">
-                <label>Email</label>
+                <label>{tModals.editUser.email}</label>
                 <input
                   className="ht-input"
                   type="email"
@@ -532,7 +537,7 @@ const PersonnelContent = () => {
                 />
               </div>
               <div className="input-group">
-                <label>Role</label>
+                <label>{tModals.editUser.role}</label>
                 <select
                   className="ht-input"
                   value={editFormData.role}
@@ -544,13 +549,13 @@ const PersonnelContent = () => {
                   }
                 >
                   <option value={UserRole.WarehouseWorker}>
-                    Warehouse Worker
+                    {tPers.roles.worker}
                   </option>
-                  <option value={UserRole.Administrator}>Administrator</option>
+                  <option value={UserRole.Administrator}>{tPers.roles.admin}</option>
                 </select>
               </div>
               <button type="submit" className="btn-submit-ht">
-                Save Changes
+                {tModals.editUser.save}
               </button>
             </form>
           </Dialog.Content>
@@ -563,7 +568,7 @@ const PersonnelContent = () => {
           <Dialog.Content className="dialog-content-ht">
             <div className="modal-header">
               <h2>
-                <Key size={24} className="icon-accent" /> Reset Password
+                <Key size={24} className="icon-accent" /> {tModals.resetPassword.title}
               </h2>
               <button
                 className="btn-close"
@@ -574,7 +579,7 @@ const PersonnelContent = () => {
             </div>
             <Form.Root className="ht-form" onSubmit={handleResetPassword}>
               <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-                Override password for <strong>{selectedUser?.name}</strong>.
+                {tModals.resetPassword.description} <strong>{selectedUser?.name}</strong>.
               </p>
 
               <RegisterPasswordFieldPair
@@ -589,7 +594,7 @@ const PersonnelContent = () => {
                   className="btn-submit-ht"
                   disabled={!newAdminPassword}
                 >
-                  Override Password
+                  {tModals.resetPassword.submit}
                 </button>
               </Form.Submit>
             </Form.Root>
