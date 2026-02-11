@@ -112,6 +112,7 @@ export const clearLogs = async () => (await instance.delete("/api/Logs/clear")).
 export const getAllUsers = async () => (await instance.get("/api/Auth/users")).data;
 export const registerUser = async (dto: Record<string, any>) => (await instance.post("/api/Auth/register", dto)).data;
 export const updateUser = async (targetUserId: number, dto: Record<string, any>) => (await instance.put(`/api/Auth/users/${targetUserId}`, dto)).data;
+export const deleteUser = async (targetUserId: number) => (await instance.delete(`/api/Auth/users/${targetUserId}`)).data;
 
 // Reset hasła przez administratora
 export const resetUserPassword = async (targetUserId: number, newPassword: string) => (await instance.post(`/api/Auth/users/${targetUserId}/reset-password`, { newPassword })).data;

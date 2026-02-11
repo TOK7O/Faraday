@@ -12,7 +12,8 @@ import {
     getAllUsers,
     updateUser,
     resetUserPassword,
-    resetUser2FA
+    resetUser2FA,
+    deleteUser // dodane
 } from "@/api/axios";
 
 // UI Components
@@ -129,6 +130,16 @@ const PersonnelContent = () => {
             await fetchStaff();
         } catch (error) {
             alert("Failed to update status.");
+        }
+    };
+
+    const handleDeleteUser = async (userId: number) => {
+        if (!confirm("Czy na pewno chcesz trwale usunąć tego użytkownika? Tej operacji nie można cofnąć.")) return;
+        try {
+            await deleteUser(userId);
+            await fetchStaff();
+        } catch (error: any) {
+            alert(error?.response?.data?.message || "Nie udało się usunąć użytkownika.");
         }
     };
 
@@ -277,6 +288,9 @@ const PersonnelContent = () => {
                                                     <DropdownMenu.Item className="dd-item danger" onClick={() => handleToggleStatus(person.realId, person.status === 'active')}>
                                                         {person.status === 'active' ? <><Ban size={16} /> Deactivate</> : <><CheckCircle size={16} /> Activate</>}
                                                     </DropdownMenu.Item>
+                                                    <DropdownMenu.Item className="dd-item danger" onClick={() => handleDeleteUser(person.realId)}>
+                                                        <X size={16} /> Usuń użytkownika
+                                                    </DropdownMenu.Item>
                                                 </DropdownMenu.Content>
                                             </DropdownMenu.Portal>
                                         </DropdownMenu.Root>
@@ -352,3 +366,4 @@ const PersonnelContent = () => {
 };
 
 export default PersonnelContent;
+

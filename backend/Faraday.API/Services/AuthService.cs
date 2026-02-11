@@ -522,5 +522,40 @@ namespace Faraday.API.Services
             var user = await _context.Users.FindAsync(userId);
             return user?.IsTwoFactorEnabled ?? false;
         }
+
+        /// <summary>
+        /// Deletes a user from the database. Only available to administrators. Safeguards similar to deactivation.
+        /// </summary>
+        public async Task DeleteUserAsync(int targetUserId, int adminId)
+        {
+            if (targetUserId == adminId)
+                throw new InvalidOperationException("You cannot delete yourself.");
+
+            var admin = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == adminId);
+            if (admin == null || admin.Role != UserRole.Administrator)
+                throw new UnauthorizedAccessException("Only an administrator can delete users.");
+
+            var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == targetUserId);
+            if (user == null)
+                throw new KeyNotFoundException("User does not exist.");
+
+            // Cannot delete the last active administrator
+            if (user.Role == UserRole.Administrator && user.IsActive)
+            {
+                int activeAdmins = await _context.Users.CountAsync(u => u.Role == UserRole.Administrator && u.IsActive && u.Id != targetUserId);
+                if (activeAdmins == 0)
+                    throw new InvalidOperationException("Cannot delete the last active administrator.");
+            }
+
+            // Log the operation
+            _logger.LogWarning("Administrator {AdminName} (ID: {AdminId}) is deleting user {UserName} (ID: {UserId})", admin.Username, adminId, user.Username, targetUserId);
+
+            // Audit update (optional, if the model has UpdatedAt)
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }
+

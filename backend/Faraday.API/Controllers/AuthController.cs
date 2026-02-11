@@ -297,5 +297,17 @@ namespace Faraday.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        /// <summary>
+        /// Usuwa użytkownika z bazy. Dostępne tylko dla administratora.
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpDelete("users/{targetUserId}")]
+        public async Task<IActionResult> DeleteUser(int targetUserId)
+        {
+            var adminId = int.Parse(User.FindFirst("id")!.Value);
+            await authService.DeleteUserAsync(targetUserId, adminId);
+            return Ok(new { Message = $"User with ID: {targetUserId} has been deleted." });
+        }
     }
 }

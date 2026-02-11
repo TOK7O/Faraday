@@ -27,6 +27,7 @@ namespace Faraday.API.Services.Interfaces
         Task<UserListDto> UpdateUserAsync(int targetUserId, int adminId, UserUpdateDto dto);
         Task ResetUserPasswordAsync(int targetUserId, int adminId, string newPassword);
         Task ResetUser2FAAsync(int targetUserId, int adminId);
+        Task DeleteUserAsync(int targetUserId, int adminId);
 
         // Forgot/Reset Password
         Task ForgotPasswordAsync(string email);
