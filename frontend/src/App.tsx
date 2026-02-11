@@ -7,7 +7,6 @@ import { useTranslation } from "./context/LanguageContext";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { VoiceControlFAB } from "./pages/VoiceControlFAB";
 
 function App() {
   const { t } = useTranslation();
@@ -33,7 +32,6 @@ function App() {
           element={<div>{t.dashboardPage.content.pageNotFound}</div>}
         />
       </Routes>
-      <VoiceControlFAB />
     </div>
   );
 }
