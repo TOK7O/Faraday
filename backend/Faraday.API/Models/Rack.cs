@@ -13,10 +13,10 @@ namespace Faraday.API.Models
         [MaxLength(50)]
         public required string Code { get; set; }
 
-        [Range(1, 1000)]
+        [Range(1, 25)]
         public int Rows { get; set; }
 
-        [Range(1, 1000)]
+        [Range(1, 25)]
         public int Columns { get; set; }
 
         public decimal MinTemperature { get; set; }
