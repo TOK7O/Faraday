@@ -11,18 +11,12 @@ namespace Faraday.API.Services
     /// Service responsible for handling outgoing email communications.
     /// Uses MailKit implementation.
     /// </summary>
-    public class EmailService : IEmailService
+    public class EmailService(
+        IOptions<EmailSettings> settings,
+        ILogger<EmailService> logger)
+        : IEmailService
     {
-        private readonly EmailSettings _settings;
-        private readonly ILogger<EmailService> _logger;
-
-        public EmailService(
-            IOptions<EmailSettings> settings,
-            ILogger<EmailService> logger)
-        {
-            _settings = settings.Value;
-            _logger = logger;
-        }
+        private readonly EmailSettings _settings = settings.Value;
 
         /// <summary>
         /// Generates and sends a password reset email containing a time-sensitive link.
@@ -34,7 +28,7 @@ namespace Faraday.API.Services
         {
             try
             {
-                _logger.LogInformation("Sending password reset email to: {Email}", toEmail);
+                logger.LogInformation("Sending password reset email to: {Email}", toEmail);
                 
                 var email = new MimeMessage();
                 email.From.Add(new MailboxAddress(_settings.SMTP_NAME, _settings.SMTP_EMAIL));
@@ -69,13 +63,13 @@ namespace Faraday.API.Services
                 // True indicates we are sending the QUIT command to the server
                 await smtp.DisconnectAsync(true);
                 
-                _logger.LogInformation("Password reset email sent successfully to: {Email}", toEmail);
+                logger.LogInformation("Password reset email sent successfully to: {Email}", toEmail);
             }
             catch (Exception ex)
             {
                 // We log the error here to capture the context (email address), 
                 // but we re-throw to ensure the controller knows the operation failed.
-                _logger.LogError(ex, "Failed to send password reset email to: {Email}. Error: {ErrorMessage}", 
+                logger.LogError(ex, "Failed to send password reset email to: {Email}. Error: {ErrorMessage}", 
                     toEmail, ex.Message);
                 throw;
             }
