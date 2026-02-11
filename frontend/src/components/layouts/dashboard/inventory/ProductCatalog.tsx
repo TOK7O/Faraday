@@ -1,6 +1,7 @@
 import { Package, Weight, Thermometer, AlertTriangle, CheckCircle2, Trash2, Pencil } from "lucide-react";
 import type { Product } from "./InventoryContent.types";
 import { SkeletonGrid, ProductListSkeleton } from "./InventorySkeletons";
+import { useTranslation } from "@/context/LanguageContext";
 import "./ProductCatalog.scss";
 
 interface ProductCatalogProps {
@@ -12,6 +13,8 @@ interface ProductCatalogProps {
 }
 
 export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProduct, isLoading = false }: ProductCatalogProps) => {
+    const { t } = useTranslation();
+    const invT = t.dashboardPage.content.inventory;
 
     if (viewMode === 'grid') {
         return (
@@ -32,16 +35,16 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
                         </div>
 
                         <div className="product-actions">
-                            <button className="action-btn edit" onClick={() => onEditProduct(p)} title="Edytuj">
+                            <button className="action-btn edit" onClick={() => onEditProduct(p)} title={invT.catalog.tooltips.edit}>
                                 <Pencil size={18} />
                             </button>
-                            <button className="action-btn delete" onClick={() => onDeleteProduct(p.id)} title="Usuń">
+                            <button className="action-btn delete" onClick={() => onDeleteProduct(p.id)} title={invT.catalog.tooltips.delete}>
                                 <Trash2 size={18} />
                             </button>
                         </div>
 
                         {p.isHazardous && (
-                            <div className="hazard-indicator" title="Materiał niebezpieczny">
+                            <div className="hazard-indicator" title={invT.catalog.tooltips.hazardous}>
                                 <AlertTriangle size={12} />
                             </div>
                         )}
@@ -56,44 +59,44 @@ export const ProductCatalog = ({ products, viewMode, onDeleteProduct, onEditProd
         <div className="glass-table-wrapper">
             <table className="ht-table">
                 <thead>
-                <tr>
-                    <th>ID / SKU</th>
-                    <th>Nazwa</th>
-                    <th>Masa</th>
-                    <th>Wymiary</th>
-                    <th>Temp.</th>
-                    <th>Status</th>
-                    <th className="text-right">Akcje</th>
-                </tr>
+                    <tr>
+                        <th>{invT.catalog.table.id}</th>
+                        <th>{invT.catalog.table.name}</th>
+                        <th>{invT.catalog.table.weight}</th>
+                        <th>{invT.catalog.table.dims}</th>
+                        <th>{invT.catalog.table.temp}</th>
+                        <th>{invT.catalog.table.status}</th>
+                        <th className="text-right">{invT.catalog.table.actions}</th>
+                    </tr>
                 </thead>
                 <tbody>
-                {products.map((p) => (
-                    <tr key={p.id} className="fade-in-up">
-                        <td className="id-col">{p.scanCode || p.id}</td>
-                        <td className="name-col">{p.name}</td>
-                        <td><div className="cell-with-icon"><Weight size={12}/> {p.weightKg} kg</div></td>
-                        <td>{p.widthMm}x{p.heightMm}x{p.depthMm} mm</td>
-                        <td>{p.tempRequired}°C</td>
-                        <td>
-                            {p.isHazardous ? (
-                                <span className="badge-adr">
+                    {products.map((p) => (
+                        <tr key={p.id} className="fade-in-up">
+                            <td className="id-col">{p.scanCode || p.id}</td>
+                            <td className="name-col">{p.name}</td>
+                            <td><div className="cell-with-icon"><Weight size={12} /> {p.weightKg} kg</div></td>
+                            <td>{p.widthMm}x{p.heightMm}x{p.depthMm} mm</td>
+                            <td>{p.tempRequired}°C</td>
+                            <td>
+                                {p.isHazardous ? (
+                                    <span className="badge-adr">
                                         <AlertTriangle size={12} strokeWidth={3} /> ADR
                                     </span>
-                            ) : (
-                                <span className="badge-ok">
+                                ) : (
+                                    <span className="badge-ok">
                                         <CheckCircle2 size={12} /> OK
                                     </span>
-                            )}
-                        </td>
-                        <td className="text-right">
-                            <div className="table-actions">
-                                <button className="btn-icon edit" onClick={() => onEditProduct(p)}><Pencil size={16} /></button>
-                                <button className="btn-icon delete" onClick={() => onDeleteProduct(p.id)}><Trash2 size={16} /></button>
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-                {isLoading && <><ProductListSkeleton /><ProductListSkeleton /></>}
+                                )}
+                            </td>
+                            <td className="text-right">
+                                <div className="table-actions">
+                                    <button className="btn-icon edit" onClick={() => onEditProduct(p)} title={invT.catalog.tooltips.edit}><Pencil size={16} /></button>
+                                    <button className="btn-icon delete" onClick={() => onDeleteProduct(p.id)} title={invT.catalog.tooltips.delete}><Trash2 size={16} /></button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                    {isLoading && <><ProductListSkeleton /><ProductListSkeleton /></>}
                 </tbody>
             </table>
         </div>

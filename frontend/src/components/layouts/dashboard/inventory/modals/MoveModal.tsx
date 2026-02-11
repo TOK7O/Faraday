@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, ArrowRight, Move } from "lucide-react";
 import type { FullInventoryItem, Rack, Product } from "../InventoryContent.types";
+import { useTranslation } from "@/context/LanguageContext";
 
 interface MoveModalProps {
     open: boolean;
@@ -14,6 +15,9 @@ interface MoveModalProps {
 }
 
 export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory, onMove }: MoveModalProps) => {
+    const { t } = useTranslation();
+    const invT = t.dashboardPage.content.inventory.modals.move;
+
     const [targetRackCode, setTargetRackCode] = useState("");
     const [targetSlotX, setTargetSlotX] = useState(1);
     const [targetSlotY, setTargetSlotY] = useState(1);
@@ -52,9 +56,9 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                     <div className="modal-accent-line" />
                     <div className="modal-header">
                         <Move size={20} className="header-icon" />
-                        <Dialog.Title><h2>Przesuń towar</h2></Dialog.Title>
+                        <Dialog.Title><h2>{invT.title}</h2></Dialog.Title>
                         <Dialog.Description className="visually-hidden">
-                            Formularz relokacji produktu między regałami.
+                            {invT.description}
                         </Dialog.Description>
                         <Dialog.Close asChild>
                             <button className="btn-close"><X size={24} /></button>
@@ -64,9 +68,9 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                     {item && (
                         <form onSubmit={handleSubmit} className="ht-form">
                             <div className="source-info" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', borderLeft: '3px solid var(--accent-primary)' }}>
-                                <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Towar:</strong> {item.productName}</p>
-                                <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', opacity: 0.8 }}><strong>Kod:</strong> {item.barcode}</p>
-                                <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', opacity: 0.8 }}><strong>Z:</strong> {item.rackCode} (K-{item.slotX}, R-{item.slotY})</p>
+                                <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>{invT.product}:</strong> {item.productName}</p>
+                                <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', opacity: 0.8 }}><strong>{invT.code}:</strong> {item.barcode}</p>
+                                <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', opacity: 0.8 }}><strong>{invT.from}:</strong> {item.rackCode} (K-{item.slotX}, R-{item.slotY})</p>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
@@ -74,7 +78,7 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                             </div>
 
                             <div className="input-group">
-                                <label>Regał docelowy</label>
+                                <label>{invT.targetRack}</label>
                                 <select
                                     value={targetRackCode}
                                     onChange={(e) => {
@@ -86,7 +90,7 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                     required
                                     style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-input)', borderRadius: '6px', padding: '0.7rem', color: 'white' }}
                                 >
-                                    <option value="">Wybierz regał...</option>
+                                    <option value="">{invT.selectRack}</option>
                                     {racks.map(r => (
                                         <option key={r.id} value={r.code}>{r.code}</option>
                                     ))}
@@ -96,7 +100,7 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                             {selectedRack && (
                                 <div style={{ marginTop: '1rem' }}>
                                     <label style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                                        Wybierz slot:
+                                        {invT.selectSlot}
                                     </label>
                                     <div className="mini-grid" style={{ pointerEvents: 'auto' }}>
                                         <div style={{
@@ -146,7 +150,7 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                                                 fontSize: '0.6rem',
                                                                 color: isTarget ? 'black' : isIncompatible ? '#ff4d4d' : 'white'
                                                             }}
-                                                            title={isOccupied ? "Zajęte" : isCurrent ? "Obecna lokalizacja" : isIncompatible ? `Niekompatybilne: ${tooHeavy ? 'Zbyt ciężkie' : tempMismatch ? 'Błąd temperatury' : 'Błąd wymiarów'}` : `Wybierz: ${colNum}x${rowNum}`}
+                                                            title={isOccupied ? invT.tooltips.occupied : isCurrent ? invT.tooltips.current : isIncompatible ? `${invT.tooltips.incompatible}: ${tooHeavy ? invT.tooltips.tooHeavy : tempMismatch ? invT.tooltips.tempMismatch : invT.tooltips.dimMismatch}` : `${invT.tooltips.select} ${colNum}x${rowNum}`}
                                                         >
                                                             {isTarget && colNum}
                                                             {isIncompatible && !isTarget && !isOccupied && !isCurrent && <X size={10} />}
@@ -157,8 +161,8 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                         </div>
                                     </div>
                                     <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
-                                        <span>Wybrano: <strong>{targetSlotX}x{targetSlotY}</strong></span>
-                                        <span style={{ color: 'var(--accent-primary)' }}>Slot wolny</span>
+                                        <span>{invT.selected}: <strong>{targetSlotX}x{targetSlotY}</strong></span>
+                                        <span style={{ color: 'var(--accent-primary)' }}>{invT.freeSlot}</span>
                                     </div>
                                 </div>
                             )}
@@ -169,7 +173,7 @@ export const MoveModal = ({ open, onOpenChange, item, racks, products, inventory
                                 disabled={!targetRackCode}
                                 style={{ marginTop: '1.5rem' }}
                             >
-                                Potwierdź przesunięcie
+                                {invT.submit}
                             </button>
                         </form>
                     )}

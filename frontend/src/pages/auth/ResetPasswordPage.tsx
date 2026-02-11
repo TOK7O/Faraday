@@ -4,9 +4,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
 import { resetPassword } from "@/api/axios";
+import { useTranslation } from "@/context/LanguageContext";
 import "./login/LoginPage.scss";
 
 const ResetPasswordPage = () => {
+    const { t } = useTranslation();
+    const pageT = t.resetPasswordPage;
+
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token");
@@ -18,8 +22,8 @@ const ResetPasswordPage = () => {
         return (
             <div className="auth-container" style={{ justifyContent: "center", alignItems: "center" }}>
                 <div style={{ color: "white", textAlign: "center" }}>
-                    <h2>Invalid Link</h2>
-                    <p>This password reset link is invalid or missing a token.</p>
+                    <h2>{pageT.invalidLink.title}</h2>
+                    <p>{pageT.invalidLink.description}</p>
                 </div>
             </div>
         );
@@ -36,7 +40,7 @@ const ResetPasswordPage = () => {
         const confirmPassword = formData.get("confirmPassword") as string;
 
         if (newPassword !== confirmPassword) {
-            setError("Passwords do not match");
+            setError(pageT.formSection.passwordsMismatch);
             setIsLoading(false);
             return;
         }
@@ -45,7 +49,7 @@ const ResetPasswordPage = () => {
             await resetPassword(token, newPassword);
             navigate("/login");
         } catch (err) {
-            setError("Failed to reset password. The link may have expired.");
+            setError(pageT.formSection.resetError);
         } finally {
             setIsLoading(false);
         }
@@ -61,8 +65,8 @@ const ResetPasswordPage = () => {
 
             <section className="auth-form">
                 <div className="form-header">
-                    <h1>Set New Password</h1>
-                    <p className="subtitle">Please enter your new credentials below.</p>
+                    <h1>{pageT.formSection.title}</h1>
+                    <p className="subtitle">{pageT.formSection.subtitle}</p>
                 </div>
 
                 {error && (
@@ -86,28 +90,28 @@ const ResetPasswordPage = () => {
 
                     <RegisterPasswordFieldPair
                         passwordData={{
-                            label: "New Password",
-                            placeholder: "Enter new password",
+                            label: pageT.formSection.newPasswordLabel,
+                            placeholder: pageT.formSection.newPasswordPlaceholder,
                             validation: {
-                                required: "Required",
-                                tooShort: "Min 8 chars",
-                                noNumber: "Need number",
-                                noSpecialChar: "Need symbol"
+                                required: pageT.formSection.validation.required,
+                                tooShort: pageT.formSection.validation.tooShort,
+                                noNumber: pageT.formSection.validation.noNumber,
+                                noSpecialChar: pageT.formSection.validation.noSpecialChar
                             }
                         }}
                         confirmData={{
-                            label: "Confirm Password",
-                            placeholder: "Confirm password",
+                            label: pageT.formSection.confirmPasswordLabel,
+                            placeholder: pageT.formSection.confirmPasswordPlaceholder,
                             validation: {
-                                required: "Required",
-                                mismatch: "Passwords do not match"
+                                required: pageT.formSection.validation.required,
+                                mismatch: pageT.formSection.passwordsMismatch
                             }
                         }}
                     />
 
                     <Form.Submit asChild>
                         <button className="submit-btn" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="animate-spin" /> : "Reset Password"}
+                            {isLoading ? <Loader2 className="animate-spin" /> : pageT.formSection.resetButton}
                         </button>
                     </Form.Submit>
                 </Form.Root>

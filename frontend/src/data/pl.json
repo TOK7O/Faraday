@@ -202,45 +202,330 @@
         "edit": "Edytuj",
         "delete": "Usuń",
         "tempRange": "Zakres temp.",
-        "capacity": "Nośność"
+        "capacity": "Nośność",
+        "stockTab": "Stan magazynowy",
+        "operationsTab": "Operacje",
+        "emptyStock": "Magazyn jest obecnie pusty.",
+        "emptyProducts": "Brak produktów.",
+        "deleteProductConfirm": "Czy na pewno chcesz usunąć ten produkt z katalogu?",
+        "searchPlaceholder": "Szukaj w magazynie (nazwa, kod, regał)...",
+        "moveTo": "Przesuń",
+        "moveItem": "Przesuń towar",
+        "errors": {
+          "server": "Nieznany błąd serwera.",
+          "noRacksMatch": {
+            "title": "Brak pasujących regałów",
+            "dimensions": "Wymiary",
+            "temp": "Wymagana temp",
+            "hint": "Sprawdź czy w systemie istnieją regały o takich parametrach."
+          },
+          "noAvailableSlots": {
+            "title": "Brak wolnego miejsca",
+            "hint": "Wszystkie pasujące regały są pełne lub dodanie towaru przekroczyłoby ich nośność."
+          },
+          "productNotFound": {
+            "title": "Produkt nieznany",
+            "hint": "Dodaj produkt do katalogu asortymentu przed próbą przyjęcia."
+          },
+          "csv": {
+            "noData": "Nie znaleziono poprawnych danych w pliku CSV. Sprawdź format (średniki, nagłówki).",
+            "parseError": "Wystąpił błąd podczas analizowania pliku CSV.",
+            "readError": "Błąd odczytu pliku.",
+            "noProducts": "Nie znaleziono poprawnych danych produktów w pliku CSV."
+          },
+          "deleteRack": "Wystąpił błąd podczas usuwania regału.",
+          "deleteProduct": "Wystąpił błąd podczas usuwania produktu.",
+          "connection": "Błąd połączenia z serwerem.",
+          "notFound": "Nie znaleziono produktu.",
+          "move": "Błąd podczas przesuwania.",
+          "inbound": "Błąd podczas przyjmowania.",
+          "outbound": "Błąd podczas wydawania produktu."
+        },
+        "import": {
+          "racksTitle": "Import: Regały",
+          "productsTitle": "Import: Produkty",
+          "processing": "Przetwarzanie importu...",
+          "processed": "{current} z {total} operacji zakończonych",
+          "summary": {
+            "total": "Łącznie",
+            "new": "Nowe",
+            "conflicts": "Konflikty",
+            "toSave": "Do zapisu"
+          },
+          "table": {
+            "status": "Status",
+            "code": "Kod / Identyfikator",
+            "decision": "Decyzja",
+            "action": "Działanie",
+            "conflict": "Konflikt",
+            "new": "Nowy"
+          },
+          "actions": {
+            "skip": "Pomiń (Zachowaj obecny)",
+            "update": "Zaktualizuj (Nadpisz)",
+            "create": "Utwórz nowy",
+            "cancelRow": "Anuluj ten wiersz",
+            "showDiff": "Pokaż różnice"
+          },
+          "warnings": {
+            "critical": "Krytyczne ostrzeżenia",
+            "contentInfo": "Informacja o zawartości",
+            "contentWarning": "Ten regał posiada aktualnie towary. Sugerujemy ostrożność przy zmianie parametrów fizycznych."
+          },
+          "diff": {
+            "current": "Obecnie w systemie",
+            "csv": "Dane z pliku CSV",
+            "noData": "Brak danych (Nowy element)"
+          },
+          "result": {
+            "title": "Wynik importu CSV",
+            "successes": "Sukcesów",
+            "failures": "Błędów",
+            "details": "Szczegóły błędów:"
+          },
+          "submit": "Zatwierdź i importuj ({count})",
+          "cancel": "Anuluj",
+          "close": "Zamknij"
+        },
+        "scanner": {
+          "title": "Skaner kodów",
+          "description": "Użyj kamery, aby zeskanować kod kreskowy produktu."
+        },
+        "operations": {
+          "inbound": {
+            "title": "Przyjęcia",
+            "subtitle": "Automatyczna alokacja miejsca.",
+            "placeholder": "Kod produktu...",
+            "submit": "Przyjmij towar",
+            "success": "Przyjęto",
+            "error": "Błąd"
+          },
+          "move": {
+            "title": "Przesunięcia",
+            "subtitle": "Relokacja między regałami.",
+            "placeholder": "Kod produktu...",
+            "submit": "Inicjuj przesunięcie",
+            "action": "Przesuń",
+            "success": "Przesunięto",
+            "error": "Błąd"
+          },
+          "outbound": {
+            "title": "Wydania",
+            "subtitle": "Wydanie towaru zgodnie z FIFO.",
+            "placeholder": "Kod produktu...",
+            "submit": "Wydaj towar",
+            "success": "Wydano",
+            "error": "Błąd",
+            "details": "Produkt opuścił magazyn."
+          }
+        },
+        "items": {
+          "receivedBy": "Przyjął",
+          "days": "dni",
+          "status": "Status",
+          "entryDate": "Data przyjęcia",
+          "expirationDate": "Data ważności"
+        },
+        "catalog": {
+          "table": {
+            "id": "ID / SKU",
+            "name": "Nazwa",
+            "weight": "Masa",
+            "dims": "Wymiary",
+            "temp": "Temp.",
+            "status": "Status",
+            "actions": "Akcje"
+          },
+          "tooltips": {
+            "edit": "Edytuj",
+            "delete": "Usuń",
+            "hazardous": "Materiał niebezpieczny"
+          }
+        },
+        "grid": {
+          "pos": "Pozycja",
+          "weight": "Waga",
+          "empty": "Wolne miejsce"
+        },
+        "modals": {
+          "move": {
+            "title": "Przesuń towar",
+            "description": "Formularz relokacji produktu między regałami.",
+            "product": "Towar",
+            "code": "Kod",
+            "from": "Z",
+            "targetRack": "Regał docelowy",
+            "selectRack": "Wybierz regał...",
+            "selectSlot": "Wybierz slot:",
+            "selected": "Wybrano",
+            "freeSlot": "Slot wolny",
+            "submit": "Potwierdź przesunięcie",
+            "tooltips": {
+              "occupied": "Zajęte",
+              "current": "Obecna lokalizacja",
+              "select": "Wybierz",
+              "incompatible": "Niekompatybilne",
+              "tooHeavy": "Zbyt ciężkie",
+              "tempMismatch": "Błąd temperatury",
+              "dimMismatch": "Błąd wymiarów"
+            }
+          },
+          "product": {
+            "titleEdit": "Edycja asortymentu",
+            "titleNew": "Definiowanie asortymentu",
+            "description": "Formularz produktu",
+            "editLimited": "Edycja ograniczona: Produkt znajduje się w magazynie. Parametry fizyczne są zablokowane.",
+            "name": "Nazwa",
+            "barcode": "Kod kreskowy (EAN/QR)",
+            "photo": "Zdjęcie produktu",
+            "selectFile": "Wybierz plik...",
+            "weight": "Waga [kg]",
+            "tempReq": "Wymagania temp. [°C]",
+            "dims": "Wymiary [mm]",
+            "width": "Szer.",
+            "height": "Wys.",
+            "depth": "Głęb.",
+            "comment": "Komentarz",
+            "adrClass": "Klasyfikacja ADR",
+            "validity": "Ważność (dni)",
+            "submitNew": "Zapisz w systemie",
+            "submitEdit": "Zaktualizuj produkt",
+            "errors": {
+              "required": "To pole jest wymagane",
+              "gt0": "Wartość musi być większa od 0",
+              "allDimsGt0": "Wszystkie wymiary muszą być > 0",
+              "tempRange": "Temp. Min > Max"
+            },
+            "adrOptions": {
+              "none": "Brak",
+              "class1": "Klasa 1 (Wybuchowe)",
+              "class2": "Klasa 2 (Gazy)",
+              "class3": "Klasa 3 (Zapalne)",
+              "class6": "Klasa 6 (Toksyczne)",
+              "class8": "Klasa 8 (Żrące)"
+            }
+          },
+          "rack": {
+            "titleNew": "Nowa Jednostka Regałowa",
+            "titleEdit": "Konfiguracja Regału",
+            "description": "Formularz konfiguracji regału",
+            "editLimited": "Edycja ograniczona: Regał zawiera towary. Zmiana parametrów fizycznych jest zablokowana",
+            "code": "Oznaczenie (ID)",
+            "comment": "Notatka/Opis",
+            "rows": "Siatka: Rzędy (M)",
+            "cols": "Siatka: Kolumny (N)",
+            "capacity": "Nośność całkowita [kg]",
+            "environment": "Środowisko: Temp [°C]",
+            "maxDims": "Maksymalne gabaryty towaru [mm]",
+            "submitEdit": "Zaktualizuj parametry",
+            "submitNew": "Zatwierdź i utwórz regał",
+            "errors": {
+              "required": "Pole wymagane",
+              "codeInUse": "Kod {code} jest już w użyciu!",
+              "number": "Wpisz liczbę",
+              "gt0": "{label} musi być > 0",
+              "tempRange": "Błąd: {min}°C > {max}°C"
+            }
+          },
+          "addUser": {
+            "title": "Nowy Użytkownik",
+            "create": "UTWÓRZ KONTO",
+            "creating": "Tworzenie...",
+            "username": "Nazwa użytkownika",
+            "email": "Email",
+            "password": "Hasło",
+            "confirmPassword": "Potwierdź hasło",
+            "role": "Rola",
+            "placeholders": {
+              "username": "np. j.kowalski",
+              "email": "user@faraday.systems",
+              "password": "Min 8 znaków, cyfra, symbol",
+              "confirm": "Powtórz hasło"
+            },
+            "errors": {
+              "required": "Pole wymagane",
+              "invalidEmail": "Niepoprawny email",
+              "tooShort": "Min 8 znaków",
+              "noNumber": "Wymagana cyfra",
+              "noSpecial": "Wymagany znak specjalny",
+              "mismatch": "Hasła nie pasują",
+              "createError": "Błąd tworzenia użytkownika"
+            }
+          },
+          "editUser": {
+            "title": "Edycja Użytkownika",
+            "save": "Zapisz Zmiany"
+          },
+          "resetPassword": {
+            "title": "Reset Hasła",
+            "description": "Nadpisz hasło dla",
+            "submit": "Zmień Hasło"
+          }
+        }
       },
       "personnel": {
+        "tag": "Administracja Systemu",
         "title": "Zarządzanie Personelem",
-        "placeholder": "Lista operatorów z aktywnym modułem 2FA",
-        "managementSystem": "Centrum Zarządzania Personelem",
-        "database": "Baza Danych",
-        "monitorDescription": "Monitoruj dostępność operatorów i zarządzaj poświadczeniami bezpieczeństwa biometrycznego.",
-        "sync": "Sync",
-        "searchPlaceholder": "Filtruj po ID lub nazwisku...",
-        "registerOperator": "Zarejestruj Operatora",
-        "authOperator": "Autoryzacja Operatora",
-        "fullName": "Pełne Imię i Nazwisko",
-        "fullNamePlaceholder": "np. Jan Kowalski",
-        "systemEmail": "Email Systemowy",
-        "emailPlaceholder": "j.kowalski@magazyn.pl",
-        "sectorRole": "Rola w Sektorze",
-        "securityId": "ID Bezpieczeństwa",
-        "securityIdPlaceholder": "FS-XXXX",
-        "confirmAuth": "Potwierdź i Autoryzuj",
+        "description": "Zarządzaj dostępem do systemu, rolami użytkowników i statusami kont.",
+        "search": "Szukaj personelu...",
+        "addUser": "Dodaj Użytkownika",
+        "table": {
+          "id": "ID",
+          "user": "Użytkownik",
+          "role": "Rola",
+          "status": "Status",
+          "security": "Zabezpieczenia",
+          "lastLogin": "Ostatnie logowanie",
+          "action": "Akcja"
+        },
         "roles": {
-          "operator": "Operator Magazynu",
-          "manager": "Kierownik Zmiany",
-          "admin": "Administrator Systemu"
+          "admin": "Administrator",
+          "worker": "Magazynier"
+        },
+        "status": {
+          "active": "Aktywny",
+          "offline": "Offline"
+        },
+        "actions": {
+          "edit": "Edytuj Użytkownika",
+          "resetPass": "Zresetuj Hasło",
+          "reset2fa": "Zresetuj 2FA",
+          "activate": "Aktywuj",
+          "deactivate": "Dezaktywuj"
+        },
+        "messages": {
+          "confirmStatusChange": "Czy na pewno chcesz zmienić statusu tego użytkownika?",
+          "confirmReset2fa": "Czy na pewno chcesz zresetować 2FA dla tego użytkownika?",
+          "reset2faSuccess": "2FA zostało zresetowane.",
+          "resetPassSuccess": "Hasło zostało zresetowane.",
+          "updateSuccess": "Użytkownik zaktualizowany.",
+          "error": "Wystąpił błąd."
+        }
+      },
+      "operations": {
+        "tag": "Logistyka i Audyt",
+        "title": "Historia Operacji",
+        "sync": "Synchronizuj",
+        "search": "Szukaj po ID, produkcie lub operatorze...",
+        "filters": {
+          "last20": "Ostatnie 20 wpisów",
+          "last50": "Ostatnie 50 wpisów",
+          "last100": "Ostatnie 100 wpisów"
         },
         "table": {
-          "employeeId": "ID Pracownika",
-          "identity": "Tożsamość",
-          "assignedRole": "Przypisana Rola",
-          "status": "Status",
-          "management": "Zarządzanie",
-          "configureAccess": "Konfiguruj Dostęp",
-          "revokePermissions": "Cofnij Uprawnienia"
+          "timestamp": "Czas",
+          "operation": "Operacja",
+          "detail": "Szczegóły",
+          "asset": "Zasób",
+          "operator": "Operator"
         },
-        "stats": {
-          "totalPersonnel": "Cały Personel",
-          "activeNow": "Obecnie Aktywni",
-          "onBreak": "Na Przerwie"
-        }
+        "types": {
+          "accepted": "Przyjęto",
+          "dispatched": "Wydano",
+          "moved": "Przesunięto"
+        },
+        "loading": "Ładowanie logów systemowych...",
+        "empty": "Brak wpisów w historii."
       },
       "reports": {
         "title": "Raporty",
@@ -318,6 +603,50 @@
       "title": "Język Systemu",
       "english": "Angielski (US)",
       "polish": "Polski (PL)"
+    }
+  },
+  "forgotPasswordPage": {
+    "visualSection": {
+      "title": "Odzyskiwanie",
+      "description": "Zgubiłeś dane logowania? Pomożemy Ci odzyskać dostęp."
+    },
+    "formSection": {
+      "title": "Zresetuj hasło",
+      "subtitle": "Wpisz swój adres e-mail, aby otrzymać link do resetowania hasła.",
+      "emailLabel": "Adres e-mail",
+      "emailPlaceholder": "nazwa@firma.com",
+      "emailRequired": "Adres e-mail jest wymagany",
+      "sendButton": "Wyślij link resetujący",
+      "backToLogin": "Wróć do logowania",
+      "successMessage": "Jeśli konto istnieje dla tego adresu e-mail, wysłaliśmy instrukcje resetowania hasła.",
+      "returnToLogin": "Wróć do logowania",
+      "genericError": "Coś poszło nie tak. Spróbuj ponownie."
+    }
+  },
+  "resetPasswordPage": {
+    "visualSection": {
+      "title": "Faraday Systems"
+    },
+    "formSection": {
+      "title": "Ustaw nowe hasło",
+      "subtitle": "Wprowadź poniżej swoje nowe dane logowania.",
+      "newPasswordLabel": "Nowe hasło",
+      "newPasswordPlaceholder": "Wprowadź nowe hasło",
+      "confirmPasswordLabel": "Potwierdź hasło",
+      "confirmPasswordPlaceholder": "Potwierdź hasło",
+      "resetButton": "Zresetuj hasło",
+      "passwordsMismatch": "Hasła nie pasują do siebie",
+      "resetError": "Nie udało się zresetować hasła. Link mógł wygasnąć.",
+      "validation": {
+        "required": "Wymagane",
+        "tooShort": "Min 8 znaków",
+        "noNumber": "Wymagana cyfra",
+        "noSpecialChar": "Wymagany znak spec."
+      }
+    },
+    "invalidLink": {
+      "title": "Nieprawidłowy link",
+      "description": "Ten link do resetowania hasła jest nieprawidłowy lub brakuje tokena."
     }
   }
 }

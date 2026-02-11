@@ -6,6 +6,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Form from "@radix-ui/react-form";
+import { useTranslation } from "@/context/LanguageContext";
 
 // API
 import {
@@ -52,28 +53,38 @@ const UserRole = {
 } as const;
 type UserRole = typeof UserRole[keyof typeof UserRole];
 
-const fieldsData = {
-    password: {
-        label: "New Password",
-        placeholder: "Min 8 chars, number, symbol",
-        validation: {
-            required: "Password is required",
-            tooShort: "Min 8 chars",
-            noNumber: "Need number",
-            noSpecialChar: "Need symbol"
-        }
-    },
-    confirmPassword: {
-        label: "Confirm New Password",
-        placeholder: "Repeat password",
-        validation: {
-            required: "Confirmation is required",
-            mismatch: "Passwords do not match"
-        }
-    }
-};
-
 const PersonnelContent = () => {
+    const { t } = useTranslation();
+    const pT = t.dashboardPage.content.personnel;
+    const mT = t.dashboardPage.content.inventory.modals; // Reusing modal structure or specific personnel modals
+
+    // Helper for modal translations
+    const editUserT = mT.editUser;
+    const resetPassT = mT.resetPassword;
+    const addUserT = mT.addUser; // content.inventory.modals.addUser
+
+    // Fields data for reset password (using global auth keys if possible, or defined here with translations)
+    const fieldsData = {
+        password: {
+            label: "New Password", // Ideally these come from auth translations
+            placeholder: "Min 8 chars, number, symbol",
+            validation: {
+                required: "Password is required",
+                tooShort: "Min 8 chars",
+                noNumber: "Need number",
+                noSpecialChar: "Need symbol"
+            }
+        },
+        confirmPassword: {
+            label: "Confirm New Password",
+            placeholder: "Repeat password",
+            validation: {
+                required: "Confirmation is required",
+                mismatch: "Passwords do not match"
+            }
+        }
+    };
+
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -122,24 +133,24 @@ const PersonnelContent = () => {
     // --- ADMIN ACTIONS ---
 
     const handleToggleStatus = async (userId: number, isCurrentlyActive: boolean) => {
-        const action = isCurrentlyActive ? "deactivate" : "activate";
-        if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+        // const action = isCurrentlyActive ? "deactivate" : "activate";
+        if (!confirm(pT.messages.confirmStatusChange)) return;
         try {
             await updateUser(userId, { isActive: !isCurrentlyActive });
             await fetchStaff();
         } catch (error) {
-            alert("Failed to update status.");
+            alert(pT.messages.error);
         }
     };
 
     const handleReset2FA = async (userId: number) => {
-        if (!confirm("Are you sure you want to reset 2FA for this user?")) return;
+        if (!confirm(pT.messages.confirmReset2fa)) return;
         try {
             await resetUser2FA(userId);
-            alert("2FA has been reset.");
+            alert(pT.messages.reset2faSuccess);
             await fetchStaff();
         } catch (error) {
-            alert("Failed to reset 2FA.");
+            alert(pT.messages.error);
         }
     };
 
@@ -163,8 +174,9 @@ const PersonnelContent = () => {
             });
             setIsEditUserOpen(false);
             await fetchStaff();
+            alert(pT.messages.updateSuccess);
         } catch (error) {
-            alert("Failed to update user.");
+            alert(pT.messages.error);
         }
     };
 
@@ -183,10 +195,10 @@ const PersonnelContent = () => {
 
         try {
             await resetUserPassword(selectedUser.realId, passwordToSet);
-            alert("Password reset successfully.");
+            alert(pT.messages.resetPassSuccess);
             setIsResetPassOpen(false);
         } catch (error) {
-            alert("Failed to reset password.");
+            alert(pT.messages.error);
         }
     };
 
@@ -208,20 +220,20 @@ const PersonnelContent = () => {
         <div className="personnel-view-container">
             <header className="content-header">
                 <div className="header-brand">
-                    <div className="system-tag"><Users size={14} className="icon-glow" /><span>System Administration</span></div>
-                    <h1>Personnel Management</h1>
-                    <p className="lead-text">Manage system access, user roles, and account statuses.</p>
+                    <div className="system-tag"><Users size={14} className="icon-glow" /><span>{pT.tag}</span></div>
+                    <h1>{pT.title}</h1>
+                    <p className="lead-text">{pT.description}</p>
                 </div>
             </header>
 
             <div className="action-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
                 <div className="search-wrapper" style={{ position: 'relative', flex: 1, minWidth: '280px', maxWidth: '500px' }}>
                     <Search className="search-icon" size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input type="text" placeholder="Search personnel..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="ht-input" style={{ paddingLeft: '40px', width: '100%', height: '3.2rem' }} />
+                    <input type="text" placeholder={pT.search} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="ht-input" style={{ paddingLeft: '40px', width: '100%', height: '3.2rem' }} />
                 </div>
                 {isAdmin && (
                     <button className="btn-submit-ht" style={{ width: 'auto', padding: '0 1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => setIsAddUserOpen(true)}>
-                        <Plus size={20} /><span>Add User</span>
+                        <Plus size={20} /><span>{pT.addUser}</span>
                     </button>
                 )}
             </div>
@@ -232,58 +244,66 @@ const PersonnelContent = () => {
                 <div className="table-container">
                     <table className="ht-table">
                         <thead>
-                        <tr>
-                            <th>ID</th><th>User</th><th>Role</th><th>Status</th><th>Security</th><th>Last Login</th>{isAdmin && <th className="text-right">Action</th>}
-                        </tr>
+                            <tr>
+                                <th>{pT.table.id}</th>
+                                <th>{pT.table.user}</th>
+                                <th>{pT.table.role}</th>
+                                <th>{pT.table.status}</th>
+                                <th>{pT.table.security}</th>
+                                <th>{pT.table.lastLogin}</th>
+                                {isAdmin && <th className="text-right">{pT.table.action}</th>}
+                            </tr>
                         </thead>
                         <tbody>
-                        {filteredStaff.map((person) => (
-                            <tr key={person.realId} style={{ opacity: person.status === 'active' ? 1 : 0.5 }}>
-                                <td className="id-col" style={{ fontFamily: 'monospace' }}>{person.id}</td>
-                                <td className="name-col">
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{person.name}</span>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Mail size={10} /> {person.email}</span>
-                                    </div>
-                                </td>
-                                <td>
+                            {filteredStaff.map((person) => (
+                                <tr key={person.realId} style={{ opacity: person.status === 'active' ? 1 : 0.5 }}>
+                                    <td className="id-col" style={{ fontFamily: 'monospace' }}>{person.id}</td>
+                                    <td className="name-col">
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{person.name}</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Mail size={10} /> {person.email}</span>
+                                        </div>
+                                    </td>
+                                    <td>
                                         <span className="role-badge" style={{ ...getRoleBadgeStyle(person.role), padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                             {person.role === 'Administrator' ? <Shield size={12} /> : <User size={12} />}
-                                            {person.role.replace(/([a-z])([A-Z])/g, '$1 $2')}
+                                            {person.role === 'Administrator' ? pT.roles.admin : pT.roles.worker}
                                         </span>
-                                </td>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <span className={`status-dot ${person.status}`}></span>
-                                        <span style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700 }}>{person.status}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    {person.is2faEnabled && <span style={{ color: '#4ade80', fontSize: '0.75rem' }}><Smartphone size={12} /> 2FA ON</span>}
-                                </td>
-                                <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{person.lastLogin ? new Date(person.lastLogin).toLocaleString() : "Never"}</td>
-                                {isAdmin && (
-                                    <td className="text-right">
-                                        <DropdownMenu.Root>
-                                            <DropdownMenu.Trigger asChild>
-                                                <button className="btn-icon"><MoreVertical size={18} /></button>
-                                            </DropdownMenu.Trigger>
-                                            <DropdownMenu.Portal>
-                                                <DropdownMenu.Content className="dropdown-ht" align="end">
-                                                    <DropdownMenu.Item className="dd-item" onClick={() => openEditModal(person)}><Edit size={16} /> Edit User</DropdownMenu.Item>
-                                                    <DropdownMenu.Item className="dd-item" onClick={() => openResetPassModal(person)}><Key size={16} /> Reset Password</DropdownMenu.Item>
-                                                    {person.is2faEnabled && <DropdownMenu.Item className="dd-item danger" onClick={() => handleReset2FA(person.realId)}><Smartphone size={16} /> Reset 2FA</DropdownMenu.Item>}
-                                                    <div className="dd-divider" />
-                                                    <DropdownMenu.Item className="dd-item danger" onClick={() => handleToggleStatus(person.realId, person.status === 'active')}>
-                                                        {person.status === 'active' ? <><Ban size={16} /> Deactivate</> : <><CheckCircle size={16} /> Activate</>}
-                                                    </DropdownMenu.Item>
-                                                </DropdownMenu.Content>
-                                            </DropdownMenu.Portal>
-                                        </DropdownMenu.Root>
                                     </td>
-                                )}
-                            </tr>
-                        ))}
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span className={`status-dot ${person.status}`}></span>
+                                            <span style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                {person.status === 'active' ? pT.status.active : pT.status.offline}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {person.is2faEnabled && <span style={{ color: '#4ade80', fontSize: '0.75rem' }}><Smartphone size={12} /> 2FA ON</span>}
+                                    </td>
+                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{person.lastLogin ? new Date(person.lastLogin).toLocaleString() : "Never"}</td>
+                                    {isAdmin && (
+                                        <td className="text-right">
+                                            <DropdownMenu.Root>
+                                                <DropdownMenu.Trigger asChild>
+                                                    <button className="btn-icon"><MoreVertical size={18} /></button>
+                                                </DropdownMenu.Trigger>
+                                                <DropdownMenu.Portal>
+                                                    <DropdownMenu.Content className="dropdown-ht" align="end">
+                                                        <DropdownMenu.Item className="dd-item" onClick={() => openEditModal(person)}><Edit size={16} /> {pT.actions.edit}</DropdownMenu.Item>
+                                                        <DropdownMenu.Item className="dd-item" onClick={() => openResetPassModal(person)}><Key size={16} /> {pT.actions.resetPass}</DropdownMenu.Item>
+                                                        {person.is2faEnabled && <DropdownMenu.Item className="dd-item danger" onClick={() => handleReset2FA(person.realId)}><Smartphone size={16} /> {pT.actions.reset2fa}</DropdownMenu.Item>}
+                                                        <div className="dd-divider" />
+                                                        <DropdownMenu.Item className="dd-item danger" onClick={() => handleToggleStatus(person.realId, person.status === 'active')}>
+                                                            {person.status === 'active' ? <><Ban size={16} /> {pT.actions.deactivate}</> : <><CheckCircle size={16} /> {pT.actions.activate}</>}
+                                                        </DropdownMenu.Item>
+                                                    </DropdownMenu.Content>
+                                                </DropdownMenu.Portal>
+                                            </DropdownMenu.Root>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -297,26 +317,26 @@ const PersonnelContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht">
                         <div className="modal-header">
-                            <h2><Edit size={24} className="icon-accent" /> Edit User</h2>
+                            <h2><Edit size={24} className="icon-accent" /> {editUserT.title}</h2>
                             <button className="btn-close" onClick={() => setIsEditUserOpen(false)}><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSaveEdit} className="ht-form">
                             <div className="input-group">
-                                <label>Username (Read Only)</label>
+                                <label>{pT.table.user} (Read Only)</label>
                                 <input className="ht-input" disabled value={selectedUser?.name || ''} style={{ opacity: 0.5 }} />
                             </div>
                             <div className="input-group">
-                                <label>Email</label>
+                                <label>{addUserT.email}</label>
                                 <input className="ht-input" type="email" required value={editFormData.email} onChange={e => setEditFormData({ ...editFormData, email: e.target.value })} />
                             </div>
                             <div className="input-group">
-                                <label>Role</label>
+                                <label>{pT.table.role}</label>
                                 <select className="ht-input" value={editFormData.role} onChange={e => setEditFormData({ ...editFormData, role: Number(e.target.value) as UserRole })}>
-                                    <option value={UserRole.WarehouseWorker}>Warehouse Worker</option>
-                                    <option value={UserRole.Administrator}>Administrator</option>
+                                    <option value={UserRole.WarehouseWorker}>{pT.roles.worker}</option>
+                                    <option value={UserRole.Administrator}>{pT.roles.admin}</option>
                                 </select>
                             </div>
-                            <button type="submit" className="btn-submit-ht">Save Changes</button>
+                            <button type="submit" className="btn-submit-ht">{editUserT.save}</button>
                         </form>
                     </Dialog.Content>
                 </Dialog.Portal>
@@ -328,11 +348,11 @@ const PersonnelContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht">
                         <div className="modal-header">
-                            <h2><Key size={24} className="icon-accent" /> Reset Password</h2>
+                            <h2><Key size={24} className="icon-accent" /> {resetPassT.title}</h2>
                             <button className="btn-close" onClick={() => setIsResetPassOpen(false)}><X size={24} /></button>
                         </div>
                         <Form.Root className="ht-form" onSubmit={handleResetPassword}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Override password for <strong>{selectedUser?.name}</strong>.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{resetPassT.description} <strong>{selectedUser?.name}</strong>.</p>
 
                             <RegisterPasswordFieldPair
                                 passwordData={fieldsData.password}
@@ -341,7 +361,7 @@ const PersonnelContent = () => {
                             />
 
                             <Form.Submit asChild>
-                                <button type="submit" className="btn-submit-ht" disabled={!newAdminPassword}>Override Password</button>
+                                <button type="submit" className="btn-submit-ht" disabled={!newAdminPassword}>{resetPassT.submit}</button>
                             </Form.Submit>
                         </Form.Root>
                     </Dialog.Content>

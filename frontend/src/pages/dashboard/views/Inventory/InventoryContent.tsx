@@ -26,48 +26,7 @@ const formatMessageNumbers = (msg: string) => {
         .replace(/\.0+(?!\d)/g, '');
 };
 
-const prettifyBackendError = (rawMsg: string) => {
-    if (!rawMsg) return "Nieznany błąd serwera.";
-    const msg = formatMessageNumbers(rawMsg);
 
-    // No racks found meeting requirements for 'Mleko' (Dim: 20x20x20 mm, Temp: -10 to -5°C). Check rack definitions.
-    const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
-    if (noRacksMatch) {
-        return (
-            <div className="pretty-error">
-                <p><strong>Brak pasujących regałów</strong> dla produktu <strong>{noRacksMatch[1]}</strong>.</p>
-                <div className="error-specs">
-                    <span>Wymiary: <strong>{noRacksMatch[2]} mm</strong></span>
-                    <span>Wymagana temp: <strong>{noRacksMatch[3]}°C</strong></span>
-                </div>
-                <p className="error-hint">Sprawdź czy w systemie istnieją regały o takich parametrach.</p>
-            </div>
-        );
-    }
-
-    // No available slots found in 4 compatible racks. Racks are either full or adding this item would exceed the rack's weight limit.
-    if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
-        return (
-            <div className="pretty-error">
-                <p><strong>Brak wolnego miejsca</strong> w regałach spełniających wymagania techniczne.</p>
-                <p className="error-hint">Wszystkie pasujące regały są pełne lub dodanie towaru przekroczyłoby ich nośność.</p>
-            </div>
-        );
-    }
-
-    // Product with barcode 1 not found.
-    const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
-    if (productNotFound) {
-        return (
-            <div className="pretty-error">
-                <p><strong>Produkt nieznany</strong> (kod: {productNotFound[1]}).</p>
-                <p className="error-hint">Dodaj produkt do katalogu asortymentu przed próbą przyjęcia.</p>
-            </div>
-        );
-    }
-
-    return <div className="pretty-error">{msg}</div>;
-};
 
 const InventoryContent = () => {
     const { t } = useTranslation();
@@ -113,6 +72,49 @@ const InventoryContent = () => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const productFileInputRef = useRef<HTMLInputElement>(null);
+
+    const prettifyBackendError = (rawMsg: string) => {
+        if (!rawMsg) return invT.errors.server;
+        const msg = formatMessageNumbers(rawMsg);
+
+        // No racks found meeting requirements for 'Mleko' (Dim: 20x20x20 mm, Temp: -10 to -5°C). Check rack definitions.
+        const noRacksMatch = msg.match(/No racks found meeting requirements for '(.*?)' \(Dim: (.*?) mm, Temp: (.*?)°C\)/i);
+        if (noRacksMatch) {
+            return (
+                <div className="pretty-error">
+                    <p><strong>{invT.errors.noRacksMatch.title}</strong> ({noRacksMatch[1]}).</p>
+                    <div className="error-specs">
+                        <span>{invT.errors.noRacksMatch.dimensions}: <strong>{noRacksMatch[2]} mm</strong></span>
+                        <span>{invT.errors.noRacksMatch.temp}: <strong>{noRacksMatch[3]}°C</strong></span>
+                    </div>
+                    <p className="error-hint">{invT.errors.noRacksMatch.hint}</p>
+                </div>
+            );
+        }
+
+        // No available slots found in 4 compatible racks. Racks are either full or adding this item would exceed the rack's weight limit.
+        if (msg.includes("No available slots found") && msg.includes("compatible racks")) {
+            return (
+                <div className="pretty-error">
+                    <p><strong>{invT.errors.noAvailableSlots.title}</strong></p>
+                    <p className="error-hint">{invT.errors.noAvailableSlots.hint}</p>
+                </div>
+            );
+        }
+
+        // Product with barcode 1 not found.
+        const productNotFound = msg.match(/Product with barcode (.*?) not found/i);
+        if (productNotFound) {
+            return (
+                <div className="pretty-error">
+                    <p><strong>{invT.errors.productNotFound.title}</strong> (ID: {productNotFound[1]}).</p>
+                    <p className="error-hint">{invT.errors.productNotFound.hint}</p>
+                </div>
+            );
+        }
+
+        return <div className="pretty-error">{msg}</div>;
+    };
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -235,17 +237,17 @@ const InventoryContent = () => {
                             const product = products.find(p => p.id === item.productId);
                             if (product) {
                                 if (rackDto.minTemperature < product.requiredMinTemp || rackDto.maxTemperature > product.requiredMaxTemp) {
-                                    validationErrors.push(`Błąd temperatury: '${product.name}' wymaga ${product.requiredMinTemp}°C do ${product.requiredMaxTemp}°C. Nowy zakres (${rackDto.minTemperature}°C - ${rackDto.maxTemperature}°C) jest niedopuszczalny.`);
+                                    validationErrors.push(`${invT.import.warnings.contentInfo}: '${product.name}' requires ${product.requiredMinTemp}°C - ${product.requiredMaxTemp}°C. New range (${rackDto.minTemperature}°C - ${rackDto.maxTemperature}°C) is invalid.`);
                                 }
                                 if (product.widthMm > rackDto.maxItemWidthMm || product.heightMm > rackDto.maxItemHeightMm || product.depthMm > rackDto.maxItemDepthMm) {
-                                    validationErrors.push(`Błąd wymiarów: '${product.name}' (${product.widthMm}x${product.heightMm}x${product.depthMm}mm) nie zmieści się w nowych limitach.`);
+                                    validationErrors.push(`Dimensions error: '${product.name}' (${product.widthMm}x${product.heightMm}x${product.depthMm}mm) will not fit in new limits.`);
                                 }
                             }
                         });
 
                         const currentTotalWeight = rackItems.reduce((acc, item) => acc + (item.productWeightKg || 0), 0);
                         if (currentTotalWeight > rackDto.maxWeightKg) {
-                            validationErrors.push(`Błąd nośności: Obecna masa (${currentTotalWeight.toFixed(1)}kg) przekracza nowy limit (${rackDto.maxWeightKg}kg).`);
+                            validationErrors.push(`Weight error: Current weight (${currentTotalWeight.toFixed(1)}kg) exceeds new limit (${rackDto.maxWeightKg}kg).`);
                         }
                     }
 
@@ -330,7 +332,7 @@ const InventoryContent = () => {
                 const text = event.target?.result as string;
                 const preview = parseCSV(text, 'racks');
                 if (preview.length === 0) {
-                    alert("Nie znaleziono poprawnych danych w pliku CSV. Sprawdź format (średniki, nagłówki).");
+                    alert(invT.errors.csv.noData);
                     return;
                 }
                 setImportType('racks');
@@ -338,10 +340,10 @@ const InventoryContent = () => {
                 setIsImportPreviewModalOpen(true);
             } catch (err) {
                 console.error("CSV Import error:", err);
-                alert("Wystąpił błąd podczas analizowania pliku CSV.");
+                alert(invT.errors.csv.parseError);
             }
         };
-        reader.onerror = () => alert("Błąd odczytu pliku.");
+        reader.onerror = () => alert(invT.errors.csv.readError);
         reader.readAsText(file);
         e.target.value = "";
     };
@@ -356,7 +358,7 @@ const InventoryContent = () => {
                 const text = event.target?.result as string;
                 const preview = parseCSV(text, 'products');
                 if (preview.length === 0) {
-                    alert("Nie znaleziono poprawnych danych produktów w pliku CSV.");
+                    alert(invT.errors.csv.noProducts);
                     return;
                 }
                 setImportType('products');
@@ -364,10 +366,10 @@ const InventoryContent = () => {
                 setIsImportPreviewModalOpen(true);
             } catch (err) {
                 console.error("Product CSV Import error:", err);
-                alert("Wystąpił błąd podczas analizowania pliku produktów.");
+                alert(invT.errors.csv.parseError);
             }
         };
-        reader.onerror = () => alert("Błąd odczytu pliku.");
+        reader.onerror = () => alert(invT.errors.csv.readError);
         reader.readAsText(file);
         e.target.value = "";
     };
@@ -452,7 +454,7 @@ const InventoryContent = () => {
             } else {
                 setMoveResult({
                     success: false,
-                    message: "Nie znaleziono produktu w magazynie.",
+                    message: invT.errors.notFound,
                     timestamp,
                     operator
                 });
@@ -506,11 +508,6 @@ const InventoryContent = () => {
             };
         }
     }, [isScannerOpen, scannerMode, inventoryData]);
-    const resetOperationResults = () => {
-        setInboundResult(null);
-        setOutboundResult(null);
-        setMoveResult(null);
-    };
     const handleInbound = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         try {
@@ -525,7 +522,7 @@ const InventoryContent = () => {
         } catch (e: any) {
             setInboundResult({
                 success: false,
-                message: e.response?.data?.message || "Błąd podczas przyjmowania.",
+                message: e.response?.data?.message || invT.errors.inbound,
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -546,7 +543,7 @@ const InventoryContent = () => {
         } catch (e: any) {
             setOutboundResult({
                 success: false,
-                message: e.response?.data?.message || "Błąd podczas wydawania produktu.",
+                message: e.response?.data?.message || invT.errors.outbound,
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -579,7 +576,7 @@ const InventoryContent = () => {
         } catch (e: any) {
             setMoveResult({
                 success: false,
-                message: e.response?.data?.message || "Błąd podczas przesuwania.",
+                message: e.response?.data?.message || invT.errors.move,
                 timestamp: new Date().toLocaleString(),
                 operator: localStorage.getItem("username") || "Admin"
             });
@@ -589,23 +586,23 @@ const InventoryContent = () => {
         }
     };
     const handleDeleteRack = async (id: number | string) => {
-        if (!window.confirm(t.dashboardPage.content.inventory.deleteConfirm?.replace("{id}", id.toString()) || "Czy na pewno chcesz usunąć ten regał?")) return;
+        if (!window.confirm(invT.deleteConfirm?.replace("{id}", id.toString()))) return;
         setIsLoading(true);
         try {
             await deleteRack(id);
             fetchData();
         } catch (e) {
-            alert("Wystąpił błąd podczas usuwania regału.");
+            alert(invT.errors.deleteRack);
         } finally { setIsLoading(false); }
     };
 
     const handleDeleteProduct = async (id: number | string) => {
-        if (!window.confirm("Czy na pewno chcesz usunąć ten produkt z katalogu?")) return;
+        if (!window.confirm(invT.deleteProductConfirm)) return;
         setIsLoading(true);
         try {
             await deleteProduct(id);
             fetchData();
-        } catch (e) { alert("Wystąpił błąd podczas usuwania produktu."); } finally { setIsLoading(false); }
+        } catch (e) { alert(invT.errors.deleteProduct); } finally { setIsLoading(false); }
     };
 
     const closeModal = () => { setIsModalOpen(false); setIsProductModalOpen(false); setEditingRack(null); setEditingProduct(null); };
@@ -640,7 +637,7 @@ const InventoryContent = () => {
             fetchData();
             closeModal();
         } catch (error: any) {
-            alert(error.response?.data?.message || "Błąd połączenia z serwerem.");
+            alert(error.response?.data?.message || invT.errors.connection);
         } finally {
             setIsLoading(false);
         }
@@ -675,7 +672,7 @@ const InventoryContent = () => {
             fetchData();
             closeModal();
         } catch (error: any) {
-            alert(error.response?.data?.message || "Błąd połączenia z serwerem.");
+            alert(error.response?.data?.message || invT.errors.connection);
         } finally {
             setIsLoading(false);
         }
@@ -693,8 +690,8 @@ const InventoryContent = () => {
                                 <Tabs.List className="ht-tabs-list" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
                                     <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
                                     <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
-                                    <Tabs.Trigger value="stock" className="ht-tabs-trigger">Stan magazynowy</Tabs.Trigger>
-                                    <Tabs.Trigger value="operations" className="ht-tabs-trigger">Operacje</Tabs.Trigger>
+                                    <Tabs.Trigger value="stock" className="ht-tabs-trigger">{invT.stockTab}</Tabs.Trigger>
+                                    <Tabs.Trigger value="operations" className="ht-tabs-trigger">{invT.operationsTab}</Tabs.Trigger>
                                 </Tabs.List>
                                 <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>
                                     {isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}
@@ -705,14 +702,14 @@ const InventoryContent = () => {
 
                     <Tabs.Content value="racks">
                         {isAdmin && (
-                        <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
-                            <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
-                            <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
-                            <button className="btn-primary-ht" onClick={() => { setEditingRack(null); setIsModalOpen(true); }}>
-                                <Plus size={18} /><span>{invT.addRack}</span>
-                            </button>
-                        </div>
-                            )}
+                            <div className="action-bar" style={{ justifyContent: 'flex-start', gap: '1rem' }}>
+                                <input type="file" accept=".csv" ref={fileInputRef} hidden onChange={handleCSVImport} />
+                                <button className="btn-primary-ht" onClick={() => fileInputRef.current?.click()}><FileUp size={18} /><span>{invT.importCSV}</span></button>
+                                <button className="btn-primary-ht" onClick={() => { setEditingRack(null); setIsModalOpen(true); }}>
+                                    <Plus size={18} /><span>{invT.addRack}</span>
+                                </button>
+                            </div>
+                        )}
                         <div className="stats-grid">
                             {racks.map(r => (
                                 <RackCard
@@ -742,7 +739,7 @@ const InventoryContent = () => {
                             <input type="file" accept=".csv" ref={productFileInputRef} hidden onChange={handleProductCSVImport} />
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <button className="btn-primary-ht" onClick={() => productFileInputRef.current?.click()}>
-                                    <FileUp size={18} /><span>Importuj CSV</span>
+                                    <FileUp size={18} /><span>{invT.importCSV}</span>
                                 </button>
                                 <button className="btn-primary-ht" onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}>
                                     <Plus size={18} /><span>{invT.defineProduct}</span>
@@ -757,14 +754,14 @@ const InventoryContent = () => {
                                 onEditProduct={(p) => { setEditingProduct(p); setIsProductModalOpen(true); }}
                                 isLoading={isLoading}
                             />
-                        ) : <div className="empty-state-ht">Brak produktów.</div>}
+                        ) : <div className="empty-state-ht">{invT.emptyProducts}</div>}
                     </Tabs.Content>
 
                     <Tabs.Content value="stock">
                         <div className="action-bar">
                             <div className="search-container">
                                 <Search size={18} className="search-icon" />
-                                <input type="text" placeholder="Szukaj w magazynie (nazwa, kod, regał)..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                <input type="text" placeholder={invT.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             </div>
                         </div>
                         <div className="stock-grid">
@@ -788,19 +785,19 @@ const InventoryContent = () => {
 
                                         <div className="stock-item-details">
                                             <div className="detail-row">
-                                                <span className="label">Status:</span>
+                                                <span className="label">{invT.items.status}:</span>
                                                 <span className={`status-tag ${item.status.toLowerCase()}`}>{item.status}</span>
                                             </div>
                                             <div className="detail-row">
-                                                <span className="label">Data przyjęcia:</span>
+                                                <span className="label">{invT.items.entryDate}:</span>
                                                 <span>{new Date(item.entryDate).toLocaleDateString()}</span>
                                             </div>
                                             {item.expirationDate && (
                                                 <div className="detail-row">
-                                                    <span className="label">Data ważności:</span>
+                                                    <span className="label">{invT.items.expirationDate}:</span>
                                                     <span className={item.daysUntilExpiration && item.daysUntilExpiration < 5 ? 'text-danger' : ''}>
                                                         {new Date(item.expirationDate).toLocaleDateString()}
-                                                        {item.daysUntilExpiration !== undefined && ` (${item.daysUntilExpiration} dni)`}
+                                                        {item.daysUntilExpiration !== undefined && ` (${item.daysUntilExpiration} ${invT.items.days})`}
                                                     </span>
                                                 </div>
                                             )}
@@ -816,20 +813,20 @@ const InventoryContent = () => {
                                                 </div>
                                             </div>
                                             <div className="received-by">
-                                                Przyjął: <strong>{item.receivedByUsername}</strong>
+                                                {invT.items.receivedBy}: <strong>{item.receivedByUsername}</strong>
                                             </div>
                                             <button
                                                 className="btn-action-ht"
                                                 onClick={() => { setMovingItem(item); setIsMoveModalOpen(true); }}
-                                                title="Przesuń towar"
+                                                title={invT.moveItem}
                                                 style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.8rem' }}
                                             >
-                                                <span>Przesuń</span>
+                                                <span>{invT.moveTo}</span>
                                             </button>
                                         </div>
                                     </div>
                                 ))}
-                            {inventoryData.length === 0 && !isLoading && <div className="empty-state-ht">Magazyn jest obecnie pusty.</div>}
+                            {inventoryData.length === 0 && !isLoading && <div className="empty-state-ht">{invT.emptyStock}</div>}
                         </div>
                     </Tabs.Content>
 
@@ -840,9 +837,9 @@ const InventoryContent = () => {
                                 <div className="card-header">
                                     <h2>
                                         <PackagePlus size={20} className="icon-accent" />
-                                        Przyjęcia
+                                        {invT.operations.inbound.title}
                                     </h2>
-                                    <p className="text-muted">Automatyczna alokacja miejsca.</p>
+                                    <p className="text-muted">{invT.operations.inbound.subtitle}</p>
                                 </div>
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleInbound(e); }} className="ht-form">
@@ -851,7 +848,7 @@ const InventoryContent = () => {
                                             <input
                                                 value={inboundBarcode}
                                                 onChange={(e) => setInboundBarcode(e.target.value)}
-                                                placeholder="Kod produktu..."
+                                                placeholder={invT.operations.inbound.placeholder}
                                             />
                                             <button
                                                 type="button"
@@ -863,7 +860,7 @@ const InventoryContent = () => {
                                         </div>
                                     </div>
                                     <button type="submit" className="btn-primary-ht btn-submit">
-                                        Przyjmij towar
+                                        {invT.operations.inbound.submit}
                                     </button>
                                 </form>
 
@@ -874,13 +871,13 @@ const InventoryContent = () => {
                                                 <CheckCircle2 size={16} className="icon-success" /> :
                                                 <AlertTriangle size={16} className="icon-error" />
                                             }
-                                            <span>{inboundResult.success ? "Przyjęto" : "Błąd"}</span>
+                                            <span>{inboundResult.success ? invT.operations.inbound.success : invT.operations.inbound.error}</span>
                                         </div>
                                         <div className="result-details">
                                             {inboundResult.success ? (
                                                 <span className="location-badge">
-                {inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]
-              </span>
+                                                    {inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]
+                                                </span>
                                             ) : (
                                                 <span className="error-text">{prettifyBackendError(inboundResult.message)}</span>
                                             )}
@@ -894,9 +891,9 @@ const InventoryContent = () => {
                                 <div className="card-header">
                                     <h2>
                                         <Move size={20} className="icon-accent" />
-                                        Przesunięcia
+                                        {invT.operations.move.title}
                                     </h2>
-                                    <p className="text-muted">Relokacja między regałami.</p>
+                                    <p className="text-muted">{invT.operations.move.subtitle}</p>
                                 </div>
 
                                 <div className="ht-form">
@@ -904,7 +901,7 @@ const InventoryContent = () => {
                                         <div className="input-wrapper">
                                             <input
                                                 type="text"
-                                                placeholder="Kod produktu..."
+                                                placeholder={invT.operations.move.placeholder}
                                                 value={moveBarcode}
                                                 onChange={(e) => setMoveBarcode(e.target.value)}
                                                 onKeyDown={(e) => {
@@ -915,7 +912,7 @@ const InventoryContent = () => {
                                                             setIsMoveModalOpen(true);
                                                             setMoveBarcode("");
                                                         } else {
-                                                            setMoveResult({ success: false, message: "Nie znaleziono produktu." });
+                                                            setMoveResult({ success: false, message: invT.errors.notFound });
                                                         }
                                                     }
                                                 }}
@@ -939,11 +936,11 @@ const InventoryContent = () => {
                                                 setIsMoveModalOpen(true);
                                                 setMoveBarcode("");
                                             } else {
-                                                setMoveResult({ success: false, message: "Nie znaleziono produktu." });
+                                                setMoveResult({ success: false, message: invT.errors.notFound });
                                             }
                                         }}
                                     >
-                                        Inicjuj przesunięcie
+                                        {invT.operations.move.submit}
                                     </button>
                                 </div>
 
@@ -954,7 +951,7 @@ const InventoryContent = () => {
                                                 <CheckCircle2 size={16} className="icon-success" /> :
                                                 <AlertTriangle size={16} className="icon-error" />
                                             }
-                                            <span>{moveResult.success ? "Przesunięto" : "Błąd"}</span>
+                                            <span>{moveResult.success ? invT.operations.move.success : invT.operations.move.error}</span>
                                         </div>
                                         <div className="result-details">
                                             {moveResult.success ? (
@@ -975,9 +972,9 @@ const InventoryContent = () => {
                                 <div className="card-header">
                                     <h2>
                                         <PackageMinus size={20} className="icon-error" />
-                                        Wydania
+                                        {invT.operations.outbound.title}
                                     </h2>
-                                    <p className="text-muted">Wydanie towaru zgodnie z FIFO.</p>
+                                    <p className="text-muted">{invT.operations.outbound.subtitle}</p>
                                 </div>
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleOutbound(e); }} className="ht-form">
@@ -986,7 +983,7 @@ const InventoryContent = () => {
                                             <input
                                                 value={outboundBarcode}
                                                 onChange={(e) => setOutboundBarcode(e.target.value)}
-                                                placeholder="Kod produktu..."
+                                                placeholder={invT.operations.outbound.placeholder}
                                             />
                                             <button
                                                 type="button"
@@ -998,7 +995,7 @@ const InventoryContent = () => {
                                         </div>
                                     </div>
                                     <button type="submit" className="btn-primary-ht btn-submit btn-danger">
-                                        Wydaj towar
+                                        {invT.operations.outbound.submit}
                                     </button>
                                 </form>
 
@@ -1009,10 +1006,10 @@ const InventoryContent = () => {
                                                 <CheckCircle2 size={16} className="icon-success" /> :
                                                 <AlertTriangle size={16} className="icon-error" />
                                             }
-                                            <span>{outboundResult.success ? "Wydano" : "Błąd"}</span>
+                                            <span>{outboundResult.success ? invT.operations.outbound.success : invT.operations.outbound.error}</span>
                                         </div>
                                         <div className="result-details">
-                                            {outboundResult.success ? "Produkt opuścił magazyn." : outboundResult.message}
+                                            {outboundResult.success ? invT.operations.outbound.details : outboundResult.message}
                                         </div>
                                     </div>
                                 )}
@@ -1040,10 +1037,10 @@ const InventoryContent = () => {
 
                     <Dialog.Content className="modal-content" aria-describedby="scanner-description">
                         <div className="modal-header">
-                            <Dialog.Title>Skaner kodów</Dialog.Title>
+                            <Dialog.Title>{invT.scanner.title}</Dialog.Title>
                             {/* To naprawi błąd "Missing Description" */}
                             <Dialog.Description id="scanner-description" className="visually-hidden">
-                                Użyj kamery, aby zeskanować kod kreskowy produktu.
+                                {invT.scanner.description}
                             </Dialog.Description>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
@@ -1066,7 +1063,7 @@ const InventoryContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht import-modal-ht">
                         <div className="modal-header">
-                            <Dialog.Title>Import: {importType === 'racks' ? 'Regały' : 'Produkty'}</Dialog.Title>
+                            <Dialog.Title>Import: {importType === 'racks' ? invT.import.racksTitle : invT.import.productsTitle}</Dialog.Title>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
                             </Dialog.Close>
@@ -1076,8 +1073,10 @@ const InventoryContent = () => {
                             {batchProgress ? (
                                 <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '24px' }}>
                                     <Spinner size={40} />
-                                    <p style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>Przetwarzanie importu...</p>
-                                    <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>{batchProgress.current} z {batchProgress.total} operacji zakończonych</p>
+                                    <p style={{ marginTop: '1.5rem', fontWeight: 600, fontSize: '1.1rem' }}>{invT.import.processing}</p>
+                                    <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>
+                                        {invT.import.processed.replace('{current}', batchProgress.current.toString()).replace('{total}', batchProgress.total.toString())}
+                                    </p>
                                     <div style={{ width: '100%', maxWidth: '400px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', margin: '2rem auto 0', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${(batchProgress.current / batchProgress.total) * 100}%`,
@@ -1092,23 +1091,23 @@ const InventoryContent = () => {
                                 <>
                                     <div className="import-summary-strip">
                                         <div className="summary-item">
-                                            <span className="label">Łącznie</span>
+                                            <span className="label">{invT.import.summary.total}</span>
                                             <span className="value">{importPreviewData.length}</span>
                                         </div>
                                         <div className="summary-item">
-                                            <span className="label">Nowe</span>
+                                            <span className="label">{invT.import.summary.new}</span>
                                             <span className="value" style={{ color: '#4ade80' }}>
                                                 {importPreviewData.filter(i => i.status === 'new').length}
                                             </span>
                                         </div>
                                         <div className="summary-item">
-                                            <span className="label">Konflikty</span>
+                                            <span className="label">{invT.import.summary.conflicts}</span>
                                             <span className="value" style={{ color: '#facc15' }}>
                                                 {importPreviewData.filter(i => i.status === 'conflict').length}
                                             </span>
                                         </div>
                                         <div className="summary-item" style={{ marginLeft: 'auto' }}>
-                                            <span className="label">Do zapisu</span>
+                                            <span className="label">{invT.import.summary.toSave}</span>
                                             <span className="value">
                                                 {importPreviewData.filter(i => i.action !== 'skip').length}
                                             </span>
@@ -1119,67 +1118,67 @@ const InventoryContent = () => {
                                         <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                                             <table className="import-table">
                                                 <thead>
-                                                <tr>
-                                                    <th>Status</th>
-                                                    <th>Kod / Identyfikator</th>
-                                                    <th>Decyzja</th>
-                                                    <th>Działanie</th>
-                                                </tr>
+                                                    <tr>
+                                                        <th>{invT.import.table.status}</th>
+                                                        <th>{invT.import.table.code}</th>
+                                                        <th>{invT.import.table.decision}</th>
+                                                        <th>{invT.import.table.action}</th>
+                                                    </tr>
                                                 </thead>
                                                 <tbody>
-                                                {importPreviewData.map((item, idx) => (
-                                                    <tr key={idx} style={{
-                                                        background: selectedPreviewItem === item ? 'rgba(var(--accent-primary-rgb), 0.08)' : 'transparent'
-                                                    }}>
-                                                        <td>
+                                                    {importPreviewData.map((item, idx) => (
+                                                        <tr key={idx} style={{
+                                                            background: selectedPreviewItem === item ? 'rgba(var(--accent-primary-rgb), 0.08)' : 'transparent'
+                                                        }}>
+                                                            <td>
                                                                 <span className={`status-badge ${item.status === 'conflict' ? 'conflict' : 'new'}`}>
                                                                     {item.status === 'conflict' ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-                                                                    {item.status === 'conflict' ? 'Konflikt' : 'Nowy'}
+                                                                    {item.status === 'conflict' ? invT.import.table.conflict : invT.import.table.new}
                                                                 </span>
-                                                        </td>
-                                                        <td style={{ fontWeight: 700, fontFamily: 'Space Grotesk' }}>{item.data.code || item.data.scanCode}</td>
-                                                        <td>
-                                                            <select
-                                                                value={item.action}
-                                                                onChange={(e) => {
-                                                                    const newData = [...importPreviewData];
-                                                                    newData[idx].action = e.target.value;
-                                                                    setImportPreviewData(newData);
-                                                                }}
-                                                                style={{
-                                                                    background: 'rgba(255,255,255,0.05)',
-                                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                                    borderRadius: '8px',
-                                                                    padding: '4px 8px',
-                                                                    color: 'white',
-                                                                    fontSize: '0.8rem',
-                                                                    outline: 'none'
-                                                                }}
-                                                            >
-                                                                {item.status === 'conflict' ? (
-                                                                    <>
-                                                                        <option value="skip">Pomiń (Zachowaj obecny)</option>
-                                                                        <option value="update">Zaktualizuj (Nadpisz)</option>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <option value="create">Utwórz nowy</option>
-                                                                        <option value="skip">Anuluj ten wiersz</option>
-                                                                    </>
-                                                                )}
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <button
-                                                                className={`btn-action-ht ${selectedPreviewItem === item ? 'active' : ''}`}
-                                                                onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
-                                                                title="Pokaż różnice"
-                                                            >
-                                                                {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                            </td>
+                                                            <td style={{ fontWeight: 700, fontFamily: 'Space Grotesk' }}>{item.data.code || item.data.scanCode}</td>
+                                                            <td>
+                                                                <select
+                                                                    value={item.action}
+                                                                    onChange={(e) => {
+                                                                        const newData = [...importPreviewData];
+                                                                        newData[idx].action = e.target.value;
+                                                                        setImportPreviewData(newData);
+                                                                    }}
+                                                                    style={{
+                                                                        background: 'rgba(255,255,255,0.05)',
+                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                        borderRadius: '8px',
+                                                                        padding: '4px 8px',
+                                                                        color: 'white',
+                                                                        fontSize: '0.8rem',
+                                                                        outline: 'none'
+                                                                    }}
+                                                                >
+                                                                    {item.status === 'conflict' ? (
+                                                                        <>
+                                                                            <option value="skip">{invT.import.actions.skip}</option>
+                                                                            <option value="update">{invT.import.actions.update}</option>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <option value="create">{invT.import.actions.create}</option>
+                                                                            <option value="skip">{invT.import.actions.skip}</option>
+                                                                        </>
+                                                                    )}
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <button
+                                                                    className={`btn-action-ht ${selectedPreviewItem === item ? 'active' : ''}`}
+                                                                    onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
+                                                                    title={invT.import.actions.showDiff}
+                                                                >
+                                                                    {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1191,7 +1190,7 @@ const InventoryContent = () => {
                                                 {selectedPreviewItem.validationErrors && selectedPreviewItem.validationErrors.length > 0 && (
                                                     <div className="validation-warning">
                                                         <div className="warning-header">
-                                                            <AlertTriangle size={18} /> Krytyczne ostrzeżenia
+                                                            <AlertTriangle size={18} /> {invT.import.warnings.critical}
                                                         </div>
                                                         <ul>
                                                             {selectedPreviewItem.validationErrors.map((err: string, i: number) => (
@@ -1204,10 +1203,10 @@ const InventoryContent = () => {
                                                 {selectedPreviewItem.hasItems && (!selectedPreviewItem.validationErrors || selectedPreviewItem.validationErrors.length === 0) && (
                                                     <div className="validation-warning" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)', color: '#93c5fd' }}>
                                                         <div className="warning-header" style={{ color: '#60a5fa' }}>
-                                                            <Box size={18} /> Informacja o zawartości
+                                                            <Box size={18} /> {invT.import.warnings.contentInfo}
                                                         </div>
                                                         <p style={{ fontSize: '0.85rem', margin: 0, paddingLeft: '1.5rem' }}>
-                                                            Ten regał posiada aktualnie towary. Sugerujemy ostrożność przy zmianie parametrów fizycznych.
+                                                            {invT.import.warnings.contentWarning}
                                                         </p>
                                                     </div>
                                                 )}
@@ -1216,7 +1215,7 @@ const InventoryContent = () => {
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                                 <div className="diff-card">
                                                     <div className="card-title" style={{ opacity: 0.5 }}>
-                                                        <LayoutGrid size={14} /> Obecnie w systemie
+                                                        <LayoutGrid size={14} /> {invT.import.diff.current}
                                                     </div>
                                                     {selectedPreviewItem.existingData ? (
                                                         Object.entries(selectedPreviewItem.existingData).map(([key, val]: [string, any]) => (
@@ -1227,14 +1226,14 @@ const InventoryContent = () => {
                                                         ))
                                                     ) : (
                                                         <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.3, fontStyle: 'italic' }}>
-                                                            Brak danych (Nowy element)
+                                                            {invT.import.diff.noData}
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 <div className="diff-card" style={{ borderLeft: '2px solid var(--accent-primary)' }}>
                                                     <div className="card-title" style={{ color: 'var(--accent-primary)' }}>
-                                                        <FileUp size={14} /> Dane z pliku CSV
+                                                        <FileUp size={14} /> {invT.import.diff.csv}
                                                     </div>
                                                     {Object.entries(selectedPreviewItem.data).map(([key, val]: [string, any]) => {
                                                         const isDifferent = selectedPreviewItem.existingData && String(val) !== String(selectedPreviewItem.existingData[key]);
@@ -1256,9 +1255,9 @@ const InventoryContent = () => {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                            <button className="btn-secondary" onClick={() => setIsImportPreviewModalOpen(false)}>Anuluj</button>
+                            <button className="btn-secondary" onClick={() => setIsImportPreviewModalOpen(false)}>{invT.import.cancel}</button>
                             <button className="btn-primary-ht" onClick={handleConfirmImport} disabled={!!batchProgress || importPreviewData.length === 0}>
-                                Zatwierdź i importuj ({importPreviewData.filter(i => i.action !== 'skip').length})
+                                {invT.import.submit.replace('{count}', importPreviewData.filter(i => i.action !== 'skip').length.toString())}
                             </button>
                         </div>
                     </Dialog.Content>
@@ -1270,7 +1269,7 @@ const InventoryContent = () => {
                     <Dialog.Overlay className="dialog-overlay-ht" />
                     <Dialog.Content className="dialog-content-ht" style={{ maxWidth: '600px' }}>
                         <div className="modal-header">
-                            <Dialog.Title>Wynik importu CSV</Dialog.Title>
+                            <Dialog.Title>{invT.import.result.title}</Dialog.Title>
                             <Dialog.Close asChild>
                                 <button className="close-btn"><X size={20} /></button>
                             </Dialog.Close>
@@ -1279,17 +1278,17 @@ const InventoryContent = () => {
                             <div style={{ display: 'flex', gap: '20px', marginBottom: '1.5rem' }}>
                                 <div style={{ flex: 1, padding: '1rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80' }}>{importResult?.successCount}</div>
-                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Sukcesów</div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{invT.import.result.successes}</div>
                                 </div>
                                 <div style={{ flex: 1, padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                                     <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f87171' }}>{importResult?.errorCount}</div>
-                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Błędów</div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{invT.import.result.failures}</div>
                                 </div>
                             </div>
 
                             {importResult && importResult.errors.length > 0 && (
                                 <div style={{ marginTop: '1rem' }}>
-                                    <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>Szczegóły błędów:</p>
+                                    <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>{invT.import.result.details}</p>
                                     <div style={{
                                         maxHeight: '250px',
                                         overflowY: 'auto',
@@ -1310,7 +1309,7 @@ const InventoryContent = () => {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button className="btn-primary" onClick={() => setIsImportResultModalOpen(false)}>
-                                Zamknij
+                                {invT.import.close}
                             </button>
                         </div>
                     </Dialog.Content>
@@ -1322,7 +1321,7 @@ const InventoryContent = () => {
                 onOpenChange={setIsModalOpen}
                 editingRack={editingRack}
                 onSave={handleSaveRack}
-                invT={invT}
+
                 existingRacks={racks}
                 hasItems={editingRack ? inventoryData.some(i => i.rackCode === editingRack.code) : false}
             />

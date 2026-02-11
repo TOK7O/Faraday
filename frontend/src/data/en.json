@@ -202,45 +202,330 @@
         "edit": "Edit",
         "delete": "Delete",
         "tempRange": "Temp range",
-        "capacity": "Capacity"
+        "capacity": "Capacity",
+        "stockTab": "Stock Level",
+        "operationsTab": "Operations",
+        "emptyStock": "Warehouse is currently empty.",
+        "emptyProducts": "No products.",
+        "deleteProductConfirm": "Are you sure you want to remove this product from catalog?",
+        "searchPlaceholder": "Search in warehouse (name, code, rack)...",
+        "moveTo": "Move to",
+        "moveItem": "Move goods",
+        "errors": {
+          "server": "Unknown server error.",
+          "noRacksMatch": {
+            "title": "No matching racks",
+            "dimensions": "Dimensions",
+            "temp": "Required temp",
+            "hint": "Check if racks with such parameters exist in the system."
+          },
+          "noAvailableSlots": {
+            "title": "No available slots",
+            "hint": "All matching racks are full or weight limit would be exceeded."
+          },
+          "productNotFound": {
+            "title": "Product unknown",
+            "hint": "Add product to catalog before inbound."
+          },
+          "csv": {
+            "noData": "No valid data found in CSV file. Check format (semicolons, headers).",
+            "parseError": "Error parsing CSV file.",
+            "readError": "File read error.",
+            "noProducts": "No valid product data found in CSV file."
+          },
+          "deleteRack": "Error deleting rack.",
+          "deleteProduct": "Error deleting product.",
+          "connection": "Server connection error.",
+          "notFound": "Product not found.",
+          "move": "Error during move.",
+          "inbound": "Error during inbound.",
+          "outbound": "Error during outbound."
+        },
+        "import": {
+          "racksTitle": "Import: Racks",
+          "productsTitle": "Import: Products",
+          "processing": "Processing import...",
+          "processed": "{current} of {total} operations finished",
+          "summary": {
+            "total": "Total",
+            "new": "New",
+            "conflicts": "Conflicts",
+            "toSave": "To Save"
+          },
+          "table": {
+            "status": "Status",
+            "code": "Code / Identifier",
+            "decision": "Decision",
+            "action": "Action",
+            "conflict": "Conflict",
+            "new": "New"
+          },
+          "actions": {
+            "skip": "Skip (Keep current)",
+            "update": "Update (Overwrite)",
+            "create": "Create new",
+            "cancelRow": "Cancel this row",
+            "showDiff": "Show differences"
+          },
+          "warnings": {
+            "critical": "Critical warnings",
+            "contentInfo": "Content Information",
+            "contentWarning": "This rack currently holds items. Caution advised when changing physical parameters."
+          },
+          "diff": {
+            "current": "Currently in system",
+            "csv": "Data from CSV",
+            "noData": "No data (New item)"
+          },
+          "result": {
+            "title": "CSV Import Result",
+            "successes": "Successes",
+            "failures": "Failures",
+            "details": "Error details:"
+          },
+          "submit": "Confirm and import ({count})",
+          "cancel": "Cancel",
+          "close": "Close"
+        },
+        "scanner": {
+          "title": "Barcode Scanner",
+          "description": "Use camera to scan product barcode."
+        },
+        "operations": {
+          "inbound": {
+            "title": "Inbound",
+            "subtitle": "Automatic space allocation.",
+            "placeholder": "Product code...",
+            "submit": "Receive goods",
+            "success": "Received",
+            "error": "Error"
+          },
+          "move": {
+            "title": "Move",
+            "subtitle": "Relocation between racks.",
+            "placeholder": "Product code...",
+            "submit": "Initiate move",
+            "action": "Move",
+            "success": "Moved",
+            "error": "Error"
+          },
+          "outbound": {
+            "title": "Outbound",
+            "subtitle": "Goods issue (FIFO).",
+            "placeholder": "Product code...",
+            "submit": "Issue goods",
+            "success": "Issued",
+            "error": "Error",
+            "details": "Product left the warehouse."
+          }
+        },
+        "items": {
+          "receivedBy": "Received by",
+          "days": "days",
+          "status": "Status",
+          "entryDate": "Entry date",
+          "expirationDate": "Expiration date"
+        },
+        "catalog": {
+          "table": {
+            "id": "ID / SKU",
+            "name": "Name",
+            "weight": "Weight",
+            "dims": "Dimensions",
+            "temp": "Temp.",
+            "status": "Status",
+            "actions": "Actions"
+          },
+          "tooltips": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "hazardous": "Hazardous Material"
+          }
+        },
+        "grid": {
+          "pos": "Pos",
+          "weight": "Weight",
+          "empty": "Empty slot"
+        },
+        "modals": {
+          "move": {
+            "title": "Move Item",
+            "description": "Product relocation form.",
+            "product": "Product",
+            "code": "Code",
+            "from": "From",
+            "targetRack": "Target Rack",
+            "selectRack": "Select rack...",
+            "selectSlot": "Select slot:",
+            "selected": "Selected",
+            "freeSlot": "Free slot",
+            "submit": "Confirm Move",
+            "tooltips": {
+              "occupied": "Occupied",
+              "current": "Current location",
+              "select": "Select",
+              "incompatible": "Incompatible",
+              "tooHeavy": "Too heavy",
+              "tempMismatch": "Temp mismatch",
+              "dimMismatch": "Dimensions mismatch"
+            }
+          },
+          "product": {
+            "titleEdit": "Edit Product",
+            "titleNew": "Define Product",
+            "description": "Product form",
+            "editLimited": "Limited edit: Product is in stock. Physical parameters are locked.",
+            "name": "Name",
+            "barcode": "Barcode (EAN/QR)",
+            "photo": "Product Photo",
+            "selectFile": "Select file...",
+            "weight": "Weight [kg]",
+            "tempReq": "Temp Requirements [°C]",
+            "dims": "Dimensions [mm]",
+            "width": "Width",
+            "height": "Height",
+            "depth": "Depth",
+            "comment": "Comment",
+            "adrClass": "ADR Classification",
+            "validity": "Validity (days)",
+            "submitEdit": "Update Product",
+            "submitNew": "Save to System",
+            "errors": {
+              "required": "This field is required",
+              "gt0": "Value must be > 0",
+              "allDimsGt0": "All dimensions must be > 0",
+              "tempRange": "Temp. Min > Max"
+            },
+            "adrOptions": {
+              "none": "None",
+              "class1": "Class 1 (Explosives)",
+              "class2": "Class 2 (Gases)",
+              "class3": "Class 3 (Flammable)",
+              "class6": "Class 6 (Toxic)",
+              "class8": "Class 8 (Corrosive)"
+            }
+          },
+          "rack": {
+            "titleEdit": "Rack Configuration",
+            "titleNew": "New Rack Unit",
+            "description": "Rack configuration form",
+            "editLimited": "Editing Limited: Rack contains items. Physical parameters locked",
+            "code": "Designation (ID)",
+            "comment": "Note/Description",
+            "rows": "Grid: Rows (M)",
+            "cols": "Grid: Cols (N)",
+            "capacity": "Total Capacity [kg]",
+            "environment": "Environment: Temp [°C]",
+            "maxDims": "Max Item Dims [mm]",
+            "submitEdit": "Update Parameters",
+            "submitNew": "Confirm and Create Rack",
+            "errors": {
+              "required": "Field required",
+              "codeInUse": "Code {code} is already in use!",
+              "number": "Enter a number",
+              "gt0": "{label} must be > 0",
+              "tempRange": "Error: {min}°C > {max}°C"
+            }
+          },
+          "addUser": {
+            "title": "New User",
+            "create": "CREATE ACCOUNT",
+            "creating": "Creating...",
+            "username": "Username",
+            "email": "Email",
+            "password": "Password",
+            "confirmPassword": "Confirm Password",
+            "role": "Role",
+            "placeholders": {
+              "username": "e.g. j.doe",
+              "email": "user@faraday.systems",
+              "password": "Min 8 chars, number, symbol",
+              "confirm": "Re-enter password"
+            },
+            "errors": {
+              "required": "Required",
+              "invalidEmail": "Invalid email",
+              "tooShort": "Min 8 chars",
+              "noNumber": "Need number",
+              "noSpecial": "Need symbol",
+              "mismatch": "Passwords do not match",
+              "createError": "Failed to create user"
+            }
+          },
+          "editUser": {
+            "title": "Edit User",
+            "save": "Save Changes"
+          },
+          "resetPassword": {
+            "title": "Reset Password",
+            "description": "Override password for",
+            "submit": "Override Password"
+          }
+        }
       },
       "personnel": {
+        "tag": "System Administration",
         "title": "Personnel Management",
-        "placeholder": "List of operators with active 2FA module",
-        "managementSystem": "Personnel Management System",
-        "database": "Database",
-        "monitorDescription": "Monitor operator availability and manage biometric security credentials.",
-        "sync": "Sync",
-        "searchPlaceholder": "Filter by ID or name...",
-        "registerOperator": "Register Operator",
-        "authOperator": "Operator Authorization",
-        "fullName": "Full Name",
-        "fullNamePlaceholder": "e.g. John Doe",
-        "systemEmail": "System Email",
-        "emailPlaceholder": "j.doe@warehouse.com",
-        "sectorRole": "Sector Role",
-        "securityId": "Security ID",
-        "securityIdPlaceholder": "FS-XXXX",
-        "confirmAuth": "Confirm & Authorize",
+        "description": "Manage system access, user roles, and account statuses.",
+        "search": "Search personnel...",
+        "addUser": "Add User",
+        "table": {
+          "id": "ID",
+          "user": "User",
+          "role": "Role",
+          "status": "Status",
+          "security": "Security",
+          "lastLogin": "Last Login",
+          "action": "Action"
+        },
         "roles": {
-          "operator": "Warehouse Operator",
-          "manager": "Shift Manager",
-          "admin": "System Administrator"
+          "admin": "Administrator",
+          "worker": "Warehouse Worker"
+        },
+        "status": {
+          "active": "Active",
+          "offline": "Offline"
+        },
+        "actions": {
+          "edit": "Edit User",
+          "resetPass": "Reset Password",
+          "reset2fa": "Reset 2FA",
+          "activate": "Activate",
+          "deactivate": "Deactivate"
+        },
+        "messages": {
+          "confirmStatusChange": "Are you sure you want to change this user's status?",
+          "confirmReset2fa": "Are you sure you want to reset 2FA for this user?",
+          "reset2faSuccess": "2FA has been reset.",
+          "resetPassSuccess": "Password reset successfully.",
+          "updateSuccess": "User updated.",
+          "error": "An error occurred."
+        }
+      },
+      "operations": {
+        "tag": "Logistics Audit Log",
+        "title": "Operations History",
+        "sync": "Sync Logs",
+        "search": "Search logs by ID, Product or Operator...",
+        "filters": {
+          "last20": "Last 20 entries",
+          "last50": "Last 50 entries",
+          "last100": "Last 100 entries"
         },
         "table": {
-          "employeeId": "Employee ID",
-          "identity": "Identity",
-          "assignedRole": "Assigned Role",
-          "status": "Status",
-          "management": "Management",
-          "configureAccess": "Configure Access",
-          "revokePermissions": "Revoke Permissions"
+          "timestamp": "Timestamp",
+          "operation": "Operation",
+          "detail": "Action Detail",
+          "asset": "Target Asset",
+          "operator": "Operator"
         },
-        "stats": {
-          "totalPersonnel": "Total Personnel",
-          "activeNow": "Active Now",
-          "onBreak": "On Break"
-        }
+        "types": {
+          "accepted": "Accepted",
+          "dispatched": "Dispatched",
+          "moved": "Moved"
+        },
+        "loading": "Loading system logs...",
+        "empty": "No records found."
       },
       "reports": {
         "title": "Reports",
@@ -318,6 +603,50 @@
       "title": "System Language",
       "english": "English (US)",
       "polish": "Polish (PL)"
+    }
+  },
+  "forgotPasswordPage": {
+    "visualSection": {
+      "title": "Recovery",
+      "description": "Lost your credentials? We'll help you get back on track."
+    },
+    "formSection": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive a reset link.",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name@company.com",
+      "emailRequired": "Email is required",
+      "sendButton": "Send Reset Link",
+      "backToLogin": "Back to Login",
+      "successMessage": "If an account exists for that email, we have sent password reset instructions.",
+      "returnToLogin": "Return to Login",
+      "genericError": "Something went wrong. Please try again."
+    }
+  },
+  "resetPasswordPage": {
+    "visualSection": {
+      "title": "Faraday Systems"
+    },
+    "formSection": {
+      "title": "Set New Password",
+      "subtitle": "Please enter your new credentials below.",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "resetButton": "Reset Password",
+      "passwordsMismatch": "Passwords do not match",
+      "resetError": "Failed to reset password. The link may have expired.",
+      "validation": {
+        "required": "Required",
+        "tooShort": "Min 8 chars",
+        "noNumber": "Need number",
+        "noSpecialChar": "Need symbol"
+      }
+    },
+    "invalidLink": {
+      "title": "Invalid Link",
+      "description": "This password reset link is invalid or missing a token."
     }
   }
 }

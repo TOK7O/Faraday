@@ -519,7 +519,7 @@ $radius-modal: 24px;
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-input);
     border-radius: 20px;
-    overflow: hidden;
+    overflow-x:scroll;
     margin-top: 1rem;
 
     .ht-table {

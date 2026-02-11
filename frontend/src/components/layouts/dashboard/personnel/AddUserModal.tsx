@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Form from "@radix-ui/react-form";
 import { X, Loader2, UserPlus, AlertCircle } from "lucide-react";
 import { registerUser } from "@/api/axios";
-import { SignInLoginField } from "@components/ui/SignInLoginField";
-import { RegisterEmailField } from "@components/ui/RegisterEmailField";
-import { RegisterPasswordFieldPair } from "@components/ui/RegisterPasswordFieldPair";
+import { SignInLoginField } from "@/components/ui/SignInLoginField";
+import { RegisterEmailField } from "@/components/ui/RegisterEmailField";
+import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
+import { useTranslation } from "@/context/LanguageContext";
 import "./AddUserModal.scss";
 
 
@@ -22,39 +23,11 @@ interface AddUserModalProps {
     onSuccess: () => void;
 }
 
-// --- ZAKTUALIZOWANA KONFIGURACJA (zgodna z ResetPasswordPage) ---
-const fieldsData = {
-    username: {
-        label: "Username",
-        placeholder: "e.g. j.doe",
-        validation: { required: "Username is required" }
-    },
-    email: {
-        label: "Email",
-        placeholder: "user@faraday.systems",
-        validation: { required: "Email is required", invalid: "Invalid email" }
-    },
-    password: {
-        label: "Password",
-        placeholder: "Min 8 chars, number, symbol",
-        validation: {
-            required: "Password is required",
-            tooShort: "Min 8 chars",      // Zmieniono z 6 na 8
-            noNumber: "Need number",      // Wymagana cyfra
-            noSpecialChar: "Need symbol"  // Wymagany znak specjalny (!@#$...)
-        }
-    },
-    confirmPassword: {
-        label: "Confirm Password",
-        placeholder: "Re-enter password",
-        validation: {
-            required: "Confirmation is required",
-            mismatch: "Passwords do not match"
-        }
-    }
-};
-
 export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProps) => {
+    const { t } = useTranslation();
+    const tAdd = t.dashboardPage.content.inventory.modals.addUser;
+    const tRoles = t.dashboardPage.content.personnel.roles;
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +35,38 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [role, setRole] = useState<UserRole>(UserRole.WarehouseWorker);
+
+    // Dynamic configuration based on language
+    const fieldsData = useMemo(() => ({
+        username: {
+            label: tAdd.username,
+            placeholder: tAdd.placeholders.username,
+            validation: { required: tAdd.errors.required }
+        },
+        email: {
+            label: tAdd.email,
+            placeholder: tAdd.placeholders.email,
+            validation: { required: tAdd.errors.required, invalid: tAdd.errors.invalidEmail }
+        },
+        password: {
+            label: tAdd.password,
+            placeholder: tAdd.placeholders.password,
+            validation: {
+                required: tAdd.errors.required,
+                tooShort: tAdd.errors.tooShort,
+                noNumber: tAdd.errors.noNumber,
+                noSpecialChar: tAdd.errors.noSpecial
+            }
+        },
+        confirmPassword: {
+            label: tAdd.confirmPassword,
+            placeholder: tAdd.placeholders.confirm,
+            validation: {
+                required: tAdd.errors.required,
+                mismatch: tAdd.errors.mismatch
+            }
+        }
+    }), [tAdd]);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -92,7 +97,7 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
             setConfirmPassword("");
             setRole(UserRole.WarehouseWorker);
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || "Failed to create user.";
+            const msg = err.response?.data?.message || err.message || tAdd.errors.createError;
             setError(typeof msg === "string" ? msg : JSON.stringify(msg));
         } finally {
             setIsLoading(false);
@@ -112,7 +117,7 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
                         <Dialog.Title asChild>
                             <h2>
                                 <UserPlus size={24} className="icon-accent" />
-                                New User
+                                {tAdd.title}
                             </h2>
                         </Dialog.Title>
 
@@ -155,15 +160,15 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
                                 marginBottom: '0.5rem',
                                 display: 'block'
                             }}>
-                                Role
+                                {tAdd.role}
                             </label>
                             <select
                                 className="ht-input"
                                 value={role}
                                 onChange={e => setRole(Number(e.target.value) as UserRole)}
                             >
-                                <option value={UserRole.WarehouseWorker}>Warehouse Worker</option>
-                                <option value={UserRole.Administrator}>Administrator</option>
+                                <option value={UserRole.WarehouseWorker}>{tRoles.worker}</option>
+                                <option value={UserRole.Administrator}>{tRoles.admin}</option>
                             </select>
                         </div>
 
@@ -188,9 +193,9 @@ export const AddUserModal = ({ open, onOpenChange, onSuccess }: AddUserModalProp
                         <Form.Submit asChild>
                             <button className="btn-submit-ht" disabled={isLoading}>
                                 {isLoading ? (
-                                    <><Loader2 className="animate-spin" size={20} /> Creating...</>
+                                    <><Loader2 className="animate-spin" size={20} /> {tAdd.creating}</>
                                 ) : (
-                                    "CREATE ACCOUNT"
+                                    tAdd.create
                                 )}
                             </button>
                         </Form.Submit>

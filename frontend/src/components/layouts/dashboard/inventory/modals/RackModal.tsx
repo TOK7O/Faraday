@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, AlertCircle } from "lucide-react";
 import type { Rack } from "../InventoryContent.types.ts";
+import { useTranslation } from "@/context/LanguageContext";
 
 interface RackModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     editingRack: Rack | null;
     onSave: (e: React.FormEvent<HTMLFormElement>) => void;
-    invT: any;
     existingRacks: Rack[];
     hasItems?: boolean;
 }
@@ -25,6 +25,15 @@ interface FormErrors {
 }
 
 export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRacks, hasItems }: RackModalProps) => {
+    const { t } = useTranslation();
+    const invT = t.dashboardPage.content.inventory.modals.rack;
+
+    const labels = {
+        width: "Szer.",
+        height: "Wys.",
+        depth: "Głęb."
+    };
+
     const [errors, setErrors] = useState<FormErrors>({});
     const [codeValue, setCodeValue] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
@@ -65,25 +74,25 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
         const code = (formData.get("code")?.toString() || codeValue).toUpperCase();
 
         if (!code) {
-            newErrors.code = "Pole wymagane";
+            newErrors.code = invT.errors.required;
         } else if (!editingRack && existingRacks.some(r => r.code.toUpperCase() === code)) {
-            newErrors.code = `Kod ${code} jest już w użyciu!`;
+            newErrors.code = invT.errors.codeInUse.replace("{code}", code);
         }
 
         const validatePositive = (name: string, label: string, key: keyof FormErrors) => {
             const val = parseFloat(formData.get(name)?.toString() || "");
             if (formData.has(name)) {
-                if (isNaN(val)) newErrors[key] = "Wpisz liczbę";
-                else if (val <= 0) newErrors[key] = `${label} musi być > 0`;
+                if (isNaN(val)) newErrors[key] = invT.errors.number;
+                else if (val <= 0) newErrors[key] = invT.errors.gt0.replace("{label}", label);
             }
         };
 
-        validatePositive("rows", "Liczba rzędów", "rows");
-        validatePositive("columns", "Liczba kolumn", "columns");
-        validatePositive("maxWeightKg", "Nośność", "maxWeightKg");
-        validatePositive("maxItemWidthMm", "Szerokość", "maxItemWidthMm");
-        validatePositive("maxItemHeightMm", "Wysokość", "maxItemHeightMm");
-        validatePositive("maxItemDepthMm", "Głębokość", "maxItemDepthMm");
+        validatePositive("rows", invT.rows, "rows");
+        validatePositive("columns", invT.cols, "columns");
+        validatePositive("maxWeightKg", invT.capacity, "maxWeightKg");
+        validatePositive("maxItemWidthMm", labels.width, "maxItemWidthMm");
+        validatePositive("maxItemHeightMm", labels.height, "maxItemHeightMm");
+        validatePositive("maxItemDepthMm", labels.depth, "maxItemDepthMm");
 
         const minT = formData.get("minTemperature");
         const maxT = formData.get("maxTemperature");
@@ -91,7 +100,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
             const minNum = parseFloat(minT.toString());
             const maxNum = parseFloat(maxT.toString());
             if (minNum > maxNum) {
-                newErrors.tempRange = `Błąd: ${minNum}°C > ${maxNum}°C`;
+                newErrors.tempRange = invT.errors.tempRange.replace("{min}", minNum.toString()).replace("{max}", maxNum.toString());
             }
         }
 
@@ -138,9 +147,9 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                 <Dialog.Content className="dialog-content-ht">
                     <div className="modal-accent-line" />
                     <div className="modal-header">
-                        <Dialog.Title><h2>{editingRack ? "Konfiguracja Regału" : "Nowa Jednostka Regałowa"}</h2></Dialog.Title>
+                        <Dialog.Title><h2>{editingRack ? invT.titleEdit : invT.titleNew}</h2></Dialog.Title>
                         <Dialog.Description className="visually-hidden">
-                            Formularz do {editingRack ? "edycji" : "tworzenia"} regału.
+                            {invT.description}
                         </Dialog.Description>
                         <Dialog.Close asChild><button className="btn-close"><X size={24} /></button></Dialog.Close>
                     </div>
@@ -158,7 +167,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                         }}>
                             <AlertCircle size={20} color="#ef4444" />
                             <div style={{ fontSize: '0.85rem', color: '#ffaaaa' }}>
-                                <strong>Edycja ograniczona:</strong> Regał zawiera towary. Zmiana parametrów fizycznych jest zablokowana, aby zapobiec konfliktom.
+                                <strong>{invT.editLimited.split(':')[0]}:</strong> {invT.editLimited.split(':')[1]}
                             </div>
                         </div>
                     )}
@@ -166,7 +175,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                     <form className="ht-form" ref={formRef} onSubmit={handleSubmit}>
                         <div className="input-row">
                             <div className="input-group">
-                                <label>Oznaczenie (ID)</label>
+                                <label>{invT.code}</label>
                                 <input
                                     name="code"
                                     value={codeValue}
@@ -182,12 +191,12 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                 <ErrorLabel field="code" />
                             </div>
                             <div className="input-group">
-                                <label>Notatka/Opis</label>
+                                <label>{invT.comment}</label>
                                 <input
                                     name="comment"
                                     defaultValue={editingRack?.comment}
                                     onChange={handleInputChange}
-                                    placeholder="Lokalizacja lub przeznaczenie..."
+                                    placeholder={invT.comment}
                                 />
                             </div>
                         </div>
@@ -195,12 +204,12 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                         {!editingRack && (
                             <div className="input-row">
                                 <div className="input-group">
-                                    <label>Siatka: Rzędy (M)</label>
+                                    <label>{invT.rows}</label>
                                     <input type="number" name="rows" onChange={handleInputChange} required />
                                     <ErrorLabel field="rows" />
                                 </div>
                                 <div className="input-group">
-                                    <label>Siatka: Kolumny (N)</label>
+                                    <label>{invT.cols}</label>
                                     <input type="number" name="columns" onChange={handleInputChange} required />
                                     <ErrorLabel field="columns" />
                                 </div>
@@ -209,7 +218,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
 
                         <div className="input-row">
                             <div className="input-group">
-                                <label>Nośność całkowita [kg]</label>
+                                <label>{invT.capacity}</label>
                                 <input
                                     type="number"
                                     step="0.1"
@@ -223,7 +232,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                 <ErrorLabel field="maxWeightKg" />
                             </div>
                             <div className="input-group">
-                                <label>Środowisko: Temp [°C] <ErrorLabel field="tempRange" /></label>
+                                <label>{invT.environment} <ErrorLabel field="tempRange" /></label>
                                 <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
                                     <input type="number" step="0.1" name="minTemperature" onChange={handleInputChange} defaultValue={editingRack?.tempMin ?? ""} placeholder="Min" required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
@@ -236,7 +245,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                         </div>
 
                         <div className="input-group">
-                            <label>Maksymalne gabaryty towaru [mm]</label>
+                            <label>{invT.maxDims}</label>
                             <div className="multi-input" style={{ display: 'flex', gap: '8px' }}>
                                 <div style={{ flex: 1 }}>
                                     <input
@@ -244,7 +253,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         name="maxItemWidthMm"
                                         onChange={handleInputChange}
                                         defaultValue={editingRack?.maxWidth ?? ""}
-                                        placeholder="Szerokość"
+                                        placeholder={labels.width}
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
@@ -256,7 +265,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         name="maxItemHeightMm"
                                         onChange={handleInputChange}
                                         defaultValue={editingRack?.maxHeight ?? ""}
-                                        placeholder="Wysokość"
+                                        placeholder={labels.height}
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
@@ -268,7 +277,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                         name="maxItemDepthMm"
                                         onChange={handleInputChange}
                                         defaultValue={editingRack?.maxDepth ?? ""}
-                                        placeholder="Głębokość"
+                                        placeholder={labels.depth}
                                         required
                                         readOnly={hasItems} style={{ opacity: hasItems ? 0.6 : 1, cursor: hasItems ? 'not-allowed' : 'text' }}
                                     />
@@ -288,7 +297,7 @@ export const RackModal = ({ open, onOpenChange, editingRack, onSave, existingRac
                                 cursor: hasErrors ? 'not-allowed' : 'pointer'
                             }}
                         >
-                            {editingRack ? "Zaktualizuj parametry" : "Zatwierdź i utwórz regał"}
+                            {editingRack ? invT.submitEdit : invT.submitNew}
                         </button>
                     </form>
                 </Dialog.Content>
