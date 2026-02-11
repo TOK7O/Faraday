@@ -14,6 +14,7 @@ import Sidebar from "@/components/layouts/dashboard/Sidebar";
 import DashboardNavbar from "@/components/layouts/dashboard/DashboardNavbar";
 import MobileNavbar from "@/components/layouts/dashboard/MobileNavbar";
 import { isSessionExpired, clearSession } from "@/utils/auth.utils";
+import { VoiceControlFAB } from "../VoiceControlFAB";
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -82,6 +83,7 @@ const DashboardPage = () => {
           </section>
         </main>
       </Tabs.Root>
+        <VoiceControlFAB />
     </div>
   );
 };

@@ -2,7 +2,7 @@
 import * as Form from "@radix-ui/react-form";
 import * as Password from "@radix-ui/react-password-toggle-field";
 import { EyeOpenIcon, EyeNoneIcon } from "@radix-ui/react-icons";
-
+import "./AuthForm.scss";
 interface PasswordPairProps {
   passwordData: any;
   confirmData: any;
@@ -91,7 +91,7 @@ export const RegisterPasswordFieldPair = ({
         <Password.Root>
           <Form.Control asChild>
             <Password.Input
-              className="Input"
+              className="ht-input"
               required
               value={confirm}
               placeholder={confirmData.placeholder}

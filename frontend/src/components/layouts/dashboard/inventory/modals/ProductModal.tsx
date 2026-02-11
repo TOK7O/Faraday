@@ -189,6 +189,7 @@ export const ProductModal = ({
                     <input
                       type="file"
                       accept="image/*"
+                      style={{ display: "none" }}
                       onChange={handleFileChange}
                     />
                   </label>
