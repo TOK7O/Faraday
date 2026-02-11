@@ -17,9 +17,9 @@ const HomePage = () => {
           </span>
         </div>
         <div className="nav-actions">
-          <Link to="/docs">
-            <button className={"btn-ht"}>{t.homePage.nav.documentation}</button>
-          </Link>
+          {/*<Link to="/docs">*/}
+          {/*  <button className={"btn-ht"}>{t.homePage.nav.documentation}</button>*/}
+          {/*</Link>*/}
           <Link to="/dashboard">
             <button className={"btn-ht"}>{t.homePage.nav.dashboard}</button>
           </Link>
