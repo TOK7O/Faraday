@@ -15,8 +15,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     allowedHosts: ["faradaywms.pl", "www.faradaywms.pl", "localhost"],
-      watch: {
-          usePolling: true,
-      },
+    watch: {
+      usePolling: true,
+    },
   },
 });
