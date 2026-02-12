@@ -410,9 +410,9 @@ const PersonnelContent = () => {
                                     </td>
                                     <td>
                                         {person.is2faEnabled && (
-                                            <span style={{ color: "#4ade80", fontSize: "0.75rem" }}>
-                                                <Smartphone size={12} /> {tPers.status.twoFactorOn}
-                                            </span>
+                                            <span className="security-badge">
+            <Smartphone size={12} /> {tPers.status.twoFactorOn}
+        </span>
                                         )}
                                     </td>
                                     <td

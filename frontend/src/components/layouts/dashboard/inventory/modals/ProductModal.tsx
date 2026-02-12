@@ -336,7 +336,7 @@ export const ProductModal = ({
 
               <button
                   type="submit"
-                  className="btn-submit-ht secondary"
+                  className="btn-submit-ht"
                   disabled={isInvalid}
               >
                 {editingProduct ? invT.submitEdit : invT.submitNew}

@@ -235,10 +235,15 @@ const OperationsHistory = () => {
                         )}
                       </div>
                     </td>
-                    <td>
-                      <div className="detail-item">
-                        <User size={14} />
-                        <span>{log.userName}</span>
+                    <td className="operator-col">
+                      <div className="operator-wrapper">
+                        <div className="op-avatar">
+                          <User size={16} />
+                        </div>
+                        <div className="op-info">
+                          <span className="op-name">{log.userName}</span>
+                          <span className="op-role">Staff</span>
+                        </div>
                       </div>
                     </td>
                   </tr>

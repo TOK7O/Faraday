@@ -245,9 +245,55 @@
           }
         }
       }
+      .operator-col {
+        .operator-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .op-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(var(--text-muted-rgb, 148, 163, 184), 0.1);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+          }
+
+          .op-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+
+            .op-name {
+              font-weight: 700;
+              color: var(--text-main);
+              font-size: 0.9rem;
+            }
+
+            .op-role {
+              font-size: 0.75rem;
+              color: var(--text-muted);
+              opacity: 0.7;
+            }
+          }
+        }
+      }
+
+      tr:hover .op-avatar {
+        background: rgba(var(--accent-primary-rgb, 0, 242, 255), 0.15);
+        color: var(--accent-primary);
+        border-color: rgba(var(--accent-primary-rgb, 0, 242, 255), 0.3);
+      }
+    }
+
     }
   }
-}
+
 
 @keyframes spin {
   from {

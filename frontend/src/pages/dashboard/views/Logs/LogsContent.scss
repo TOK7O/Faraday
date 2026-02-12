@@ -124,7 +124,7 @@
         border-left: 1px solid var(--border-input);
         padding-left: 1rem;
         select {
-          background: transparent;
+          background: var(--bg-form);
           border: none;
           color: var(--text-main);
           font-weight: 700;
