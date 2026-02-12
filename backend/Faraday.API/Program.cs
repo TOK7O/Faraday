@@ -167,7 +167,15 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-builder.Services.Configure<EmailSettings>(builder.Configuration);
+builder.Services.Configure<EmailSettings>(options =>
+{
+    options.SMTP_SERVER = Environment.GetEnvironmentVariable("SMTP_SERVER");
+    var portEnv = Environment.GetEnvironmentVariable("SMTP_PORT");
+    options.SMTP_PORT = int.TryParse(portEnv, out var port) ? port : 587;
+    options.SMTP_EMAIL = Environment.GetEnvironmentVariable("SMTP_EMAIL");
+    options.SMTP_NAME = Environment.GetEnvironmentVariable("SMTP_NAME") ?? "Faraday System";
+    options.SMTP_PASSWORD = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+});
 
 // Register Services (Scoped)
 builder.Services.AddScoped<IAuthService, AuthService>();
