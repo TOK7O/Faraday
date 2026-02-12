@@ -21,7 +21,7 @@ import {
   X,
   BrainCircuit,
   Upload,
-  Database
+  Database,
 } from "lucide-react";
 import { useTranslation } from "@/context/LanguageContext";
 import { Html5QrcodeScanner } from "html5-qrcode";
@@ -39,7 +39,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  recognizeProduct // <--- NOWA FUNKCJA API
+  recognizeProduct, // <--- NOWA FUNKCJA API
 } from "@/api/axios";
 
 // POPRAWIONY IMPORT TYPÓW (TS1484)
@@ -149,12 +149,13 @@ const InventoryContent = () => {
         setIdentifiedProduct({
           ...result.product,
           confidenceScore: result.confidenceScore,
-          confidenceLevel: result.confidenceLevel
+          confidenceLevel: result.confidenceLevel,
         });
 
-        const identifyTabTrigger = document.querySelector('[data-value="identify"]') as HTMLElement;
+        const identifyTabTrigger = document.querySelector(
+          '[data-value="identify"]',
+        ) as HTMLElement;
         if (identifyTabTrigger) identifyTabTrigger.click();
-
       } else {
         alert(invT.errors.notFound || "Product not recognized");
       }
@@ -893,11 +894,11 @@ const InventoryContent = () => {
       <div className="personnel-view-container">
         {/* UKRYTY INPUT DO UPLOADU ZDJĘĆ DLA AI */}
         <input
-            type="file"
-            accept="image/png, image/jpeg, image/webp"
-            ref={aiFileInputRef}
-            hidden
-            onChange={handleAiFileSelect}
+          type="file"
+          accept="image/png, image/jpeg, image/webp"
+          ref={aiFileInputRef}
+          hidden
+          onChange={handleAiFileSelect}
         />
         <Tabs.Root defaultValue="racks" className="inventory-tabs-root">
           <header className="content-header">
@@ -909,17 +910,44 @@ const InventoryContent = () => {
               <h1>
                 Inventory <span className="outline-text">Hub</span>
               </h1>
-              <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-                <Tabs.List className="ht-tabs-list" style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}>
-                  <Tabs.Trigger value="racks" className="ht-tabs-trigger">{invT.racksStructure}</Tabs.Trigger>
-                  <Tabs.Trigger value="products" className="ht-tabs-trigger">{invT.productCatalog}</Tabs.Trigger>
-                  <Tabs.Trigger value="stock" className="ht-tabs-trigger">{invT.stockTab}</Tabs.Trigger>
-                  <Tabs.Trigger value="operations" className="ht-tabs-trigger">{invT.operationsTab}</Tabs.Trigger>
-                  <Tabs.Trigger value="identify" className="ht-tabs-trigger" style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
-                    <BrainCircuit size={16} style={{ marginRight: 6 }}/> Identify
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
+              >
+                <Tabs.List
+                  className="ht-tabs-list"
+                  style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}
+                >
+                  <Tabs.Trigger value="racks" className="ht-tabs-trigger">
+                    {invT.racksStructure}
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="products" className="ht-tabs-trigger">
+                    {invT.productCatalog}
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="stock" className="ht-tabs-trigger">
+                    {invT.stockTab}
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="operations" className="ht-tabs-trigger">
+                    {invT.operationsTab}
+                  </Tabs.Trigger>
+                  <Tabs.Trigger
+                    value="identify"
+                    className="ht-tabs-trigger"
+                    style={{
+                      color: "var(--accent-primary)",
+                      borderColor: "var(--accent-primary)",
+                    }}
+                  >
+                    <BrainCircuit size={16} style={{ marginRight: 6 }} />{" "}
+                    Identify
                   </Tabs.Trigger>
                 </Tabs.List>
-                <button onClick={fetchData} className="btn-action-ht" disabled={isLoading}>{isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}</button>
+                <button
+                  onClick={fetchData}
+                  className="btn-action-ht"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Spinner size={16} /> : <RefreshCw size={16} />}
+                </button>
               </div>
             </div>
           </header>
@@ -1158,30 +1186,79 @@ const InventoryContent = () => {
             </div>
           </Tabs.Content>
           <Tabs.Content value="identify">
-            <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-
+            <div
+              style={{
+                maxWidth: "1000px",
+                margin: "0 auto",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "2rem",
+              }}
+            >
               {/* LEWA KOLUMNA: IDENTYFIKACJA */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', height: '100%' }}>
-                  <div style={{ background: 'rgba(var(--accent-primary-rgb), 0.1)', padding: '1rem', borderRadius: '50%' }}>
-                    <BrainCircuit size={48} style={{ color: 'var(--accent-primary)' }} />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2rem",
+                }}
+              >
+                <div
+                  className="glass-card"
+                  style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "1.5rem",
+                    height: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "rgba(var(--accent-primary-rgb), 0.1)",
+                      padding: "1rem",
+                      borderRadius: "50%",
+                    }}
+                  >
+                    <BrainCircuit
+                      size={48}
+                      style={{ color: "var(--accent-primary)" }}
+                    />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Identify Product</h2>
-                    <p className="text-muted">Take a photo to identify an existing product.</p>
+                    <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+                      Identify Product
+                    </h2>
+                    <p className="text-muted">
+                      Take a photo to identify an existing product.
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "1rem",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                    }}
+                  >
                     <button
-                        className="btn-primary-ht"
-                        style={{ padding: '0.8rem 1.5rem' }}
-                        onClick={() => setIsAiScannerOpen(true)}
+                      className="btn-primary-ht"
+                      style={{ padding: "0.8rem 1.5rem" }}
+                      onClick={() => setIsAiScannerOpen(true)}
                     >
                       <Camera size={20} /> Camera
                     </button>
                     <button
-                        className="btn-secondary"
-                        style={{ padding: '0.8rem 1.5rem', display: 'flex', gap: '8px', alignItems: 'center' }}
-                        onClick={() => aiFileInputRef.current?.click()}
+                      className="btn-secondary"
+                      style={{
+                        padding: "0.8rem 1.5rem",
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center",
+                      }}
+                      onClick={() => aiFileInputRef.current?.click()}
                     >
                       <Upload size={20} /> Upload
                     </button>
@@ -1189,35 +1266,117 @@ const InventoryContent = () => {
 
                   {/* WYNIK IDENTYFIKACJI */}
                   {identifiedProduct && (
-                      <div style={{ marginTop: '2rem', width: '100%', textAlign: 'left', borderTop: '1px solid var(--border-input)', paddingTop: '1rem', animation: 'fadeIn 0.3s ease' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>RESULT</span>
-                          <span className={`status-badge ${identifiedProduct.confidenceLevel === 'Excellent' ? 'new' : 'conflict'}`}>
-                                        {identifiedProduct.confidenceLevel} ({(identifiedProduct.confidenceScore * 100).toFixed(0)}%)
-                                    </span>
+                    <div
+                      style={{
+                        marginTop: "2rem",
+                        width: "100%",
+                        textAlign: "left",
+                        borderTop: "1px solid var(--border-input)",
+                        paddingTop: "1rem",
+                        animation: "fadeIn 0.3s ease",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          RESULT
+                        </span>
+                        <span
+                          className={`status-badge ${identifiedProduct.confidenceLevel === "Excellent" ? "new" : "conflict"}`}
+                        >
+                          {identifiedProduct.confidenceLevel} (
+                          {(identifiedProduct.confidenceScore * 100).toFixed(0)}
+                          %)
+                        </span>
+                      </div>
+                      <h3
+                        style={{
+                          fontSize: "1.4rem",
+                          color: "var(--accent-primary)",
+                          margin: "0 0 5px 0",
+                        }}
+                      >
+                        {identifiedProduct.name}
+                      </h3>
+                      <div
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "1rem",
+                          background: "rgba(255,255,255,0.05)",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          display: "inline-block",
+                        }}
+                      >
+                        {identifiedProduct.scanCode}
+                      </div>
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          fontSize: "0.9rem",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "10px",
+                        }}
+                      >
+                        <div>
+                          Weight:{" "}
+                          <strong>{identifiedProduct.weightKg} kg</strong>
                         </div>
-                        <h3 style={{ fontSize: '1.4rem', color: 'var(--accent-primary)', margin: '0 0 5px 0' }}>{identifiedProduct.name}</h3>
-                        <div style={{ fontFamily: 'monospace', fontSize: '1rem', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', display: 'inline-block' }}>
-                          {identifiedProduct.scanCode}
-                        </div>
-                        <div style={{ marginTop: '1rem', fontSize: '0.9rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div>Weight: <strong>{identifiedProduct.weightKg} kg</strong></div>
-                          <div>Hazardous: <strong>{identifiedProduct.isHazardous ? 'Yes' : 'No'}</strong></div>
+                        <div>
+                          Hazardous:{" "}
+                          <strong>
+                            {identifiedProduct.isHazardous ? "Yes" : "No"}
+                          </strong>
                         </div>
                       </div>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* PRAWA KOLUMNA: TRENING / ZARZĄDZANIE OBRAZAMI */}
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-input)', paddingBottom: '1rem' }}>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '8px', borderRadius: '8px' }}>
+              <div className="glass-card" style={{ padding: "2rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginBottom: "1.5rem",
+                    borderBottom: "1px solid var(--border-input)",
+                    paddingBottom: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "rgba(255, 255, 255, 0.1)",
+                      padding: "8px",
+                      borderRadius: "8px",
+                    }}
+                  >
                     <Database size={24} />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '1.3rem', margin: 0 }}>AI Training Studio</h2>
-                    <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0 }}>Attach reference images to barcodes.</p>
+                    <h2 style={{ fontSize: "1.3rem", margin: 0 }}>
+                      AI Training Studio
+                    </h2>
+                    <p
+                      className="text-muted"
+                      style={{ fontSize: "0.85rem", margin: 0 }}
+                    >
+                      Attach reference images to barcodes.
+                    </p>
                   </div>
                 </div>
 
@@ -1225,57 +1384,81 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <label>Select Product to Train</label>
                     <select
-                        className="ht-input"
-                        value={trainingProduct?.id || ""}
-                        onChange={(e) => {
-                          const prod = products.find(p => p.id === Number(e.target.value));
-                          setTrainingProduct(prod || null);
-                        }}
+                      className="ht-input"
+                      value={trainingProduct?.id || ""}
+                      onChange={(e) => {
+                        const prod = products.find(
+                          (p) => p.id === Number(e.target.value),
+                        );
+                        setTrainingProduct(prod || null);
+                      }}
                     >
                       <option value="">-- Choose a product --</option>
-                      {products.map(p => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.scanCode})
-                          </option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.scanCode})
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   {trainingProduct ? (
-                      <div style={{ animation: 'fadeIn 0.3s ease' }}>
-                        <div style={{
-                          background: 'rgba(var(--accent-primary-rgb), 0.05)',
-                          border: '1px solid rgba(var(--accent-primary-rgb), 0.2)',
-                          padding: '1rem',
-                          borderRadius: '8px',
-                          marginBottom: '1rem',
-                          marginTop: '1rem'
-                        }}>
-                          <div style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', fontWeight: 600, marginBottom: '4px' }}>
-                            Active Context:
-                          </div>
-                          <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{trainingProduct.name}</div>
-                          <div style={{ fontFamily: 'monospace', opacity: 0.8 }}>Barcode: {trainingProduct.scanCode}</div>
+                    <div style={{ animation: "fadeIn 0.3s ease" }}>
+                      <div
+                        style={{
+                          background: "rgba(var(--accent-primary-rgb), 0.05)",
+                          border:
+                            "1px solid rgba(var(--accent-primary-rgb), 0.2)",
+                          padding: "1rem",
+                          borderRadius: "8px",
+                          marginBottom: "1rem",
+                          marginTop: "1rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "0.9rem",
+                            color: "var(--accent-primary)",
+                            fontWeight: 600,
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Active Context:
                         </div>
+                        <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+                          {trainingProduct.name}
+                        </div>
+                        <div style={{ fontFamily: "monospace", opacity: 0.8 }}>
+                          Barcode: {trainingProduct.scanCode}
+                        </div>
+                      </div>
 
-                        {/* Tutaj wstawiamy komponent zarządzania zdjęciami */}
-                        <ReferenceImageManager
-                            productId={trainingProduct.id}
-                            scanCode={trainingProduct.scanCode}
-                        />
-                      </div>
+                      {/* Tutaj wstawiamy komponent zarządzania zdjęciami */}
+                      <ReferenceImageManager
+                        productId={trainingProduct.id}
+                        scanCode={trainingProduct.scanCode}
+                      />
+                    </div>
                   ) : (
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '3rem 1rem',
-                        color: 'var(--text-muted)',
-                        border: '2px dashed var(--border-input)',
-                        borderRadius: '12px',
-                        marginTop: '1rem'
-                      }}>
-                        <Search size={32} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-                        <p>Select a product from the list above to manage its AI reference images.</p>
-                      </div>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "3rem 1rem",
+                        color: "var(--text-muted)",
+                        border: "2px dashed var(--border-input)",
+                        borderRadius: "12px",
+                        marginTop: "1rem",
+                      }}
+                    >
+                      <Search
+                        size={32}
+                        style={{ opacity: 0.3, marginBottom: "1rem" }}
+                      />
+                      <p>
+                        Select a product from the list above to manage its AI
+                        reference images.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1296,27 +1479,27 @@ const InventoryContent = () => {
                 </div>
 
                 <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleInbound(e);
-                    }}
-                    className="ht-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleInbound(e);
+                  }}
+                  className="ht-form"
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                          value={inboundBarcode}
-                          onChange={(e) => setInboundBarcode(e.target.value)}
-                          placeholder={invT.operations.inbound.placeholder}
+                        value={inboundBarcode}
+                        onChange={(e) => setInboundBarcode(e.target.value)}
+                        placeholder={invT.operations.inbound.placeholder}
                       />
                       <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("inbound");
-                            setIsScannerOpen(true);
-                          }}
-                          className="btn-action-ht"
-                          title="Scan Barcode"
+                        type="button"
+                        onClick={() => {
+                          setScannerMode("inbound");
+                          setIsScannerOpen(true);
+                        }}
+                        className="btn-action-ht"
+                        title="Scan Barcode"
                       >
                         <Camera size={18} />
                       </button>
@@ -1328,19 +1511,34 @@ const InventoryContent = () => {
                 </form>
 
                 {inboundResult && (
-                    <div className={`operation-result-mini ${inboundResult.success ? "success" : "error"}`}>
-                      <div className="result-status">
-                        {inboundResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                        <span>{inboundResult.success ? invT.operations.inbound.success : invT.operations.inbound.error}</span>
-                      </div>
-                      <div className="result-details">
-                        {inboundResult.success ? (
-                            <span className="location-badge">{inboundResult.rackCode} [{inboundResult.slotX}, {inboundResult.slotY}]</span>
-                        ) : (
-                            <span className="error-text">{prettifyBackendError(inboundResult.message)}</span>
-                        )}
-                      </div>
+                  <div
+                    className={`operation-result-mini ${inboundResult.success ? "success" : "error"}`}
+                  >
+                    <div className="result-status">
+                      {inboundResult.success ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <AlertTriangle size={16} />
+                      )}
+                      <span>
+                        {inboundResult.success
+                          ? invT.operations.inbound.success
+                          : invT.operations.inbound.error}
+                      </span>
                     </div>
+                    <div className="result-details">
+                      {inboundResult.success ? (
+                        <span className="location-badge">
+                          {inboundResult.rackCode} [{inboundResult.slotX},{" "}
+                          {inboundResult.slotY}]
+                        </span>
+                      ) : (
+                        <span className="error-text">
+                          {prettifyBackendError(inboundResult.message)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -1357,67 +1555,92 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                          type="text"
-                          placeholder={invT.operations.move.placeholder}
-                          value={moveBarcode}
-                          onChange={(e) => setMoveBarcode(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              const item = inventoryData.find((i) => i.barcode === moveBarcode);
-                              if (item) {
-                                setMovingItem(item);
-                                setIsMoveModalOpen(true);
-                                setMoveBarcode("");
-                              } else {
-                                setMoveResult({ success: false, message: invT.errors.notFound });
-                              }
+                        type="text"
+                        placeholder={invT.operations.move.placeholder}
+                        value={moveBarcode}
+                        onChange={(e) => setMoveBarcode(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const item = inventoryData.find(
+                              (i) => i.barcode === moveBarcode,
+                            );
+                            if (item) {
+                              setMovingItem(item);
+                              setIsMoveModalOpen(true);
+                              setMoveBarcode("");
+                            } else {
+                              setMoveResult({
+                                success: false,
+                                message: invT.errors.notFound,
+                              });
                             }
-                          }}
+                          }
+                        }}
                       />
                       <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("move");
-                            setIsScannerOpen(true);
-                          }}
-                          className="btn-action-ht"
+                        type="button"
+                        onClick={() => {
+                          setScannerMode("move");
+                          setIsScannerOpen(true);
+                        }}
+                        className="btn-action-ht"
                       >
                         <Camera size={18} />
                       </button>
                     </div>
                   </div>
                   <button
-                      type="button"
-                      className="btn-primary-ht btn-submit"
-                      onClick={() => {
-                        const item = inventoryData.find((i) => i.barcode === moveBarcode);
-                        if (item) {
-                          setMovingItem(item);
-                          setIsMoveModalOpen(true);
-                          setMoveBarcode("");
-                        } else {
-                          setMoveResult({ success: false, message: invT.errors.notFound });
-                        }
-                      }}
+                    type="button"
+                    className="btn-primary-ht btn-submit"
+                    onClick={() => {
+                      const item = inventoryData.find(
+                        (i) => i.barcode === moveBarcode,
+                      );
+                      if (item) {
+                        setMovingItem(item);
+                        setIsMoveModalOpen(true);
+                        setMoveBarcode("");
+                      } else {
+                        setMoveResult({
+                          success: false,
+                          message: invT.errors.notFound,
+                        });
+                      }
+                    }}
                   >
                     {invT.operations.move.submit}
                   </button>
                 </div>
 
                 {moveResult && (
-                    <div className={`operation-result-mini ${moveResult.success ? "success" : "error"}`}>
-                      <div className="result-status">
-                        {moveResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                        <span>{moveResult.success ? invT.operations.move.success : invT.operations.move.error}</span>
-                      </div>
-                      <div className="result-details">
-                        {moveResult.success ? (
-                            <><span className="location-badge">→ {moveResult.rackCode} [{moveResult.slotX}, {moveResult.slotY}]</span></>
-                        ) : (
-                            <span className="error-text">{moveResult.message}</span>
-                        )}
-                      </div>
+                  <div
+                    className={`operation-result-mini ${moveResult.success ? "success" : "error"}`}
+                  >
+                    <div className="result-status">
+                      {moveResult.success ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <AlertTriangle size={16} />
+                      )}
+                      <span>
+                        {moveResult.success
+                          ? invT.operations.move.success
+                          : invT.operations.move.error}
+                      </span>
                     </div>
+                    <div className="result-details">
+                      {moveResult.success ? (
+                        <>
+                          <span className="location-badge">
+                            → {moveResult.rackCode} [{moveResult.slotX},{" "}
+                            {moveResult.slotY}]
+                          </span>
+                        </>
+                      ) : (
+                        <span className="error-text">{moveResult.message}</span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -1433,49 +1656,61 @@ const InventoryContent = () => {
                 </div>
 
                 <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleOutbound(e);
-                    }}
-                    className="ht-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleOutbound(e);
+                  }}
+                  className="ht-form"
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
-                          value={outboundBarcode}
-                          onChange={(e) => setOutboundBarcode(e.target.value)}
-                          placeholder={invT.operations.outbound.placeholder}
+                        value={outboundBarcode}
+                        onChange={(e) => setOutboundBarcode(e.target.value)}
+                        placeholder={invT.operations.outbound.placeholder}
                       />
                       <button
-                          type="button"
-                          onClick={() => {
-                            setScannerMode("outbound");
-                            setIsScannerOpen(true);
-                          }}
-                          className="btn-action-ht"
+                        type="button"
+                        onClick={() => {
+                          setScannerMode("outbound");
+                          setIsScannerOpen(true);
+                        }}
+                        className="btn-action-ht"
                       >
                         <Camera size={18} />
                       </button>
                     </div>
                   </div>
                   <button
-                      type="submit"
-                      className="btn-primary-ht btn-submit btn-danger"
+                    type="submit"
+                    className="btn-primary-ht btn-submit btn-danger"
                   >
                     {invT.operations.outbound.submit}
                   </button>
                 </form>
 
                 {outboundResult && (
-                    <div className={`operation-result-mini ${outboundResult.success ? "success" : "error"}`}>
-                      <div className="result-status">
-                        {outboundResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                        <span>{outboundResult.success ? invT.operations.outbound.success : invT.operations.outbound.error}</span>
-                      </div>
-                      <div className="result-details">
-                        {outboundResult.success ? invT.operations.outbound.details : outboundResult.message}
-                      </div>
+                  <div
+                    className={`operation-result-mini ${outboundResult.success ? "success" : "error"}`}
+                  >
+                    <div className="result-status">
+                      {outboundResult.success ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <AlertTriangle size={16} />
+                      )}
+                      <span>
+                        {outboundResult.success
+                          ? invT.operations.outbound.success
+                          : invT.operations.outbound.error}
+                      </span>
                     </div>
+                    <div className="result-details">
+                      {outboundResult.success
+                        ? invT.operations.outbound.details
+                        : outboundResult.message}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -1530,268 +1765,339 @@ const InventoryContent = () => {
         </Dialog.Portal>
       </Dialog.Root>
 
-        <Dialog.Root
-            open={isImportPreviewModalOpen}
-            onOpenChange={setIsImportPreviewModalOpen}
-        >
-            <Dialog.Portal>
-                <Dialog.Overlay className="dialog-overlay-ht" />
-                <Dialog.Content className="dialog-content-ht import-modal-ht">
+      <Dialog.Root
+        open={isImportPreviewModalOpen}
+        onOpenChange={setIsImportPreviewModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay-ht" />
+          <Dialog.Content className="dialog-content-ht import-modal-ht">
+            <div className="modal-header">
+              <Dialog.Title>
+                Import:{" "}
+                {importType === "racks"
+                  ? invT.import.racksTitle
+                  : invT.import.productsTitle}
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="close-btn">
+                  <X size={20} />
+                </button>
+              </Dialog.Close>
+            </div>
 
-                    <div className="modal-header">
-                        <Dialog.Title>
-                            Import:{" "}
-                            {importType === "racks"
-                                ? invT.import.racksTitle
-                                : invT.import.productsTitle}
-                        </Dialog.Title>
-                        <Dialog.Close asChild>
-                            <button className="close-btn">
-                                <X size={20} />
-                            </button>
-                        </Dialog.Close>
+            <div className="import-preview-container">
+              {batchProgress ? (
+                <div className="batch-progress-panel">
+                  <Spinner size={40} />
+                  <p className="progress-title">{invT.import.processing}</p>
+                  <p className="progress-count">
+                    {batchProgress.current} / {batchProgress.total}
+                  </p>
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${(batchProgress.current / batchProgress.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="import-summary-strip">
+                    <div className="summary-item">
+                      <span className="label">{invT.import.summary.total}</span>
+                      <span className="value">{importPreviewData.length}</span>
                     </div>
+                    <div className="summary-item">
+                      <span className="label">{invT.import.summary.new}</span>
+                      <span className="value success-text">
+                        {
+                          importPreviewData.filter((i) => i.status === "new")
+                            .length
+                        }
+                      </span>
+                    </div>
+                    <div className="summary-item">
+                      <span className="label">
+                        {invT.import.summary.conflicts}
+                      </span>
+                      <span className="value warning-text">
+                        {
+                          importPreviewData.filter(
+                            (i) => i.status === "conflict",
+                          ).length
+                        }
+                      </span>
+                    </div>
+                    <div className="summary-item">
+                      <span className="label">
+                        {invT.import.summary.toSave}
+                      </span>
+                      <span className="value">
+                        {
+                          importPreviewData.filter((i) => i.action !== "skip")
+                            .length
+                        }
+                      </span>
+                    </div>
+                  </div>
 
-                    <div className="import-preview-container">
-                        {batchProgress ? (
-                            <div className="batch-progress-panel">
-                                <Spinner size={40} />
-                                <p className="progress-title">{invT.import.processing}</p>
-                                <p className="progress-count">
-                                    {batchProgress.current} / {batchProgress.total}
-                                </p>
-                                <div className="progress-bar-container">
-                                    <div
-                                        className="progress-bar-fill"
-                                        style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                                    />
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="import-summary-strip">
-                                    <div className="summary-item">
-                                        <span className="label">{invT.import.summary.total}</span>
-                                        <span className="value">{importPreviewData.length}</span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="label">{invT.import.summary.new}</span>
-                                        <span className="value success-text">
-                      {importPreviewData.filter((i) => i.status === "new").length}
-                    </span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="label">{invT.import.summary.conflicts}</span>
-                                        <span className="value warning-text">
-                      {importPreviewData.filter((i) => i.status === "conflict").length}
-                    </span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="label">{invT.import.summary.toSave}</span>
-                                        <span className="value">
-                      {importPreviewData.filter((i) => i.action !== "skip").length}
-                    </span>
-                                    </div>
-                                </div>
-
-                                <div className="import-table-wrapper">
-                                    <table className="import-table">
-                                        <thead>
-                                        <tr>
-                                            <th>{invT.import.table.status}</th>
-                                            <th>{invT.import.table.code}</th>
-                                            <th>{invT.import.table.decision}</th>
-                                            <th>{invT.import.table.action}</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {importPreviewData.map((item, idx) => (
-                                            <tr key={idx} className={selectedPreviewItem === item ? 'row-selected' : ''}>
-                                                <td>
-                            <span className={`status-badge ${item.status === "conflict" ? "conflict" : "new"}`}>
-                              {item.status === "conflict" ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-                                {item.status === "conflict" ? invT.import.table.conflict : invT.import.table.new}
-                            </span>
-                                                </td>
-                                                <td className="mono-text">{item.data.code || item.data.scanCode}</td>
-                                                <td>
-                                                    <select
-                                                        value={item.action}
-                                                        onChange={(e) => {
-                                                            const newData = [...importPreviewData];
-                                                            newData[idx].action = e.target.value;
-                                                            setImportPreviewData(newData);
-                                                        }}
-                                                    >
-                                                        {item.status === "conflict" ? (
-                                                            <>
-                                                                <option value="skip">{invT.import.actions.skip}</option>
-                                                                <option value="update">{invT.import.actions.update}</option>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <option value="create">{invT.import.actions.create}</option>
-                                                                <option value="skip">{invT.import.actions.skip}</option>
-                                                            </>
-                                                        )}
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className={`btn-action-ht ${selectedPreviewItem === item ? "active" : ""}`}
-                                                        onClick={() => setSelectedPreviewItem(selectedPreviewItem === item ? null : item)}
-                                                    >
-                                                        {selectedPreviewItem === item ? <X size={16} /> : <Search size={16} />}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {selectedPreviewItem && (
-                                    <div className="diff-view-master-detail">
-                                        <div className="validation-section">
-                                            {selectedPreviewItem.validationErrors?.length > 0 && (
-                                                <div className="validation-warning critical">
-                                                    <div className="warning-header">
-                                                        <AlertTriangle size={18} /> {invT.import.warnings.critical}
-                                                    </div>
-                                                    <ul>
-                                                        {selectedPreviewItem.validationErrors.map((err: string, i: number) => (
-                                                            <li key={i}>{err}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="diff-grid">
-                                            <div className="diff-card">
-                                                <div className="card-title">
-                                                    <LayoutGrid size={14} /> {invT.import.diff.current}
-                                                </div>
-                                                <div className="diff-content">
-                                                    {selectedPreviewItem.existingData ? (
-                                                        Object.entries(selectedPreviewItem.existingData).map(([key, val]) => (
-                                                            <div key={key} className="diff-row">
-                                                                <span className="label">{key}</span>
-                                                                <span className="value">{String(val)}</span>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="no-data-placeholder">{invT.import.diff.noData}</div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="diff-card changed-data">
-                                                <div className="card-title">
-                                                    <FileUp size={14} /> {invT.import.diff.csv}
-                                                </div>
-                                                <div className="diff-content">
-                                                    {Object.entries(selectedPreviewItem.data).map(([key, val]) => {
-                                                        const isDifferent = selectedPreviewItem.existingData &&
-                                                            String(val) !== String(selectedPreviewItem.existingData[key]);
-                                                        return (
-                                                            <div key={key} className="diff-row">
-                                                                <span className="label">{key}</span>
-                                                                <span className={`value ${isDifferent ? "changed" : ""}`}>
-                                    {String(val)}
-                                </span>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                  <div className="import-table-wrapper">
+                    <table className="import-table">
+                      <thead>
+                        <tr>
+                          <th>{invT.import.table.status}</th>
+                          <th>{invT.import.table.code}</th>
+                          <th>{invT.import.table.decision}</th>
+                          <th>{invT.import.table.action}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreviewData.map((item, idx) => (
+                          <tr
+                            key={idx}
+                            className={
+                              selectedPreviewItem === item ? "row-selected" : ""
+                            }
+                          >
+                            <td>
+                              <span
+                                className={`status-badge ${item.status === "conflict" ? "conflict" : "new"}`}
+                              >
+                                {item.status === "conflict" ? (
+                                  <AlertTriangle size={12} />
+                                ) : (
+                                  <CheckCircle2 size={12} />
                                 )}
-                            </>
+                                {item.status === "conflict"
+                                  ? invT.import.table.conflict
+                                  : invT.import.table.new}
+                              </span>
+                            </td>
+                            <td className="mono-text">
+                              {item.data.code || item.data.scanCode}
+                            </td>
+                            <td>
+                              <select
+                                value={item.action}
+                                onChange={(e) => {
+                                  const newData = [...importPreviewData];
+                                  newData[idx].action = e.target.value;
+                                  setImportPreviewData(newData);
+                                }}
+                              >
+                                {item.status === "conflict" ? (
+                                  <>
+                                    <option value="skip">
+                                      {invT.import.actions.skip}
+                                    </option>
+                                    <option value="update">
+                                      {invT.import.actions.update}
+                                    </option>
+                                  </>
+                                ) : (
+                                  <>
+                                    <option value="create">
+                                      {invT.import.actions.create}
+                                    </option>
+                                    <option value="skip">
+                                      {invT.import.actions.skip}
+                                    </option>
+                                  </>
+                                )}
+                              </select>
+                            </td>
+                            <td>
+                              <button
+                                className={`btn-action-ht ${selectedPreviewItem === item ? "active" : ""}`}
+                                onClick={() =>
+                                  setSelectedPreviewItem(
+                                    selectedPreviewItem === item ? null : item,
+                                  )
+                                }
+                              >
+                                {selectedPreviewItem === item ? (
+                                  <X size={16} />
+                                ) : (
+                                  <Search size={16} />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {selectedPreviewItem && (
+                    <div className="diff-view-master-detail">
+                      <div className="validation-section">
+                        {selectedPreviewItem.validationErrors?.length > 0 && (
+                          <div className="validation-warning critical">
+                            <div className="warning-header">
+                              <AlertTriangle size={18} />{" "}
+                              {invT.import.warnings.critical}
+                            </div>
+                            <ul>
+                              {selectedPreviewItem.validationErrors.map(
+                                (err: string, i: number) => (
+                                  <li key={i}>{err}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
                         )}
-                    </div>
+                      </div>
 
-                    <div className="modal-footer">
-                        <button
-                            className="btn-secondary"
-                            onClick={() => setIsImportPreviewModalOpen(false)}
-                        >
-                            {invT.import.cancel}
-                        </button>
-                        <button
-                            className="btn-primary-ht"
-                            onClick={handleConfirmImport}
-                            disabled={!!batchProgress || importPreviewData.length === 0}
-                        >
-                            {invT.import.submit.replace(
-                                "{count}",
-                                importPreviewData.filter((i) => i.action !== "skip").length.toString()
+                      <div className="diff-grid">
+                        <div className="diff-card">
+                          <div className="card-title">
+                            <LayoutGrid size={14} /> {invT.import.diff.current}
+                          </div>
+                          <div className="diff-content">
+                            {selectedPreviewItem.existingData ? (
+                              Object.entries(
+                                selectedPreviewItem.existingData,
+                              ).map(([key, val]) => (
+                                <div key={key} className="diff-row">
+                                  <span className="label">{key}</span>
+                                  <span className="value">{String(val)}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-data-placeholder">
+                                {invT.import.diff.noData}
+                              </div>
                             )}
-                        </button>
-                    </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
-
-        <Dialog.Root
-            open={isImportResultModalOpen}
-            onOpenChange={setIsImportResultModalOpen}
-        >
-            <Dialog.Portal>
-                <Dialog.Overlay className="dialog-overlay-ht" />
-                <Dialog.Content className="dialog-content-ht result-modal-content">
-                    <div className="modal-header">
-                        <Dialog.Title>
-                            <span className="outline-text">IMPORT</span> RESULT
-                        </Dialog.Title>
-                        <Dialog.Close asChild>
-                            <button className="btn-ht">
-                                <X size={20} />
-                            </button>
-                        </Dialog.Close>
-                    </div>
-
-                    <div className="modal-body">
-                        <div className="result-stats-grid">
-                            <div className="stat-card success">
-                                <span className="stat-number">{importResult?.successCount}</span>
-                                <span className="stat-label">{invT.import.result.successes}</span>
-                            </div>
-
-                            <div className="stat-card error">
-                                <span className="stat-number">{importResult?.errorCount}</span>
-                                <span className="stat-label">{invT.import.result.failures}</span>
-                            </div>
+                          </div>
                         </div>
 
-                        {importResult && importResult.errors.length > 0 && (
-                            <div className="error-details-container">
-                                <p className="details-title">
-                                    <AlertTriangle size={14} /> {invT.import.result.details}
-                                </p>
-                                <div className="error-scroll-area">
-                                    <ul>
-                                        {importResult.errors.map((err, i) => (
-                                            <li key={i}>{err}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        )}
+                        <div className="diff-card changed-data">
+                          <div className="card-title">
+                            <FileUp size={14} /> {invT.import.diff.csv}
+                          </div>
+                          <div className="diff-content">
+                            {Object.entries(selectedPreviewItem.data).map(
+                              ([key, val]) => {
+                                const isDifferent =
+                                  selectedPreviewItem.existingData &&
+                                  String(val) !==
+                                    String(
+                                      selectedPreviewItem.existingData[key],
+                                    );
+                                return (
+                                  <div key={key} className="diff-row">
+                                    <span className="label">{key}</span>
+                                    <span
+                                      className={`value ${isDifferent ? "changed" : ""}`}
+                                    >
+                                      {String(val)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  )}
+                </>
+              )}
+            </div>
 
-                    <div className="modal-footer">
-                        <button
-                            className="btn-primary-ht"
-                            onClick={() => setIsImportResultModalOpen(false)}
-                        >
-                            {invT.import.close}
-                        </button>
-                    </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+            <div className="modal-footer">
+              <button
+                className="btn-secondary"
+                onClick={() => setIsImportPreviewModalOpen(false)}
+              >
+                {invT.import.cancel}
+              </button>
+              <button
+                className="btn-primary-ht"
+                onClick={handleConfirmImport}
+                disabled={!!batchProgress || importPreviewData.length === 0}
+              >
+                {invT.import.submit.replace(
+                  "{count}",
+                  importPreviewData
+                    .filter((i) => i.action !== "skip")
+                    .length.toString(),
+                )}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={isImportResultModalOpen}
+        onOpenChange={setIsImportResultModalOpen}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay-ht" />
+          <Dialog.Content className="dialog-content-ht result-modal-content">
+            <div className="modal-header">
+              <Dialog.Title>
+                <span className="outline-text">IMPORT</span> RESULT
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="btn-ht">
+                  <X size={20} />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            <div className="modal-body">
+              <div className="result-stats-grid">
+                <div className="stat-card success">
+                  <span className="stat-number">
+                    {importResult?.successCount}
+                  </span>
+                  <span className="stat-label">
+                    {invT.import.result.successes}
+                  </span>
+                </div>
+
+                <div className="stat-card error">
+                  <span className="stat-number">
+                    {importResult?.errorCount}
+                  </span>
+                  <span className="stat-label">
+                    {invT.import.result.failures}
+                  </span>
+                </div>
+              </div>
+
+              {importResult && importResult.errors.length > 0 && (
+                <div className="error-details-container">
+                  <p className="details-title">
+                    <AlertTriangle size={14} /> {invT.import.result.details}
+                  </p>
+                  <div className="error-scroll-area">
+                    <ul>
+                      {importResult.errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-primary-ht"
+                onClick={() => setIsImportResultModalOpen(false)}
+              >
+                {invT.import.close}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <RackModal
         open={isModalOpen}
@@ -1820,35 +2126,52 @@ const InventoryContent = () => {
 
       {/* LOADER DLA AI */}
       {aiProcessing && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.8)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', gap: '1rem', color: 'white'
-          }}>
-            <BrainCircuit size={48} className="animate-pulse" style={{ color: 'var(--accent-primary)' }} />
-            <p style={{ fontFamily: 'Space Grotesk', fontSize: '1.2rem' }}>Analyzing Image...</p>
-          </div>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            gap: "1rem",
+            color: "white",
+          }}
+        >
+          <BrainCircuit
+            size={48}
+            className="animate-pulse"
+            style={{ color: "var(--accent-primary)" }}
+          />
+          <p style={{ fontFamily: "Space Grotesk", fontSize: "1.2rem" }}>
+            Analyzing Image...
+          </p>
+        </div>
       )}
 
       <Dialog.Root open={isAiScannerOpen} onOpenChange={setIsAiScannerOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="modal-overlay" style={{ background: 'black' }} />
+          <Dialog.Overlay
+            className="modal-overlay"
+            style={{ background: "black" }}
+          />
           <Dialog.Content
-              className="modal-content"
-              style={{
-                padding: 0,
-                overflow: 'hidden',
-                background: '#000',
-                border: 'none',
-                maxWidth: '100vw',
-                height: '100vh',
-                width: '100vw'
-              }}
+            className="modal-content"
+            style={{
+              padding: 0,
+              overflow: "hidden",
+              background: "#000",
+              border: "none",
+              maxWidth: "100vw",
+              height: "100vh",
+              width: "100vw",
+            }}
           >
             <CameraSnapshot
-                onCapture={handleAiCapture}
-                onClose={() => setIsAiScannerOpen(false)}
+              onCapture={handleAiCapture}
+              onClose={() => setIsAiScannerOpen(false)}
             />
           </Dialog.Content>
         </Dialog.Portal>
