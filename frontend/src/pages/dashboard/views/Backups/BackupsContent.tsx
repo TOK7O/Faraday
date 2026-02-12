@@ -214,7 +214,7 @@ const BackupsContent = () => {
                       </td>
                       <td className="time-col">
                         <span className="date">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          {new Date(item.createdAt).toLocaleDateString()},&nbsp;
                         </span>
                         <span className="time">
                           {new Date(item.createdAt).toLocaleTimeString()}
@@ -273,7 +273,7 @@ const BackupsContent = () => {
 
             <div className="modal-body">
               <div className="target-file">
-                <label>{backupT.restore.target}</label>
+                <label>{backupT.restore.target}&nbsp;</label>
                 <code>{selectedBackup?.fileName}</code>
               </div>
 

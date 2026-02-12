@@ -47,8 +47,32 @@ const LogsContent = () => {
 
   const connectionRef = useRef<HubConnection | null>(null);
 
+  const generateLogKey = (log: LogEntry) => {
+    const timeKey = log.timestamp ? log.timestamp.slice(0, 19) : "unknown";
+    return `${timeKey}|${log.level}|${log.message}|${log.eventId}`;
+  };
+
+  const mergeLogs = (currentLogs: LogEntry[], newLogs: LogEntry[]) => {
+    const logMap = new Map<string, LogEntry>();
+
+    currentLogs.forEach((log) => {
+      logMap.set(generateLogKey(log), log);
+    });
+
+    newLogs.forEach((log) => {
+      logMap.set(generateLogKey(log), log);
+    });
+
+    const uniqueLogs = Array.from(logMap.values());
+
+    uniqueLogs.sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    return uniqueLogs.slice(0, 2000);
+  };
+
   const initSignalR = useCallback(async () => {
-    // Zapobiegamy wielokrotnej inicjalizacji jeśli połączenie już istnieje
     if (connectionRef.current) return;
 
     const token = localStorage.getItem("token");
@@ -58,33 +82,41 @@ const LogsContent = () => {
         .configureLogging(LogLevel.Warning)
         .build();
 
+    connectionRef.current = newConnection;
+
+    newConnection.off("ReceiveLogHistory");
+    newConnection.off("ReceiveLogs");
+
     newConnection.on("ReceiveLogHistory", (historyLogs: LogEntry[]) => {
-      setLogs(historyLogs.slice().reverse());
+      setLogs((prevLogs) => mergeLogs(prevLogs, historyLogs));
     });
 
-    newConnection.on("ReceiveLogs", (newLogs: LogEntry[]) => {
-      setLogs((prevLogs) => {
-        const reversedNewLogs = newLogs.slice().reverse();
-        return [...reversedNewLogs, ...prevLogs].slice(0, 2000);
-      });
+    newConnection.on("ReceiveLogs", (liveLogs: LogEntry[]) => {
+      setLogs((prevLogs) => mergeLogs(prevLogs, liveLogs));
     });
 
     try {
       await newConnection.start();
+      console.log("SignalR Connected");
       setIsConnected(true);
     } catch (err) {
+      console.error("SignalR Connection Error: ", err);
       setIsConnected(false);
+      connectionRef.current = null;
     }
 
     newConnection.onclose(() => setIsConnected(false));
     newConnection.onreconnected(() => setIsConnected(true));
-    connectionRef.current = newConnection;
   }, []);
 
   useEffect(() => {
     initSignalR();
+
     return () => {
+      // Sprzątanie przy odmontowaniu
       if (connectionRef.current) {
+        connectionRef.current.off("ReceiveLogHistory");
+        connectionRef.current.off("ReceiveLogs");
         connectionRef.current.stop();
         connectionRef.current = null;
       }
@@ -127,6 +159,9 @@ const LogsContent = () => {
           !["Warning", "Error", "Critical", "Fatal"].includes(level)
       )
         return false;
+
+      if (filterLevel === "Information" && !level.includes("Info"))
+        return false;
     }
     if (searchText) {
       const s = searchText.toLowerCase();
@@ -141,7 +176,7 @@ const LogsContent = () => {
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
   const currentLogs = filteredLogs.slice(
       (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage,
+      currentPage * itemsPerPage
   );
 
   return (
@@ -220,6 +255,7 @@ const LogsContent = () => {
                     connectionRef.current.stop();
                     connectionRef.current = null;
                   }
+                  setLogs([]);
                   initSignalR();
                 }}
                 title={logsT.actions.reconnect}
@@ -280,7 +316,7 @@ const LogsContent = () => {
                 <div className="log-rows">
                   {currentLogs.map((log, index) => (
                       <div
-                          key={`${log.timestamp}-${index}`}
+                          key={`${generateLogKey(log)}-${index}`}
                           className={`log-row ${getLevelClass(log.level)}`}
                       >
                         <div className="row-meta">

@@ -33,7 +33,6 @@ instance.interceptors.response.use(
     },
 );
 
-// --- ISTNIEJĄCE ENDPOINTY ---
 export const getDashboardStats = async () => (await instance.get("/api/report/dashboard-stats")).data;
 export const getInventorySummary = async () => (await instance.get("/api/report/inventory-summary")).data;
 export const getFullInventory = async () => (await instance.get("/api/report/full-inventory")).data;
@@ -88,8 +87,6 @@ export const sendVoiceCommand = async (commandText: string) => {
     return response.data;
 };
 
-// --- IMAGE RECOGNITION ENDPOINTS ---
-
 export const uploadReferenceImages = async (scanCode: string, files: File[]) => {
     const formData = new FormData();
     formData.append("ScanCode", scanCode);
@@ -97,7 +94,6 @@ export const uploadReferenceImages = async (scanCode: string, files: File[]) => 
         formData.append("Images", file);
     });
 
-    // Fix: Override Content-Type for multipart/form-data
     return (await instance.post("/api/ImageRecognition/upload-reference", formData, {
         headers: {
             "Content-Type": "multipart/form-data",
@@ -109,7 +105,6 @@ export const recognizeProduct = async (file: File) => {
     const formData = new FormData();
     formData.append("Image", file);
 
-    // Fix: Override Content-Type for multipart/form-data
     return (await instance.post("/api/ImageRecognition/recognize", formData, {
         headers: {
             "Content-Type": "multipart/form-data",
