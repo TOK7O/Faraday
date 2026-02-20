@@ -1,7 +1,9 @@
+using System.Security.Cryptography;
 using System.Text;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Faraday.API.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Faraday.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -213,17 +215,70 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
 
-    // Automatically apply any pending migrations to the database.
+    // Ensure the database schema is up-to-date.
     try
     {
-        startupLogger.LogInformation("Applying database migrations...");
-        dbContext.Database.Migrate();
-        startupLogger.LogInformation("Database migrations applied successfully");
+        startupLogger.LogInformation("Checking database schema...");
+
+        bool hasTables = false;
+        if (dbContext.Database.CanConnect())
+        {
+            try
+            {
+                dbContext.Database.OpenConnection();
+                using var cmd = dbContext.Database.GetDbConnection().CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
+                hasTables = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            }
+            catch { /* Database might not exist yet */ }
+            finally
+            {
+                dbContext.Database.CloseConnection();
+            }
+        }
+
+        if (!hasTables)
+        {
+            // Fresh database — create schema from current model
+            startupLogger.LogInformation("Fresh database detected. Creating schema...");
+            dbContext.Database.EnsureCreated();
+            StoreModelHash(dbContext);
+            startupLogger.LogInformation("Database schema created successfully");
+        }
+        else
+        {
+            // Apply any pending migrations
+            var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
+            if (pendingMigrations.Any())
+            {
+                startupLogger.LogInformation("Applying {Count} pending migration(s)...", pendingMigrations.Count);
+                dbContext.Database.Migrate();
+                StoreModelHash(dbContext);
+                startupLogger.LogInformation("Migrations applied successfully");
+            }
+
+            // Check if model changed since last migration/startup
+            var currentHash = ComputeModelHash(dbContext);
+            var storedHash = ReadStoredModelHash(dbContext);
+
+            if (currentHash != storedHash)
+            {
+                startupLogger.LogWarning("============================================================");
+                startupLogger.LogWarning("  MODEL CHANGE DETECTED — database schema is out of date!");
+                startupLogger.LogWarning("  Run the following commands to update the database (inside Faraday.API folder):");
+                startupLogger.LogWarning("    dotnet ef migrations add <MigrationName>");
+                startupLogger.LogWarning("    dotnet ef database update");
+                startupLogger.LogWarning("============================================================");
+            }
+            else
+            {
+                startupLogger.LogInformation("Database schema is up to date");
+            }
+        }
     }
     catch (Exception ex)
     {
-        // Log and continue, we trust the schema is there (hopefully).
-        startupLogger.LogError(ex, "Migration failed: {Message}. Attempting to continue...", ex.Message);
+        startupLogger.LogError(ex, "Database initialization failed: {Message}. Attempting to continue...", ex.Message);
     }
 
     // Seed default administrator account if the Users table is empty.
@@ -274,3 +329,42 @@ app.UseStaticFiles();
 startupLogger.LogInformation("=== Faraday WMS API Started Successfully ===");
 
 app.Run();
+
+// Database schema management helpers
+
+string ComputeModelHash(FaradayDbContext context)
+{
+    var modelString = context.Model.ToDebugString(MetadataDebugStringOptions.LongDefault);
+    var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(modelString));
+    return Convert.ToHexString(hashBytes);
+}
+
+string? ReadStoredModelHash(FaradayDbContext context)
+{
+    try
+    {
+        context.Database.OpenConnection();
+        using var cmd = context.Database.GetDbConnection().CreateCommand();
+        cmd.CommandText = "SELECT \"Hash\" FROM \"__SchemaVersion\" LIMIT 1";
+        var result = cmd.ExecuteScalar()?.ToString();
+        return result;
+    }
+    catch
+    {
+        return null;
+    }
+    finally
+    {
+        try { context.Database.CloseConnection(); } catch { }
+    }
+}
+
+void StoreModelHash(FaradayDbContext context)
+{
+    var hash = ComputeModelHash(context);
+    context.Database.ExecuteSqlRaw(
+        "CREATE TABLE IF NOT EXISTS \"__SchemaVersion\" (\"Hash\" TEXT NOT NULL)");
+    context.Database.ExecuteSqlRaw("DELETE FROM \"__SchemaVersion\"");
+    context.Database.ExecuteSqlRaw(
+        "INSERT INTO \"__SchemaVersion\" (\"Hash\") VALUES ({0})", hash);
+}
