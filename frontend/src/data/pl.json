@@ -912,7 +912,8 @@
         "tooShort": "Min 8 znaków",
         "noNumber": "Wymagana cyfra",
         "noSpecialChar": "Wymagany znak spec."
-      }
+      },
+      "backToLogin": "Powrót do logowania"
     },
     "invalidLink": {
       "title": "Nieprawidłowy link",

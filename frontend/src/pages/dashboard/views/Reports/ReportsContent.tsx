@@ -127,7 +127,7 @@ const ReportsContent = () => {
   const [limit] = useState<number>(100);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [inventorySummary, setInventorySummary] = useState<any[]>([]); // Summary is just a POJO from backend
+  const [inventorySummary, setInventorySummary] = useState<any[]>([]);
   const [fullInventory, setFullInventory] = useState<InventoryItem[]>([]);
   const [expiringItems, setExpiringItems] = useState<ExpiringItem[]>([]);
   const [rackUtilization, setRackUtilization] = useState<RackUtilization[]>([]);
@@ -168,7 +168,7 @@ const ReportsContent = () => {
 
       switch (activeTab) {
         case "inventory":
-          const [summary, full, expiring] = await Promise.all([
+          { const [summary, full, expiring] = await Promise.all([
             getInventorySummary(),
             getFullInventory(),
             getExpiringItems(7),
@@ -176,15 +176,15 @@ const ReportsContent = () => {
           setInventorySummary(summary);
           setFullInventory(full);
           setExpiringItems(expiring);
-          break;
+          break; }
 
         case "utilization":
-          const util = await getRackUtilization();
+          { const util = await getRackUtilization();
           setRackUtilization(util);
-          break;
+          break; }
 
         case "sensors":
-          const [temp, weight, rackV, itemV] = await Promise.all([
+          { const [temp, weight, rackV, itemV] = await Promise.all([
             getTemperatureHistory(filterParams),
             getWeightHistory(filterParams),
             getRackTemperatureViolations(filterParams),
@@ -197,10 +197,10 @@ const ReportsContent = () => {
           setWeightHistory(weight);
           setRackViolations(rackV);
           setItemViolations(itemV);
-          break;
+          break; }
 
         case "alerts":
-          const [active, history] = await Promise.all([
+          { const [active, history] = await Promise.all([
             getActiveAlerts(),
             getAlertHistory({
               rackId: filterParams.rackId,
@@ -210,7 +210,7 @@ const ReportsContent = () => {
           ]);
           setActiveAlerts(active);
           setAlertHistory(history);
-          break;
+          break; }
       }
     } catch (error) {
       console.error("Failed to fetch report data", error);

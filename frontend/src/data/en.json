@@ -913,7 +913,8 @@
         "tooShort": "Min 8 chars",
         "noNumber": "Need number",
         "noSpecialChar": "Need symbol"
-      }
+      },
+      "backToLogin": "Back to Login"
     },
     "invalidLink": {
       "title": "Invalid Link",
