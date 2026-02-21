@@ -167,8 +167,8 @@ const ReportsContent = () => {
       };
 
       switch (activeTab) {
-        case "inventory":
-          { const [summary, full, expiring] = await Promise.all([
+        case "inventory": {
+          const [summary, full, expiring] = await Promise.all([
             getInventorySummary(),
             getFullInventory(),
             getExpiringItems(7),
@@ -176,15 +176,17 @@ const ReportsContent = () => {
           setInventorySummary(summary);
           setFullInventory(full);
           setExpiringItems(expiring);
-          break; }
+          break;
+        }
 
-        case "utilization":
-          { const util = await getRackUtilization();
+        case "utilization": {
+          const util = await getRackUtilization();
           setRackUtilization(util);
-          break; }
+          break;
+        }
 
-        case "sensors":
-          { const [temp, weight, rackV, itemV] = await Promise.all([
+        case "sensors": {
+          const [temp, weight, rackV, itemV] = await Promise.all([
             getTemperatureHistory(filterParams),
             getWeightHistory(filterParams),
             getRackTemperatureViolations(filterParams),
@@ -197,10 +199,11 @@ const ReportsContent = () => {
           setWeightHistory(weight);
           setRackViolations(rackV);
           setItemViolations(itemV);
-          break; }
+          break;
+        }
 
-        case "alerts":
-          { const [active, history] = await Promise.all([
+        case "alerts": {
+          const [active, history] = await Promise.all([
             getActiveAlerts(),
             getAlertHistory({
               rackId: filterParams.rackId,
@@ -210,7 +213,8 @@ const ReportsContent = () => {
           ]);
           setActiveAlerts(active);
           setAlertHistory(history);
-          break; }
+          break;
+        }
       }
     } catch (error) {
       console.error("Failed to fetch report data", error);

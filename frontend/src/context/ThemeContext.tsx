@@ -15,7 +15,7 @@ interface ThemeContextType {
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(
-    undefined,
+  undefined,
 );
 
 const getInitialTheme = (): Theme => {
@@ -23,7 +23,9 @@ const getInitialTheme = (): Theme => {
   if (savedTheme === "light" || savedTheme === "dark") {
     return savedTheme;
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
@@ -52,9 +54,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-      <ThemeContext.Provider value={{ theme, toggleTheme }}>
-        {children}
-      </ThemeContext.Provider>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
   );
 };
 

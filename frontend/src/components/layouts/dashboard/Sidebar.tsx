@@ -154,8 +154,7 @@ const Sidebar = () => {
           </Tabs.Trigger>
           {isAdmin && (
             <Tabs.Trigger className="nav-item" value="logs">
-              <Terminal size={18} />{" "}
-              {t.dashboardPage.sidebar.nav.logs}
+              <Terminal size={18} /> {t.dashboardPage.sidebar.nav.logs}
             </Tabs.Trigger>
           )}
         </div>
@@ -193,10 +192,13 @@ const Sidebar = () => {
               }}
             >
               <Clock size={16} />
-              <span style={{ fontWeight: 600 }}>{t.dashboardPage.sidebar.session.expiring}</span>
+              <span style={{ fontWeight: 600 }}>
+                {t.dashboardPage.sidebar.session.expiring}
+              </span>
             </div>
             <div style={{ marginBottom: "8px", opacity: 0.9 }}>
-              {t.dashboardPage.sidebar.session.timeRemaining} <strong>{timeLeftStr}</strong>
+              {t.dashboardPage.sidebar.session.timeRemaining}{" "}
+              <strong>{timeLeftStr}</strong>
             </div>
             <button
               onClick={handleExtendSession}

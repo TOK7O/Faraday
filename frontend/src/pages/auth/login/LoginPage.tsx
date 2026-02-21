@@ -114,7 +114,9 @@ const LoginPage = () => {
       <section className="auth-form">
         <div className="form-header">
           <h1>
-            {status.requires2FA ? loginStrings.twoFactor.header : loginStrings.header.title}
+            {status.requires2FA
+              ? loginStrings.twoFactor.header
+              : loginStrings.header.title}
           </h1>
           <p className="subtitle">
             {status.requires2FA

@@ -32,23 +32,27 @@ Faraday WMS (also known as **FaradaySystems**) is a software solution for managi
 ## Features
 
 ### Warehouse Operations
-- **Goods Receipt** - automatic optimal storage allocation (algorithm: *First Fit, Bottom-Up, Left-to-Right*)
-- **Goods Dispatch** - FIFO strategy (*First In, First Out*)
+
+- **Goods Receipt** - automatic optimal storage allocation (algorithm: _First Fit, Bottom-Up, Left-to-Right_)
+- **Goods Dispatch** - FIFO strategy (_First In, First Out_)
 - **Goods Relocation** - transfer between racks with compatibility validation
 - **Full Inventory** - complete warehouse contents listing with operation history
 
 ### Monitoring & Alerts
+
 - **Temperature Monitoring** - IoT sensor readings with anomaly detection
 - **Weight Monitoring** - weight discrepancy detection (theft protection)
 - **Expiration Date Control** - automatic alerts for approaching expiration dates
 - **Real-time Notifications** - alerts via SignalR/WebSocket
 
 ### Smart Features
+
 - **Voice Control** - natural language command processing via Google Gemini API
 - **Product Recognition** - image-based product identification (ResNet50 / ONNX model)
 - **Barcode Scanning** - scanner and device camera support
 
 ### Security
+
 - **JWT Authentication** with optional **2FA (TOTP)**
 - **RBAC Access Control** - roles: `Administrator` / `Warehouse Worker`
 - **SSL/TLS** - encrypted database connection
@@ -56,6 +60,7 @@ Faraday WMS (also known as **FaradaySystems**) is a software solution for managi
 - **Soft Delete** - data is never physically removed
 
 ### User Interface
+
 - **3D Warehouse Visualization** - interactive Three.js view with navigation
 - **Dark / Light Theme**
 - **Multi-language Support** - Polish and English
@@ -67,15 +72,19 @@ Faraday WMS (also known as **FaradaySystems**) is a software solution for managi
 ## Screenshots
 
 ### Interactive 3D Warehouse
+
 ![3D warehouse visualization with racks and stored products](docs/media/3d.png)
 
 ### Inventory - Rack Structure
+
 ![Rack grid view showing slot occupancy, temperature ranges and capacity](docs/media/racks.png)
 
 ### Inventory - Current Stock
+
 ![Detailed stock level view with product cards showing status, weight and location](docs/media/items.png)
 
 ### Operations History
+
 ![Operations history log with timestamps, action types and operator info](docs/media/operations.png)
 
 ---
@@ -125,50 +134,53 @@ graph TB
     API --- BW
 ```
 
-| Component | Technology | Port | Role |
-|-----------|-----------|------|------|
-| Frontend | Vite + React 19 + TypeScript | `5173` | SPA - user interface |
-| Backend | ASP.NET Core (.NET 10.0) | `5000` | REST API, WebSocket, business logic |
-| Database | PostgreSQL 16 Alpine | `5432` | Data persistence (SSL) |
-| pgAdmin | pgAdmin 4 | `5050` | Database administration |
+| Component | Technology                   | Port   | Role                                |
+| --------- | ---------------------------- | ------ | ----------------------------------- |
+| Frontend  | Vite + React 19 + TypeScript | `5173` | SPA - user interface                |
+| Backend   | ASP.NET Core (.NET 10.0)     | `5000` | REST API, WebSocket, business logic |
+| Database  | PostgreSQL 16 Alpine         | `5432` | Data persistence (SSL)              |
+| pgAdmin   | pgAdmin 4                    | `5050` | Database administration             |
 
 ---
 
 ## Tech Stack
 
 ### Backend
-| Technology | Purpose |
-|-----------|---------|
-| ASP.NET Core (.NET 10.0) | Web framework, REST API |
-| Entity Framework Core | ORM, database migrations |
-| PostgreSQL 16 | Relational database |
-| SignalR | WebSocket communication (alerts, logs) |
-| BCrypt | Password hashing |
-| JWT Bearer | Authentication tokens |
-| OtpNet | 2FA authentication (TOTP) |
-| ONNX Runtime + ResNet50 | Image-based product recognition |
-| MailKit | Email delivery (SMTP) |
-| Google Gemini API | Voice command processing |
+
+| Technology               | Purpose                                |
+| ------------------------ | -------------------------------------- |
+| ASP.NET Core (.NET 10.0) | Web framework, REST API                |
+| Entity Framework Core    | ORM, database migrations               |
+| PostgreSQL 16            | Relational database                    |
+| SignalR                  | WebSocket communication (alerts, logs) |
+| BCrypt                   | Password hashing                       |
+| JWT Bearer               | Authentication tokens                  |
+| OtpNet                   | 2FA authentication (TOTP)              |
+| ONNX Runtime + ResNet50  | Image-based product recognition        |
+| MailKit                  | Email delivery (SMTP)                  |
+| Google Gemini API        | Voice command processing               |
 
 ### Frontend
-| Technology | Purpose |
-|-----------|---------|
-| React 19 | UI library |
-| TypeScript | Static typing |
-| Vite 7 | Bundler and dev server |
-| Three.js / React Three Fiber | 3D warehouse visualization |
-| Radix UI | Accessible UI components (Dialog, Tabs, Tooltip…) |
-| Sass / SCSS | CSS styling |
-| Axios | HTTP communication |
-| SignalR Client | WebSocket (real-time alerts and logs) |
-| html5-qrcode / ScanApp | Barcode scanning |
+
+| Technology                   | Purpose                                           |
+| ---------------------------- | ------------------------------------------------- |
+| React 19                     | UI library                                        |
+| TypeScript                   | Static typing                                     |
+| Vite 7                       | Bundler and dev server                            |
+| Three.js / React Three Fiber | 3D warehouse visualization                        |
+| Radix UI                     | Accessible UI components (Dialog, Tabs, Tooltip…) |
+| Sass / SCSS                  | CSS styling                                       |
+| Axios                        | HTTP communication                                |
+| SignalR Client               | WebSocket (real-time alerts and logs)             |
+| html5-qrcode / ScanApp       | Barcode scanning                                  |
 
 ### Infrastructure
-| Technology | Purpose |
-|-----------|---------|
+
+| Technology              | Purpose                            |
+| ----------------------- | ---------------------------------- |
 | Docker & Docker Compose | Containerization and orchestration |
-| Lefthook | Git hooks |
-| ESLint + Prettier | Code linting and formatting |
+| Lefthook                | Git hooks                          |
+| ESLint + Prettier       | Code linting and formatting        |
 
 ---
 
@@ -181,12 +193,14 @@ graph TB
 ### Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/TOK7O/Faraday.git
    cd Faraday
    ```
 
 2. **Create a `.env` file** in the project root directory using the following template:
+
    ```env
    DB_HOST=localhost
    DB_PORT=5432
@@ -212,14 +226,17 @@ graph TB
    JWT_ISSUER=FaradayServer
    JWT_AUDIENCE=FaradayClient
    ```
+
    > Replace values in `< >` with your own data. The `.env` file is ignored by Git.
 
 3. **Generate SSL certificates** (one-time)
+
    ```bash
    bash generate-certs.sh
    ```
 
 4. **Start the containers**
+
    ```bash
    docker compose up -d --build
    ```
@@ -228,11 +245,11 @@ graph TB
 
 5. **Open the application**
 
-   | Service | URL |
-   |---------|-----|
-   | Application | [http://localhost:5173](http://localhost:5173) |
+   | Service       | URL                                                            |
+   | ------------- | -------------------------------------------------------------- |
+   | Application   | [http://localhost:5173](http://localhost:5173)                 |
    | API (Swagger) | [http://localhost:5000/swagger](http://localhost:5000/swagger) |
-   | pgAdmin | [http://localhost:5050](http://localhost:5050) |
+   | pgAdmin       | [http://localhost:5050](http://localhost:5050)                 |
 
 6. **Log in** with the default administrator credentials:
    ```
@@ -256,14 +273,14 @@ docker compose down -v
 
 Configuration is stored in the `.env` file in the project root directory:
 
-| Variable | Description |
-|----------|-------------|
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | PostgreSQL database connection |
-| `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE` | JWT token configuration |
-| `BACKUP_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_IV` | Backup encryption keys (AES-256) |
-| `SMTP_SERVER`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD` | Email configuration (SMTP) |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `CLIENT_APP_BASE_URL` | Frontend base URL |
+| Variable                                                  | Description                      |
+| --------------------------------------------------------- | -------------------------------- |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | PostgreSQL database connection   |
+| `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`                   | JWT token configuration          |
+| `BACKUP_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_IV`           | Backup encryption keys (AES-256) |
+| `SMTP_SERVER`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD` | Email configuration (SMTP)       |
+| `GEMINI_API_KEY`                                          | Google Gemini API key            |
+| `CLIENT_APP_BASE_URL`                                     | Frontend base URL                |
 
 ---
 
@@ -275,6 +292,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 <div align="center">
 
-**Faraday WMS** - *Primus Inter Pares* competition project
+**Faraday WMS** - _Primus Inter Pares_ competition project
 
 </div>

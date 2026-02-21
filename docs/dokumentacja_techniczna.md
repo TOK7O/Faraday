@@ -65,17 +65,17 @@ graph TB
 
 ### Opis komponentów architektury
 
-| Komponent | Technologia | Port | Rola |
-|---|---|---|---|
-| Frontend | Vite + React + TypeScript, Node.js Alpine | 5173 | Interfejs użytkownika SPA |
-| Backend API | ASP.NET Core (.NET 10.0) | 5000 → 8080 | Logika biznesowa, REST API, WebSocket |
-| Baza danych | PostgreSQL 16 Alpine | 5432 | Persystencja danych z szyfrowaniem SSL |
-| pgAdmin | pgAdmin 4 | 5050 | Administracja bazą danych |
-| Reverse Proxy | Nginx (zalecany) | 80/443 | Terminacja SSL, routing, load balancing |
+| Komponent     | Technologia                               | Port        | Rola                                    |
+| ------------- | ----------------------------------------- | ----------- | --------------------------------------- |
+| Frontend      | Vite + React + TypeScript, Node.js Alpine | 5173        | Interfejs użytkownika SPA               |
+| Backend API   | ASP.NET Core (.NET 10.0)                  | 5000 → 8080 | Logika biznesowa, REST API, WebSocket   |
+| Baza danych   | PostgreSQL 16 Alpine                      | 5432        | Persystencja danych z szyfrowaniem SSL  |
+| pgAdmin       | pgAdmin 4                                 | 5050        | Administracja bazą danych               |
+| Reverse Proxy | Nginx (zalecany)                          | 80/443      | Terminacja SSL, routing, load balancing |
 
 Backend wykorzystuje wieloetapowy obraz Docker (multi-stage build) — w pierwszym etapie kompiluje aplikację przy użyciu SDK .NET 10.0, a w drugim uruchamia ją na lekkim obrazie runtime. Dodatkowo instaluje klienta PostgreSQL (`postgresql-client`), który jest wymagany do operacji tworzenia i przywracania kopii zapasowych za pomocą narzędzi `pg_dump` i `pg_restore`.
 
-Frontend uruchamiany jest  na obrazie Node.js Alpine.
+Frontend uruchamiany jest na obrazie Node.js Alpine.
 
 Połączenie z bazą danych jest szyfrowane za pomocą SSL — certyfikat (`server.crt`) i klucz prywatny (`server.key`) są montowane jako wolumeny do kontenera PostgreSQL. Klucz prywatny jest kopiowany wewnątrz kontenera w celu ustawienia odpowiednich uprawnień (chmod 600).
 
@@ -232,14 +232,14 @@ erDiagram
 
 Poniższa tabela opisuje wszystkie enumeracje (typy wyliczeniowe) używane w modelu danych.
 
-| Enumeracja | Wartości | Opis |
-|---|---|---|
-| `UserRole` | `Administrator`, `WarehouseWorker` | Rola użytkownika w systemie |
-| `ItemStatus` | `InStock` | Status elementu magazynowego |
-| `OperationType` | `Inbound`, `Outbound`, `Adjustment`, `Movement`, `SystemBackup`, `SystemRestore` | Typ operacji magazynowej |
-| `HazardType` | `Explosive`, `Flammable`, `Oxidizing`, `Toxic`, `Corrosive`, `RadioActive`, `Environmental` | Klasyfikacja zagrożeń (enum flagowy — wartości mogą być łączone) |
-| `RackSlotStatus` | `Available`, `Reserved` | Status slotu regałowego |
-| `AlertType` | `TemperatureMismatch`, `WeightMismatch`, `ExpirationWarning`, `ExpirationExpired` | Typ alertu systemowego |
+| Enumeracja       | Wartości                                                                                    | Opis                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `UserRole`       | `Administrator`, `WarehouseWorker`                                                          | Rola użytkownika w systemie                                      |
+| `ItemStatus`     | `InStock`                                                                                   | Status elementu magazynowego                                     |
+| `OperationType`  | `Inbound`, `Outbound`, `Adjustment`, `Movement`, `SystemBackup`, `SystemRestore`            | Typ operacji magazynowej                                         |
+| `HazardType`     | `Explosive`, `Flammable`, `Oxidizing`, `Toxic`, `Corrosive`, `RadioActive`, `Environmental` | Klasyfikacja zagrożeń (enum flagowy — wartości mogą być łączone) |
+| `RackSlotStatus` | `Available`, `Reserved`                                                                     | Status slotu regałowego                                          |
+| `AlertType`      | `TemperatureMismatch`, `WeightMismatch`, `ExpirationWarning`, `ExpirationExpired`           | Typ alertu systemowego                                           |
 
 ---
 
@@ -254,6 +254,7 @@ Kontekst bazy danych (`FaradayDbContext`) konfiguruje globalny filtr zapytań, k
 Encja reprezentująca użytkownika systemu. Posiada unikalne indeksy na polach `Username` i `Email`. Hasło jest przechowywane w formie skrótu kryptograficznego (hash) generowanego przez algorytm BCrypt.
 
 System definiuje dwie role użytkowników poprzez enumerację `UserRole`:
+
 - **Administrator** — pełny dostęp do wszystkich funkcji, w tym zarządzania użytkownikami, logami i kopiami zapasowymi.
 - **WarehouseWorker** (Pracownik magazynu) — dostęp do operacji magazynowych, produktów i podstawowych raportów.
 
@@ -286,6 +287,7 @@ Posiada datę przyjęcia (`EntryDate`) oraz opcjonalną datę ważności (`Expir
 ### 4.5. Alert
 
 Encja reprezentująca alert systemowy powiązany z regałem. Typy alertów definiuje enumeracja `AlertType`:
+
 - `TemperatureMismatch` — temperatura poza dopuszczalnym zakresem regału.
 - `WeightMismatch` — rozbieżność wagowa (potencjalny brak towaru).
 - `ExpirationWarning` — zbliżający się termin ważności.
@@ -332,6 +334,7 @@ Orkiestruje trzy kluczowe operacje magazynowe, z których każda jest realizowan
 Stanowi „mózg" systemu WMS — określa optymalną lokalizację składowania dla przyjmowanego towaru. Implementuje strategię **First Fit, Bottom-Up, Left-to-Right** z wielowymiarową walidacją ograniczeń.
 
 Proces alokacji przebiega następująco:
+
 1. Filtruje regały spełniające ograniczenia wymiarowe (regał musi pomieścić produkt).
 2. Filtruje regały spełniające ograniczenia temperaturowe (zakres operacyjny regału musi mieścić się w bezpiecznym zakresie produktu).
 3. Dla każdego kandydackiego regału sprawdza nośność (suma wag aktualnych elementów plus nowy produkt nie może przekroczyć limitu).
@@ -344,6 +347,7 @@ Przetwarza dane telemetryczne z sensorów IoT i monitoruje stan zapasów.
 **Przetwarzanie odczytów sensorów** (`ProcessRackReadingAsync`): Aktualizuje bieżący stan regału, oblicza wagę oczekiwaną na podstawie elementów w bazie danych, zapisuje odczyty historyczne do tabel `TemperatureReadings` i `WeightReadings`, a następnie analizuje anomalie.
 
 Wykrywanie anomalii obejmuje:
+
 - **Analiza temperatury** — alert, gdy temperatura przekracza skonfigurowany zakres regału. Tolerancja: brak.
 - **Analiza wagi (wykrywanie kradzieży)** — alert, gdy zmierzona waga jest niższa od oczekiwanej o więcej niż 0,5 kg.
 
@@ -372,6 +376,7 @@ Implementuje rozpoznawanie produktów na podstawie obrazów z wykorzystaniem mod
 Przetwarza polecenia głosowe użytkowników (w formie tekstu) na operacje systemowe za pośrednictwem Google Gemini API.
 
 Proces przebiega następująco:
+
 1. Tekst polecenia jest wysyłany do Gemini API wraz ze szczegółowym promptem systemowym opisującym dostępne endpointy API.
 2. Gemini generuje strukturalny plan wykonania (JSON) zawierający sekwencję kroków z metodami HTTP, endpointami i parametrami.
 3. System wykonuje kroki sekwencyjnie, routując każdy do odpowiedniej usługi (Product, Operation, Rack, Report).
@@ -380,6 +385,7 @@ Proces przebiega następująco:
 ### 5.8. ReportService — Raporty i analizy
 
 Generuje dane analityczne i raporty operacyjne:
+
 - **Statystyki dashboardu** — zagregowane metryki: slots zajęte/wolne, waga, elementy z kończącą się ważnością, operacje dzienne.
 - **Podsumowanie inwentaryzacji** — grupowanie po produkcie z ilościami i najbliższymi datami ważności.
 - **Elementy z kończącą się ważnością** — filtrowane po konfigurowalnym progu dni z lokalizacją.
@@ -405,107 +411,107 @@ Wszystkie endpointy wymagają autoryzacji tokenem JWT (nagłówek `Authorization
 
 ### 6.1. Uwierzytelnianie (`/api/auth`)
 
-| Metoda | Endpoint | Opis | Dostęp |
-|---|---|---|---|
-| POST | `/login` | Logowanie (zwraca JWT) | Publiczny |
-| POST | `/register` | Rejestracja użytkownika | Publiczny |
-| POST | `/setup-2fa` | Konfiguracja 2FA | Zalogowany |
-| POST | `/disable-2fa` | Wyłączenie 2FA | Zalogowany |
-| POST | `/change-password` | Zmiana hasła | Zalogowany |
-| POST | `/forgot-password` | Żądanie resetu hasła | Publiczny |
-| POST | `/reset-password` | Reset hasła tokenem | Publiczny |
-| GET | `/users` | Lista użytkowników | Administrator |
-| PUT | `/users/{id}` | Aktualizacja użytkownika | Administrator |
-| DELETE | `/users/{id}` | Usunięcie użytkownika | Administrator |
+| Metoda | Endpoint           | Opis                     | Dostęp        |
+| ------ | ------------------ | ------------------------ | ------------- |
+| POST   | `/login`           | Logowanie (zwraca JWT)   | Publiczny     |
+| POST   | `/register`        | Rejestracja użytkownika  | Publiczny     |
+| POST   | `/setup-2fa`       | Konfiguracja 2FA         | Zalogowany    |
+| POST   | `/disable-2fa`     | Wyłączenie 2FA           | Zalogowany    |
+| POST   | `/change-password` | Zmiana hasła             | Zalogowany    |
+| POST   | `/forgot-password` | Żądanie resetu hasła     | Publiczny     |
+| POST   | `/reset-password`  | Reset hasła tokenem      | Publiczny     |
+| GET    | `/users`           | Lista użytkowników       | Administrator |
+| PUT    | `/users/{id}`      | Aktualizacja użytkownika | Administrator |
+| DELETE | `/users/{id}`      | Usunięcie użytkownika    | Administrator |
 
 ### 6.2. Produkty (`/api/product`)
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| GET | `/` | Lista wszystkich produktów |
-| GET | `/{id}` | Produkt po ID |
-| GET | `/scanCode/{code}` | Produkt po kodzie skanowania |
-| POST | `/` | Utworzenie produktu |
-| PUT | `/{id}` | Aktualizacja produktu |
-| DELETE | `/{id}` | Usunięcie produktu (soft delete) |
-| POST | `/import-csv` | Import masowy z pliku CSV |
+| Metoda | Endpoint           | Opis                             |
+| ------ | ------------------ | -------------------------------- |
+| GET    | `/`                | Lista wszystkich produktów       |
+| GET    | `/{id}`            | Produkt po ID                    |
+| GET    | `/scanCode/{code}` | Produkt po kodzie skanowania     |
+| POST   | `/`                | Utworzenie produktu              |
+| PUT    | `/{id}`            | Aktualizacja produktu            |
+| DELETE | `/{id}`            | Usunięcie produktu (soft delete) |
+| POST   | `/import-csv`      | Import masowy z pliku CSV        |
 
 ### 6.3. Regały (`/api/rack`)
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| GET | `/` | Lista regałów |
-| GET | `/{id}` | Regał po ID |
-| POST | `/` | Utworzenie regału (auto-generuje sloty) |
-| PUT | `/{id}` | Aktualizacja regału |
-| DELETE | `/{id}` | Usunięcie regału (soft delete) |
-| POST | `/import-csv` | Import masowy z pliku CSV |
+| Metoda | Endpoint      | Opis                                    |
+| ------ | ------------- | --------------------------------------- |
+| GET    | `/`           | Lista regałów                           |
+| GET    | `/{id}`       | Regał po ID                             |
+| POST   | `/`           | Utworzenie regału (auto-generuje sloty) |
+| PUT    | `/{id}`       | Aktualizacja regału                     |
+| DELETE | `/{id}`       | Usunięcie regału (soft delete)          |
+| POST   | `/import-csv` | Import masowy z pliku CSV               |
 
 ### 6.4. Operacje magazynowe (`/api/operation`)
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| POST | `/inbound` | Przyjęcie towaru |
-| POST | `/outbound` | Wydanie towaru (FIFO) |
-| POST | `/move` | Przemieszczenie towaru |
-| GET | `/history` | Historia operacji |
+| Metoda | Endpoint    | Opis                   |
+| ------ | ----------- | ---------------------- |
+| POST   | `/inbound`  | Przyjęcie towaru       |
+| POST   | `/outbound` | Wydanie towaru (FIFO)  |
+| POST   | `/move`     | Przemieszczenie towaru |
+| GET    | `/history`  | Historia operacji      |
 
 ### 6.5. Raporty (`/api/report`)
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| GET | `/dashboard-stats` | Statystyki dashboardu |
-| GET | `/inventory-summary` | Podsumowanie inwentaryzacji |
-| GET | `/full-inventory` | Pełny raport inwentaryzacyjny |
-| GET | `/expiring-items` | Elementy kończące ważność |
-| GET | `/rack-utilization` | Wykorzystanie regałów |
-| GET | `/temperature-history` | Historia temperatury |
-| GET | `/weight-history` | Historia wagi |
-| GET | `/alert-history` | Historia alertów |
-| GET | `/active-alerts` | Aktywne alerty |
-| GET | `/rack-temperature-violations` | Naruszenia temperaturowe regałów |
-| GET | `/item-temperature-violations` | Naruszenia temperaturowe produktów |
+| Metoda | Endpoint                       | Opis                               |
+| ------ | ------------------------------ | ---------------------------------- |
+| GET    | `/dashboard-stats`             | Statystyki dashboardu              |
+| GET    | `/inventory-summary`           | Podsumowanie inwentaryzacji        |
+| GET    | `/full-inventory`              | Pełny raport inwentaryzacyjny      |
+| GET    | `/expiring-items`              | Elementy kończące ważność          |
+| GET    | `/rack-utilization`            | Wykorzystanie regałów              |
+| GET    | `/temperature-history`         | Historia temperatury               |
+| GET    | `/weight-history`              | Historia wagi                      |
+| GET    | `/alert-history`               | Historia alertów                   |
+| GET    | `/active-alerts`               | Aktywne alerty                     |
+| GET    | `/rack-temperature-violations` | Naruszenia temperaturowe regałów   |
+| GET    | `/item-temperature-violations` | Naruszenia temperaturowe produktów |
 
 ### 6.6. Kopie zapasowe (`/api/backup`) — tylko Administrator
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| POST | `/create` | Tworzenie kopii zapasowej |
-| GET | `/download/{fileName}` | Pobieranie kopii |
-| GET | `/history` | Historia kopii |
-| POST | `/restore` | Przywracanie kopii |
+| Metoda | Endpoint               | Opis                      |
+| ------ | ---------------------- | ------------------------- |
+| POST   | `/create`              | Tworzenie kopii zapasowej |
+| GET    | `/download/{fileName}` | Pobieranie kopii          |
+| GET    | `/history`             | Historia kopii            |
+| POST   | `/restore`             | Przywracanie kopii        |
 
 ### 6.7. Rozpoznawanie obrazem (`/api/image-recognition`)
 
-| Metoda | Endpoint | Opis | Dostęp |
-|---|---|---|---|
-| POST | `/upload-reference` | Przesyłanie obrazów referencyjnych produktu (po scan code) | Zalogowany |
-| POST | `/recognize` | Rozpoznawanie produktu na podstawie przesłanego obrazu | Zalogowany |
-| GET | `/references/product/{productId}` | Obrazy referencyjne po ID produktu | Zalogowany |
-| GET | `/references/scancode/{scanCode}` | Obrazy referencyjne po kodzie skanowania | Zalogowany |
-| GET | `/references/count/{productId}` | Liczba obrazów referencyjnych produktu | Zalogowany |
-| DELETE | `/reference/{imageId}` | Usunięcie obrazu referencyjnego | Administrator |
-| GET | `/image/{imageGuid}` | Pobranie pliku obrazu po GUID | Publiczny |
+| Metoda | Endpoint                          | Opis                                                       | Dostęp        |
+| ------ | --------------------------------- | ---------------------------------------------------------- | ------------- |
+| POST   | `/upload-reference`               | Przesyłanie obrazów referencyjnych produktu (po scan code) | Zalogowany    |
+| POST   | `/recognize`                      | Rozpoznawanie produktu na podstawie przesłanego obrazu     | Zalogowany    |
+| GET    | `/references/product/{productId}` | Obrazy referencyjne po ID produktu                         | Zalogowany    |
+| GET    | `/references/scancode/{scanCode}` | Obrazy referencyjne po kodzie skanowania                   | Zalogowany    |
+| GET    | `/references/count/{productId}`   | Liczba obrazów referencyjnych produktu                     | Zalogowany    |
+| DELETE | `/reference/{imageId}`            | Usunięcie obrazu referencyjnego                            | Administrator |
+| GET    | `/image/{imageGuid}`              | Pobranie pliku obrazu po GUID                              | Publiczny     |
 
 ### 6.8. Polecenia głosowe (`/api/voice`)
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| POST | `/command` | Przetwarzanie polecenia tekstowego/głosowego przez Gemini API |
+| Metoda | Endpoint   | Opis                                                          |
+| ------ | ---------- | ------------------------------------------------------------- |
+| POST   | `/command` | Przetwarzanie polecenia tekstowego/głosowego przez Gemini API |
 
 ### 6.9. Logi (`/api/logs`) — tylko Administrator
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| GET | `/recent` | Pobranie ostatnich logów z bufora pamięciowego (maks. 1000) |
-| DELETE | `/clear` | Wyczyszczenie bufora logów |
+| Metoda | Endpoint  | Opis                                                        |
+| ------ | --------- | ----------------------------------------------------------- |
+| GET    | `/recent` | Pobranie ostatnich logów z bufora pamięciowego (maks. 1000) |
+| DELETE | `/clear`  | Wyczyszczenie bufora logów                                  |
 
 ### 6.10. Symulacja (`/api/simulation`) — tylko Administrator
 
-| Metoda | Endpoint | Opis |
-|---|---|---|
-| POST | `/trigger-temp-failure/{rackId}` | Symulacja awarii temperatury na wybranym regale (cel demonstracyjny) |
-| POST | `/trigger-theft/{rackId}` | Symulacja rozbieżności wagowej/kradzieży na wybranym regale (cel demonstracyjny) |
+| Metoda | Endpoint                         | Opis                                                                             |
+| ------ | -------------------------------- | -------------------------------------------------------------------------------- |
+| POST   | `/trigger-temp-failure/{rackId}` | Symulacja awarii temperatury na wybranym regale (cel demonstracyjny)             |
+| POST   | `/trigger-theft/{rackId}`        | Symulacja rozbieżności wagowej/kradzieży na wybranym regale (cel demonstracyjny) |
 
 ---
 
@@ -566,14 +572,14 @@ Token JWT dla połączeń SignalR jest przekazywany jako parametr zapytania (`ac
 
 Wrażliwe dane konfiguracyjne są przechowywane w pliku `.env` i nie są commitowane do repozytorium:
 
-| Zmienna | Opis |
-|---|---|
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Połączenie z bazą danych |
-| `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE` | Konfiguracja tokenów JWT |
-| `BACKUP_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_IV` | Klucze szyfrowania kopii zapasowych |
-| `SMTP_SERVER`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD`, `SMTP_NAME` | Konfiguracja poczty |
-| `GEMINI_API_KEY` | Klucz API Google Gemini |
-| `CLIENT_APP_BASE_URL` | Adres bazowy aplikacji frontendowej |
+| Zmienna                                                                | Opis                                |
+| ---------------------------------------------------------------------- | ----------------------------------- |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`              | Połączenie z bazą danych            |
+| `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`                                | Konfiguracja tokenów JWT            |
+| `BACKUP_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_IV`                        | Klucze szyfrowania kopii zapasowych |
+| `SMTP_SERVER`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD`, `SMTP_NAME` | Konfiguracja poczty                 |
+| `GEMINI_API_KEY`                                                       | Klucz API Google Gemini             |
+| `CLIENT_APP_BASE_URL`                                                  | Adres bazowy aplikacji frontendowej |
 
 ---
 
@@ -581,22 +587,23 @@ Wrażliwe dane konfiguracyjne są przechowywane w pliku `.env` i nie są commito
 
 Aplikacja kliencka to SPA (Single Page Application). Główne sekcje:
 
-| Widok | Opis |
-|---|---|
-| Dashboard | Statystyki zajętości, wagi, operacji dziennych |
-| Inwentarz | Interaktywna siatka regałów, katalog produktów, operacje |
-| Personel | Zarządzanie użytkownikami, rolami, 2FA |
-| Historia operacji | Chronologiczny log operacji magazynowych |
-| Raporty | 4 zakładki: Inwentarz, Utylizacja, Czujniki, Alarmy |
-| Kopie zapasowe | Tworzenie, pobieranie, przywracanie backupów |
-| Terminal logów | Konsola logów systemowych w czasie rzeczywistym (SignalR) |
-| Preferencje | Motyw, język (PL/EN), zmiana hasła, konfiguracja 2FA |
+| Widok             | Opis                                                      |
+| ----------------- | --------------------------------------------------------- |
+| Dashboard         | Statystyki zajętości, wagi, operacji dziennych            |
+| Inwentarz         | Interaktywna siatka regałów, katalog produktów, operacje  |
+| Personel          | Zarządzanie użytkownikami, rolami, 2FA                    |
+| Historia operacji | Chronologiczny log operacji magazynowych                  |
+| Raporty           | 4 zakładki: Inwentarz, Utylizacja, Czujniki, Alarmy       |
+| Kopie zapasowe    | Tworzenie, pobieranie, przywracanie backupów              |
+| Terminal logów    | Konsola logów systemowych w czasie rzeczywistym (SignalR) |
+| Preferencje       | Motyw, język (PL/EN), zmiana hasła, konfiguracja 2FA      |
 
 ---
 
 ## 11. Inicjalizacja i uruchomienie
 
 Przy starcie aplikacji backend automatycznie:
+
 1. Stosuje wszystkie oczekujące migracje bazy danych (`context.Database.Migrate()`).
 2. Tworzy domyślnego użytkownika administratora (login: `admin`, hasło: `admin123`), jeśli baza jest pusta.
 3. Konfiguruje middleware: autoryzację JWT, CORS, Swagger z obsługą Bearer tokenów, endpointy SignalR (`/hubs/alerts`, `/hubs/logs`).

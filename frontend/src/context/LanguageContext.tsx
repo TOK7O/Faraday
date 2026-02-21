@@ -14,12 +14,12 @@ interface LanguageContextType {
 const translations = { pl, en };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(
-    undefined,
+  undefined,
 );
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
-                                                                            children,
-                                                                          }) => {
+  children,
+}) => {
   // 1. Inicjalizacja: sprawdzamy localStorage, w przeciwnym razie domyślnie "en"
   const [lang, setLang] = useState<Language>(() => {
     const savedLang = localStorage.getItem("app_language");
@@ -38,9 +38,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-      <LanguageContext.Provider value={value}>
-        {children}
-      </LanguageContext.Provider>
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
   );
 };
 
