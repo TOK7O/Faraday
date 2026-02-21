@@ -333,6 +333,29 @@
           "uploadFailed": "Failed to upload images. Ensure files are valid images and under 10MB.",
           "deleteFailed": "Failed to delete image."
         },
+        "identify": {
+          "tabTitle": "Identify",
+          "identifyCard": {
+            "title": "Identify Product",
+            "subtitle": "Take a photo to identify an existing product.",
+            "cameraBtn": "Camera",
+            "uploadBtn": "Upload",
+            "resultHeader": "RESULT",
+            "weightLabel": "Weight:",
+            "hazardousLabel": "Hazardous:",
+            "yes": "Yes",
+            "no": "No"
+          },
+          "trainingCard": {
+            "title": "AI Training Studio",
+            "subtitle": "Attach reference images to barcodes.",
+            "selectLabel": "Select Product to Train",
+            "chooseProduct": "-- Choose a product --",
+            "activeContext": "Active Context:",
+            "barcodeLabel": "Barcode:",
+            "emptyState": "Select a product from the list above to manage its AI reference images."
+          }
+        },
         "operations": {
           "inbound": {
             "title": "Inbound",

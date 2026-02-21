@@ -938,7 +938,7 @@ const InventoryContent = () => {
                     }}
                   >
                     <BrainCircuit size={16} style={{ marginRight: 6, marginTop: "2px"  }} />{" "}
-                    Identify
+                    {invT.identify.tabTitle}
                   </Tabs.Trigger>
                 </Tabs.List>
                 <button
@@ -1228,10 +1228,10 @@ const InventoryContent = () => {
                   </div>
                   <div>
                     <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
-                      Identify Product
+                      {invT.identify.identifyCard.title}
                     </h2>
                     <p className="text-muted">
-                      Take a photo to identify an existing product.
+                      {invT.identify.identifyCard.subtitle}
                     </p>
                   </div>
                   <div
@@ -1247,7 +1247,7 @@ const InventoryContent = () => {
                       style={{ padding: "0.8rem 1.5rem" }}
                       onClick={() => setIsAiScannerOpen(true)}
                     >
-                      <Camera size={20} /> Camera
+                      <Camera size={20} /> {invT.identify.identifyCard.cameraBtn}
                     </button>
                     <button
                       className="btn-secondary"
@@ -1259,7 +1259,7 @@ const InventoryContent = () => {
                       }}
                       onClick={() => aiFileInputRef.current?.click()}
                     >
-                      <Upload size={20} /> Upload
+                      <Upload size={20} /> {invT.identify.identifyCard.uploadBtn}
                     </button>
                   </div>
 
@@ -1288,7 +1288,7 @@ const InventoryContent = () => {
                             color: "var(--text-muted)",
                           }}
                         >
-                          RESULT
+                          {invT.identify.identifyCard.resultHeader}
                         </span>
                         <span
                           className={`status-badge ${identifiedProduct.confidenceLevel === "Excellent" ? "new" : "conflict"}`}
@@ -1329,13 +1329,15 @@ const InventoryContent = () => {
                         }}
                       >
                         <div>
-                          Weight:{" "}
+                          {invT.identify.identifyCard.weightLabel}{" "}
                           <strong>{identifiedProduct.weightKg} kg</strong>
                         </div>
                         <div>
-                          Hazardous:{" "}
+                          {invT.identify.identifyCard.hazardousLabel}{" "}
                           <strong>
-                            {identifiedProduct.isHazardous ? "Yes" : "No"}
+                            {identifiedProduct.isHazardous 
+                              ? invT.identify.identifyCard.yes 
+                              : invT.identify.identifyCard.no}
                           </strong>
                         </div>
                       </div>
@@ -1366,20 +1368,20 @@ const InventoryContent = () => {
                   </div>
                   <div>
                     <h2 style={{ fontSize: "1.3rem", margin: 0 }}>
-                      AI Training Studio
+                      {invT.identify.trainingCard.title}
                     </h2>
                     <p
                       className="text-muted"
                       style={{ fontSize: "0.85rem", margin: 0 }}
                     >
-                      Attach reference images to barcodes.
+                      {invT.identify.trainingCard.subtitle}
                     </p>
                   </div>
                 </div>
 
                 <div className="ht-form">
                   <div className="input-group">
-                    <label>Select Product to Train</label>
+                    <label>{invT.identify.trainingCard.selectLabel}</label>
                     <select
                       className="ht-input"
                       value={trainingProduct?.id || ""}
@@ -1390,7 +1392,7 @@ const InventoryContent = () => {
                         setTrainingProduct(prod || null);
                       }}
                     >
-                      <option value="">-- Choose a product --</option>
+                      <option value="">{invT.identify.trainingCard.chooseProduct}</option>
                       {products.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.scanCode})
@@ -1420,13 +1422,13 @@ const InventoryContent = () => {
                             marginBottom: "4px",
                           }}
                         >
-                          Active Context:
+                          {invT.identify.trainingCard.activeContext}
                         </div>
                         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
                           {trainingProduct.name}
                         </div>
                         <div style={{ fontFamily: "monospace", opacity: 0.8 }}>
-                          Barcode: {trainingProduct.scanCode}
+                          {invT.identify.trainingCard.barcodeLabel} {trainingProduct.scanCode}
                         </div>
                       </div>
 
@@ -1451,8 +1453,7 @@ const InventoryContent = () => {
                         style={{ opacity: 0.3, marginBottom: "1rem" }}
                       />
                       <p>
-                        Select a product from the list above to manage its AI
-                        reference images.
+                        {invT.identify.trainingCard.emptyState}
                       </p>
                     </div>
                   )}
