@@ -132,7 +132,7 @@ export const VoiceControlFAB = () => {
   };
 
   const handleStopAndSend = async () => {
-    SpeechRecognition.stopListening();
+    await SpeechRecognition.stopListening();
     setIsWaitingForProcessing(true);
     setTimeout(async () => {
       const currentTranscript = transcript;

@@ -69,7 +69,7 @@ const BackupsContent = () => {
         type: "success",
         message: `${backupT.success || "Backup created successfully"}: ${data.fileName}`,
       });
-      fetchHistory();
+      await fetchHistory();
     } catch (error: any) {
       setStatus({
         type: "error",

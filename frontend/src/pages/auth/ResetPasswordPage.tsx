@@ -1,7 +1,7 @@
-﻿import { useState } from "react";
+﻿import React, { useState } from "react";
 import * as Form from "@radix-ui/react-form";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, AlertCircle } from "lucide-react";
+import {Link, useNavigate, useSearchParams} from "react-router-dom";
+import {Loader2, AlertCircle, ArrowLeft} from "lucide-react";
 import { RegisterPasswordFieldPair } from "@/components/ui/RegisterPasswordFieldPair";
 import { resetPassword } from "@/api/axios";
 import { useTranslation } from "@/context/LanguageContext";
@@ -60,9 +60,11 @@ const ResetPasswordPage = () => {
   return (
     <div className="auth-container">
       <section className="auth-visual">
-        <h1>
-          Faraday<span>Systems</span>
-        </h1>
+        <Link to={"/"}>
+          <h1>
+            Faraday<span>Systems</span>
+          </h1>
+        </Link>
       </section>
 
       <section className="auth-form">
@@ -119,6 +121,20 @@ const ResetPasswordPage = () => {
               )}
             </button>
           </Form.Submit>
+          <div className="form-footer">
+            <Link
+                to="/login"
+                className="register-link"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "5px",
+                }}
+            >
+              <ArrowLeft size={16} /> {pageT.formSection.backToLogin}
+            </Link>
+          </div>
         </Form.Root>
       </section>
     </div>

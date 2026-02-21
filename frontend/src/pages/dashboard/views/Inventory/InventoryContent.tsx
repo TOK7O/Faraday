@@ -579,7 +579,7 @@ const InventoryContent = () => {
     setBatchProgress({ current: 0, total: toProcess.length });
 
     let success = 0;
-    let errors: string[] = [];
+    const errors: string[] = [];
     for (let i = 0; i < toProcess.length; i++) {
       const item = toProcess[i];
       setBatchProgress({ current: i + 1, total: toProcess.length });
