@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -11,8 +11,6 @@ import {
   useBounds,
 } from "@react-three/drei";
 import {
-  Activity,
-  ShieldCheck,
   Box,
   MousePointer2,
   Loader2,
@@ -153,7 +151,7 @@ const OverviewContent = () => {
   // Obliczanie pozycji regałów w siatce z uwzględnieniem ich szerokości
   const rackElements = useMemo(() => {
     const itemsPerRow = 2;
-    const elements: JSX.Element[] = [];
+    const elements: React.JSX.Element[] = [];
 
     let currentX = 0;
 

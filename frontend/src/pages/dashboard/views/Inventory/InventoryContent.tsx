@@ -690,7 +690,7 @@ const InventoryContent = () => {
 
             setIsScannerOpen(false);
           },
-          (error) => {},
+          () => {},
         );
       }, 500);
 
