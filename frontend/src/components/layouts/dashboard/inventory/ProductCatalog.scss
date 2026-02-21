@@ -1,0 +1,126 @@
+.product-grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+
+  .product-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-input);
+    border-left: 4px solid var(--accent-primary);
+    border-radius: 8px;
+    position: relative;
+    transition: border-color 0.2s ease;
+
+    &.hazardous-card {
+      border-left-color: #ff4d4d;
+    }
+
+    &:hover {
+      border-color: var(--text-muted);
+
+      .product-actions {
+        opacity: 1;
+      }
+    }
+
+    .product-icon-box {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      border-right: 1px solid var(--border-input);
+      margin-right: 1rem;
+      flex-shrink: 0;
+
+      &.hazardous {
+        color: #ff4d4d;
+      }
+    }
+
+    .product-info {
+      flex: 1;
+      min-width: 0;
+
+      .product-sku {
+        display: block;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent-primary);
+        text-transform: uppercase;
+      }
+
+      .product-name {
+        margin: 2px 0;
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .product-meta {
+        display: flex;
+        gap: 10px;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+
+        span {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      .action-btn {
+        background: transparent;
+        padding: 5px;
+        color: var(--text-muted);
+        cursor: pointer;
+
+        &:hover {
+          background: var(--bg-form);
+          color: var(--text-main);
+        }
+      }
+    }
+  }
+}
+
+.ht-table {
+  border-radius: 4px;
+
+  th {
+    background: var(--bg-input);
+    border-bottom: 2px solid var(--border-input);
+    letter-spacing: 0;
+  }
+
+  .badge-adr {
+    color: #ff4d4d;
+    font-weight: 800;
+    font-size: 0.65rem;
+    border: 1px solid #ff4d4d;
+    padding: 2px 5px;
+  }
+
+  .table-actions {
+    .btn-icon {
+      border: 1px solid transparent;
+      &:hover {
+        border-color: var(--border-input);
+        background: var(--bg-input);
+      }
+    }
+  }
+}

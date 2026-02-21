@@ -1,0 +1,191 @@
+@use "@/styles/animations";
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-form);
+  color: var(--text-main);
+  font-family: "Space Grotesk", sans-serif;
+  position: relative;
+  overflow: hidden;
+
+  .dashboard-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border-input) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-input) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.15;
+    pointer-events: none;
+    mask-image: radial-gradient(circle at 0% 0%, black, transparent 80%);
+    z-index: 0;
+  }
+
+  .dashboard-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+  }
+}
+
+.dashboard-sidebar.desktop-only {
+  width: 280px;
+  background: rgba(var(--bg-input), 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-input);
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.mobile-interface {
+  display: none;
+  position: absolute;
+  top: 23px;
+  left: 20px;
+  z-index: 100;
+
+  .hamburger-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    color: var(--text-main);
+    padding: 5px 6px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+  }
+}
+
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: overlayShow 0.3s ease;
+}
+
+.dialog-sidebar-content {
+  background: var(--bg-form);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 1001;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .sidebar-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    .sidebar-logo {
+      margin-bottom: 0;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+  }
+}
+
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dashboard-content {
+  padding: 3rem;
+  flex: 1;
+  overflow-y: auto;
+
+  .bento-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+
+    .bento-card {
+      background: rgba(var(--bg-input), 0.3);
+      border: 1px solid var(--border-input);
+      border-radius: 24px;
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        border-color: rgba(var(--text-main), 0.2);
+      }
+      &.accent {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        .card-header {
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      .card-header {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1rem;
+      }
+      h2 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        margin-top: auto;
+      }
+    }
+  }
+
+  .placeholder-card {
+    background: rgba(var(--bg-input), 0.3);
+    border: 1px solid var(--border-input);
+    border-radius: 20px;
+    padding: 4rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main .dashboard-navbar {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-interface {
+    display: block;
+  }
+  .dashboard-main .dashboard-navbar {
+    padding-left: 5rem;
+  }
+  .dashboard-content {
+    padding: 1.5rem;
+  }
+  .inventory-view .slots-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}

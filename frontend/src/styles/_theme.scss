@@ -1,0 +1,74 @@
+@use "sass:color";
+@use "variables" as *;
+
+:root {
+  color-scheme: light;
+
+  --overlay-start: rgba(0, 0, 0, 0.2);
+  --overlay-end: rgba(0, 0, 0, 0.2);
+  --bg-form: #{$white};
+
+  --text-main: #{$gray-dark};
+  --text-muted: #{color.scale($gray-dark, $lightness: 25%)};
+
+  --placeholder-color: #{$gray-light};
+
+  --bg-input: #f7f7f7;
+  --border-input: #{color.scale($gray-dark, $lightness: 65%)};
+  --focus-ring: rgba(108, 175, 217, 0.25);
+
+  --accent-primary: #{$blue-primary};
+  --accent-secondary: #{$blue-secondary};
+
+  --btn-grad-1: #{$blue-primary};
+  --btn-grad-2: #{$blue-secondary};
+  --btn-text: #{$white};
+  --shadow-btn: rgba(108, 175, 217, 0.3);
+
+  --error-color: #{$red-error};
+  --error-bg-subtle: rgba(255, 77, 77, 0.05);
+  --success-color: #{$green-success};
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --overlay-start: rgba(0, 0, 0, 0.3);
+  --overlay-end: rgba(0, 0, 0, 0.5);
+  --bg-form: #{$black-deep};
+
+  --text-main: #{$white};
+  --text-muted: #{$gray-light};
+
+  --placeholder-color: #{color.scale($gray-light, $lightness: -30%)};
+
+  --bg-input: #{$black-soft};
+  --border-input: #{color.scale($black-deep, $lightness: 15%)};
+  --focus-ring: rgba(98, 195, 217, 0.2);
+
+  --accent-primary: #{$blue-secondary};
+  --accent-secondary: #{$cyan-light};
+
+  --btn-grad-1: #{color.scale($blue-primary, $lightness: -15%)};
+  --btn-grad-2: #{color.scale($blue-secondary, $lightness: -20%)};
+  --btn-text: #{$white};
+  --shadow-btn: rgba(0, 0, 0, 0.5);
+
+  --error-color: #{$red-soft};
+  --error-bg-subtle: rgba(255, 107, 107, 0.1);
+}
+
+input,
+button,
+select,
+textarea {
+  color: var(--text-main);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-input);
+  font-family: inherit;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}

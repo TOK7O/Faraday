@@ -1,0 +1,84 @@
+.dashboard-navbar {
+  height: 80px;
+  border-bottom: 1px solid var(--border-input);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  background: rgba(var(--bg-form), 0.5);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+
+  .path-display {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    .active-path {
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+  }
+
+  .navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    .search-wrapper {
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      padding: 8px 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      input {
+        border: none;
+        background: transparent;
+        color: var(--text-main);
+        outline: none;
+        width: 180px;
+      }
+    }
+
+    .action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      .dot-alert {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 8px;
+        height: 8px;
+        background: #ff4d4d;
+        border-radius: 50%;
+        border: 2px solid var(--bg-form);
+      }
+    }
+
+    .user-tag {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      .role {
+        font-size: 0.65rem;
+        font-weight: 800;
+        background: var(--bg-input);
+        border: 1px solid var(--border-input);
+        color: var(--accent-primary);
+        padding: 4px 8px;
+        border-radius: 6px;
+      }
+      .name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+    }
+  }
+}

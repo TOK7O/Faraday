@@ -1,0 +1,111 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: faraday-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    command: >
+      /bin/sh -c "
+      cp /etc/ssl/private/server.key.temp /etc/ssl/private/server.key &&
+      chmod 600 /etc/ssl/private/server.key &&
+      chown postgres:postgres /etc/ssl/private/server.key &&
+      docker-entrypoint.sh postgres
+      -c ssl=on
+      -c ssl_cert_file=/etc/ssl/certs/server.crt
+      -c ssl_key_file=/etc/ssl/private/server.key"
+    volumes:
+      - faraday_pg_data:/var/lib/postgresql/data
+      - ./ssl/server.crt:/etc/ssl/certs/server.crt:ro
+      - ./ssl/server.key:/etc/ssl/private/server.key.temp:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faraday-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: faraday-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - faraday-network
+
+  backend:
+    env_file:
+      - .env
+    build:
+      context: ./backend/Faraday.API
+      dockerfile: Dockerfile
+    container_name: faraday-api
+    ports:
+      - "5000:8080"
+    volumes:
+      - product_images:/app/wwwroot/product-images
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+      - BACKUP_ENCRYPTION_IV=${BACKUP_ENCRYPTION_IV}
+      - DB_HOST=faraday-db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - faraday-network
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/Faraday.API
+          target: /src
+          ignore:
+            - bin/
+            - obj/
+        - action: rebuild
+          path: ./backend/Faraday.API/Faraday.API.csproj
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: faraday-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - faraday-network
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./frontend/package.json
+
+volumes:
+  faraday_pg_data:
+  product_images:
+
+networks:
+  faraday-network:
+    driver: bridge

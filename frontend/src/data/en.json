@@ -1,0 +1,923 @@
+{
+  "loginPage": {
+    "visualSection": {
+      "title": "Welcome to the System",
+      "description": "Manage your warehouse faster and smarter. Join thousands of users today.",
+      "imageAlt": "Abstract login background"
+    },
+    "formSection": {
+      "header": {
+        "title": "Sign In",
+        "subtitle": "Log in to get full access to your account and all available system features."
+      },
+      "fields": {
+        "email": {
+          "label": "Username",
+          "placeholder": "",
+          "validation": {
+            "required": "Username is required",
+            "invalid": "The provided username is invalid"
+          }
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "••••••",
+          "validation": {
+            "required": "Password is required",
+            "tooShort": "Password must be at least 8 characters long",
+            "tooLong": "Password is too long (max 32 characters)",
+            "noNumber": "Password must contain at least one number",
+            "noSpecialChar": "Password must contain a special character (e.g. !@#$)",
+            "wrongPassword": "The provided password is incorrect"
+          }
+        },
+        "terms": {
+          "label": "I accept the Terms of Service and Privacy Policy",
+          "links": {
+            "termsUrl": "/terms",
+            "privacyUrl": "/privacy-policy"
+          },
+          "validation": {
+            "required": "You must accept the terms to continue"
+          }
+        }
+      },
+      "buttons": {
+        "submit": "Sign In",
+        "forgotPassword": "Forgot password?"
+      },
+      "footer": {
+        "text": "Don't have an account?",
+        "linkText": "Register here",
+        "linkUrl": "/register"
+      }
+    }
+  },
+  "registerPage": {
+    "visualSection": {
+      "title": "Create a New Account",
+      "description": "Start your journey with our system. Set up your warehouse in minutes and optimize your workflow.",
+      "imageAlt": "Abstract registration background"
+    },
+    "formSection": {
+      "header": {
+        "title": "Registration",
+        "subtitle": "Fill out the form below to create a free account and access the management panel."
+      },
+      "fields": {
+        "email": {
+          "label": "Email Address",
+          "placeholder": "e.g. name@domain.com",
+          "validation": {
+            "required": "Email is required",
+            "invalid": "The provided email address is invalid",
+            "taken": "This email address is already assigned to another account"
+          }
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "Minimum 8 characters",
+          "validation": {
+            "required": "Password is required",
+            "tooShort": "Password must be at least 8 characters long",
+            "tooLong": "Password is too long (max 32 characters)",
+            "noNumber": "Password must contain at least one number",
+            "noSpecialChar": "Password must contain a special character (e.g. !@#$)"
+          }
+        },
+        "confirmPassword": {
+          "label": "Confirm Password",
+          "placeholder": "••••••",
+          "validation": {
+            "required": "Password confirmation is required",
+            "mismatch": "Passwords do not match",
+            "tooShort": "Password must be at least 8 characters long"
+          }
+        },
+        "terms": {
+          "label": "I accept the Terms of Service and Privacy Policy",
+          "links": {
+            "termsUrl": "/terms",
+            "privacyUrl": "/privacy-policy"
+          },
+          "validation": {
+            "required": "You must accept the terms to create an account"
+          }
+        }
+      },
+      "buttons": {
+        "submit": "Create Account",
+        "backToLogin": "Back to login"
+      },
+      "footer": {
+        "text": "Already have an account?",
+        "linkText": "Sign in",
+        "linkUrl": "/login"
+      }
+    }
+  },
+  "homePage": {
+    "language": {
+      "toggle": "Switch to PL"
+    },
+    "nav": {
+      "documentation": "Documentation",
+      "dashboard": "Dashboard",
+      "login": "Login"
+    },
+    "hero": {
+      "statusPill": "System Operational v1.0",
+      "title": {
+        "line1": "Automated",
+        "line2": "Warehouse",
+        "line3": "Intelligence"
+      },
+      "description": "We transform raw sensor data into precision logistics. Faraday is more than a WMS – it is the operating system for your warehouse.",
+      "liveEnvironment": {
+        "title": "Live Environment",
+        "avgTemp": "Avg. Temp",
+        "humidity": "Humidity"
+      }
+    }
+  },
+  "dashboardPage": {
+    "sidebar": {
+      "groups": {
+        "terminal": "Terminal",
+        "securityLogs": "Security & Logs",
+        "settings": "Settings"
+      },
+      "nav": {
+        "overview": "Overview",
+        "inventory": "Inventory",
+        "personnel": "Personnel",
+        "operations": "Operations",
+        "reports": "Reports",
+        "backups": "Backups",
+        "settings": "Preferences",
+        "theme": "Theme",
+        "language": "Language"
+      },
+      "logout": "Logout"
+    },
+    "navbar": {
+      "path": "root / dashboard",
+      "searchPlaceholder": "Search..."
+    },
+    "content": {
+      "overview": {
+        "title": "Overview",
+        "throughput": "Real-time Throughput",
+        "warehouseLoad": "Warehouse Load",
+        "securityProtocol": "Security Protocol Active"
+      },
+      "inventory": {
+        "title": "Inventory System (M x N)",
+        "subtitle": "Manage racks according to FIFO principle",
+        "rack": "Rack",
+        "dimensions": "Dimensions",
+        "temp": "Temp",
+        "managementCenter": "Warehouse Management Center",
+        "inventoryHub": "Inventory Hub",
+        "racksStructure": "Racks Structure",
+        "productCatalog": "Product Catalog",
+        "importCSV": "Import CSV",
+        "addRack": "Add Rack",
+        "editRack": "Edit Rack",
+        "newRack": "New Rack",
+        "idLabel": "ID / Designation",
+        "idPlaceholder": "e.g. R-01",
+        "sectionDescription": "Section description",
+        "sectionPlaceholder": "e.g. Sector A",
+        "rowsM": "Rows (M)",
+        "colsN": "Columns (N)",
+        "maxWeightKg": "Max weight (kg)",
+        "tempMinMax": "Temp. Min/Max",
+        "slotDimensionsMm": "Slot dimensions (mm)",
+        "confirmChanges": "Confirm changes",
+        "searchProduct": "Search product...",
+        "defineProduct": "Define Product",
+        "deleteConfirm": "Are you sure you want to delete rack {id}?",
+        "viewHistory": "View History",
+        "edit": "Edit",
+        "delete": "Delete",
+        "tempRange": "Temp range",
+        "capacity": "Capacity",
+        "stockTab": "Stock Level",
+        "operationsTab": "Operations",
+        "emptyStock": "Warehouse is currently empty.",
+        "emptyProducts": "No products.",
+        "deleteProductConfirm": "Are you sure you want to remove this product from catalog?",
+        "searchPlaceholder": "Search in warehouse (name, code, rack)...",
+        "moveTo": "Move to",
+        "moveItem": "Move goods",
+        "errors": {
+          "server": "Unknown server error.",
+          "noRacksMatch": {
+            "title": "No matching racks",
+            "dimensions": "Dimensions",
+            "temp": "Required temp",
+            "hint": "Check if racks with such parameters exist in the system."
+          },
+          "noAvailableSlots": {
+            "title": "No available slots",
+            "hint": "All matching racks are full or weight limit would be exceeded."
+          },
+          "productNotFound": {
+            "title": "Product unknown",
+            "hint": "Add product to catalog before inbound."
+          },
+          "csv": {
+            "noData": "No valid data found in CSV file. Check format (semicolons, headers).",
+            "parseError": "Error parsing CSV file.",
+            "readError": "File read error.",
+            "noProducts": "No valid product data found in CSV file."
+          },
+          "deleteRack": "Error deleting rack.",
+          "deleteProduct": "Error deleting product.",
+          "connection": "Server connection error.",
+          "notFound": "Product not found.",
+          "move": "Error during move.",
+          "inbound": "Error during inbound.",
+          "outbound": "Error during outbound."
+        },
+        "import": {
+          "racksTitle": "Import: Racks",
+          "productsTitle": "Import: Products",
+          "processing": "Processing import...",
+          "processed": "{current} of {total} operations finished",
+          "summary": {
+            "total": "Total",
+            "new": "New",
+            "conflicts": "Conflicts",
+            "toSave": "To Save"
+          },
+          "table": {
+            "status": "Status",
+            "code": "Code / Identifier",
+            "decision": "Decision",
+            "action": "Action",
+            "conflict": "Conflict",
+            "new": "New"
+          },
+          "actions": {
+            "skip": "Skip (Keep current)",
+            "update": "Update (Overwrite)",
+            "create": "Create new",
+            "cancelRow": "Cancel this row",
+            "showDiff": "Show differences"
+          },
+          "warnings": {
+            "critical": "Critical warnings",
+            "contentInfo": "Content Information",
+            "contentWarning": "This rack currently holds items. Caution advised when changing physical parameters."
+          },
+          "diff": {
+            "current": "Currently in system",
+            "csv": "Data from CSV",
+            "noData": "No data (New item)"
+          },
+          "result": {
+            "title": "CSV Import Result",
+            "successes": "Successes",
+            "failures": "Failures",
+            "details": "Error details:"
+          },
+          "submit": "Confirm and import ({count})",
+          "cancel": "Cancel",
+          "close": "Close"
+        },
+        "scanner": {
+          "title": "Barcode Scanner",
+          "description": "Use camera to scan product barcode."
+        },
+        "operations": {
+          "inbound": {
+            "title": "Inbound",
+            "subtitle": "Automatic space allocation.",
+            "placeholder": "Product code...",
+            "submit": "Receive goods",
+            "success": "Received",
+            "error": "Error"
+          },
+          "move": {
+            "title": "Move",
+            "subtitle": "Relocation between racks.",
+            "placeholder": "Product code...",
+            "submit": "Initiate move",
+            "action": "Move",
+            "success": "Moved",
+            "error": "Error"
+          },
+          "outbound": {
+            "title": "Outbound",
+            "subtitle": "Goods issue (FIFO).",
+            "placeholder": "Product code...",
+            "submit": "Issue goods",
+            "success": "Issued",
+            "error": "Error",
+            "details": "Product left the warehouse."
+          }
+        },
+        "items": {
+          "receivedBy": "Received by",
+          "days": "days",
+          "status": "Status",
+          "entryDate": "Entry date",
+          "expirationDate": "Expiration date"
+        },
+        "catalog": {
+          "table": {
+            "id": "ID",
+            "name": "Name",
+            "weight": "Weight",
+            "dims": "Dimensions",
+            "temp": "Temp.",
+            "status": "Status",
+            "actions": "Actions"
+          },
+          "tooltips": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "hazardous": "Hazardous Material"
+          }
+        },
+        "grid": {
+          "pos": "Pos",
+          "weight": "Weight",
+          "empty": "Empty slot"
+        },
+        "modals": {
+          "move": {
+            "title": "Move Item",
+            "description": "Product relocation form.",
+            "product": "Product",
+            "code": "Code",
+            "from": "From",
+            "targetRack": "Target Rack",
+            "selectRack": "Select rack...",
+            "selectSlot": "Select slot:",
+            "selected": "Selected",
+            "freeSlot": "Free slot",
+            "submit": "Confirm Move",
+            "tooltips": {
+              "occupied": "Occupied",
+              "current": "Current location",
+              "select": "Select",
+              "incompatible": "Incompatible",
+              "tooHeavy": "Too heavy",
+              "tempMismatch": "Temp mismatch",
+              "dimMismatch": "Dimensions mismatch"
+            }
+          },
+          "product": {
+            "titleEdit": "Edit Product",
+            "titleNew": "Define Product",
+            "description": "Product form",
+            "editLimited": "Limited edit: Product is in stock. Physical parameters are locked.",
+            "name": "Name",
+            "barcode": "Barcode (EAN/QR)",
+            "photo": "Product Photo",
+            "selectFile": "Select file...",
+            "weight": "Weight [kg]",
+            "tempReq": "Temp Requirements [°C]",
+            "dims": "Dimensions [mm]",
+            "width": "Width",
+            "height": "Height",
+            "depth": "Depth",
+            "comment": "Comment",
+            "adrClass": "ADR Classification",
+            "validity": "Validity (days)",
+            "submitEdit": "Update Product",
+            "submitNew": "Save to System",
+            "errors": {
+              "required": "This field is required",
+              "gt0": "Value must be > 0",
+              "allDimsGt0": "All dimensions must be > 0",
+              "tempRange": "Temp. Min > Max"
+            },
+            "adrOptions": {
+              "none": "None",
+              "class1": "Class 1 (Explosives)",
+              "class2": "Class 2 (Gases)",
+              "class3": "Class 3 (Flammable)",
+              "class6": "Class 6 (Toxic)",
+              "class8": "Class 8 (Corrosive)"
+            }
+          },
+          "rack": {
+            "titleEdit": "Rack Configuration",
+            "titleNew": "New Rack Unit",
+            "description": "Rack configuration form",
+            "editLimited": "Editing Limited: Rack contains items. Physical parameters locked",
+            "code": "Designation (ID)",
+            "comment": "Note/Description",
+            "rows": "Grid: Rows (M)",
+            "cols": "Grid: Cols (N)",
+            "capacity": "Total Capacity [kg]",
+            "environment": "Environment: Temp [°C]",
+            "maxDims": "Max Item Dims [mm]",
+            "submitEdit": "Update Parameters",
+            "submitNew": "Confirm and Create Rack",
+            "errors": {
+              "required": "Field required",
+              "codeInUse": "Code {code} is already in use!",
+              "number": "Enter a number",
+              "gt0": "{label} must be > 0",
+              "tempRange": "Error: {min}°C > {max}°C"
+            }
+          },
+          "addUser": {
+            "title": "New User",
+            "create": "CREATE ACCOUNT",
+            "creating": "Creating...",
+            "username": "Username",
+            "email": "Email",
+            "password": "Password",
+            "confirmPassword": "Confirm Password",
+            "role": "Role",
+            "placeholders": {
+              "username": "e.g. j.doe",
+              "email": "user@faraday.systems",
+              "password": "Min 8 chars, number, symbol",
+              "confirm": "Re-enter password"
+            },
+            "errors": {
+              "required": "Required",
+              "invalidEmail": "Invalid email",
+              "tooShort": "Min 8 chars",
+              "noNumber": "Need number",
+              "noSpecial": "Need symbol",
+              "mismatch": "Passwords do not match",
+              "createError": "Failed to create user"
+            }
+          },
+          "editUser": {
+            "title": "Edit User",
+            "save": "Save Changes"
+          },
+          "resetPassword": {
+            "title": "Reset Password",
+            "description": "Override password for",
+            "submit": "Override Password"
+          }
+        }
+      },
+      "personnel": {
+        "tag": "System Administration",
+        "title": "Personnel Management",
+        "description": "Manage system access, user roles, and account statuses.",
+        "search": "Search personnel...",
+        "addUser": "Add User",
+        "table": {
+          "id": "ID",
+          "user": "User",
+          "role": "Role",
+          "status": "Status",
+          "security": "Security",
+          "lastLogin": "Last Login",
+          "action": "Action"
+        },
+        "roles": {
+          "admin": "Administrator",
+          "worker": "Warehouse Worker"
+        },
+        "status": {
+          "active": "Active",
+          "offline": "Offline",
+          "never": "Never",
+          "twoFactorOn": "2FA ON"
+        },
+        "actions": {
+          "edit": "Edit User",
+          "resetPass": "Reset Password",
+          "reset2fa": "Reset 2FA",
+          "activate": "Activate",
+          "deactivate": "Deactivate",
+          "delete": "Delete User"
+        },
+        "messages": {
+          "confirmStatusChange": "Are you sure you want to change this user's status?",
+          "confirmActivate": "Are you sure you want to activate this user?",
+          "confirmDeactivate": "Are you sure you want to deactivate this user?",
+          "confirmReset2fa": "Are you sure you want to reset 2FA for this user?",
+          "confirmDelete": "Are you sure you want to permanently delete this user? This action cannot be undone.",
+          "reset2faSuccess": "2FA has been reset.",
+          "resetPassSuccess": "Password reset successfully.",
+          "resetPassError": "Failed to reset password.",
+          "updateSuccess": "User updated.",
+          "updateError": "Failed to update user.",
+          "deleteError": "Failed to delete user.",
+          "error": "An error occurred."
+        },
+        "modals": {
+          "editUser": {
+            "title": "Edit User",
+            "username": "Username (Read Only)",
+            "email": "Email",
+            "role": "Role",
+            "save": "Save Changes"
+          },
+          "resetPassword": {
+            "title": "Reset Password",
+            "description": "Override password for",
+            "submit": "Override Password",
+            "newPassword": "New Password",
+            "confirmPassword": "Confirm New Password",
+            "placeholders": {
+              "newPassword": "Min 8 chars, number, symbol",
+              "confirm": "Repeat password"
+            },
+            "errors": {
+              "required": "Password is required",
+              "confirmRequired": "Confirmation is required",
+              "tooShort": "Min 8 chars",
+              "noNumber": "Need number",
+              "noSpecial": "Need symbol",
+              "mismatch": "Passwords do not match"
+            }
+          }
+        }
+      },
+      "operations": {
+        "tag": "Logistics Audit Log",
+        "title": "Operations History",
+        "sync": "Sync Logs",
+        "search": "Search logs by ID, Product or Operator...",
+        "filters": {
+          "last20": "Last 20 entries",
+          "last50": "Last 50 entries",
+          "last100": "Last 100 entries"
+        },
+        "table": {
+          "timestamp": "Timestamp",
+          "operation": "Operation",
+          "detail": "Action Detail",
+          "asset": "Target Asset",
+          "operator": "Operator"
+        },
+        "types": {
+          "accepted": "Accepted",
+          "dispatched": "Dispatched",
+          "moved": "Moved"
+        },
+        "loading": "Loading system logs...",
+        "empty": "No records found."
+      },
+      "reports": {
+        "title": "System Reports",
+        "tag": "Reports & Alarms",
+        "loading": "Loading report data...",
+        "common": {
+          "rackPrefix": "Rack",
+          "product": "Product",
+          "mins": "min",
+          "kg": "kg"
+        },
+        "tabs": {
+          "inventory": "Inventory",
+          "utilization": "Utilization",
+          "sensors": "Sensors & Violations",
+          "alerts": "Alerts"
+        },
+        "stats": {
+          "occupancy": "Occupancy",
+          "slots": "Slots",
+          "totalWeight": "Total Weight",
+          "cap": "Cap",
+          "opsToday": "Operations Today",
+          "totalItems": "Total Items",
+          "blockedItems": "Blocked Items",
+          "expiring": "Expiring Soon (7 days)"
+        },
+        "filters": {
+          "rackId": "Rack ID",
+          "allRacks": "All Racks",
+          "fromDate": "From Date",
+          "toDate": "To Date",
+          "refresh": "Refresh"
+        },
+        "inventory": {
+          "expiringTitle": "Items Expiring Soon",
+          "fullTitle": "Full Inventory List",
+          "emptyExpiring": "No items expiring soon.",
+          "showingFirst": "Showing first {count} of {total} items",
+          "table": {
+            "product": "Product",
+            "barcode": "Barcode",
+            "location": "Location",
+            "expDate": "Exp. Date",
+            "daysLeft": "Days Left",
+            "status": "Status",
+            "temp": "Temp (°C)",
+            "entryDate": "Entry Date"
+          },
+          "days": "days"
+        },
+        "utilization": {
+          "title": "Rack Utilization",
+          "table": {
+            "rack": "Rack",
+            "occupancy": "Occupancy (Slots)",
+            "weight": "Weight Load",
+            "maxWeight": "Max Weight"
+          }
+        },
+        "sensors": {
+          "violationsTitle": "Temperature Violations",
+          "tempHistory": "Temperature History",
+          "weightHistory": "Weight History",
+          "emptyViolations": "No temperature violations found.",
+          "table": {
+            "type": "Type",
+            "target": "Target",
+            "recorded": "Recorded",
+            "range": "Allowed Range",
+            "deviation": "Deviation",
+            "time": "Time",
+            "rack": "Rack",
+            "measured": "Measured",
+            "discrepancy": "Discrepancy"
+          }
+        },
+        "alerts": {
+          "activeTitle": "Active Alerts",
+          "historyTitle": "Alert History",
+          "emptyActive": "No active alerts. System healthy.",
+          "table": {
+            "severity": "Severity",
+            "rack": "Rack",
+            "message": "Message",
+            "duration": "Duration",
+            "status": "Status",
+            "created": "Created At",
+            "resolved": "Resolved At"
+          },
+          "status": {
+            "resolved": "Resolved",
+            "active": "Active"
+          },
+          "general": "General",
+          "inventoryStatus": {
+            "InStock": "In Stock",
+            "OutStock": "Out of Stock",
+            "LowStock": "Low Stock"
+          },
+          "severityLevels": {
+            "Critical": "Critical",
+            "Warning": "Warning",
+            "Information": "Information"
+          }
+        },
+        "placeholder": "Warehouse operations history (CSV Export)",
+        "generator": "PDF/CSV Report Generator"
+      },
+      "backups": {
+        "title": "System Backups",
+        "description": "Create and manage manual database backups.",
+        "createButton": "Create New Backup",
+        "generating": "Generating...",
+        "initBackup": "Init New Backup",
+        "history": "Backup History",
+        "snapshotHistory": "Snapshot History",
+        "noBackups": "No previous backups found locally.",
+        "fileName": "File name",
+        "size": "Size",
+        "date": "Created at",
+        "download": "Download",
+        "success": "Backup created successfully!",
+        "error": "Failed to create backup.",
+        "scanning": "Scanning disk...",
+        "table": {
+          "name": "Name",
+          "size": "Size",
+          "created": "Created At",
+          "ops": "Operations"
+        },
+        "restore": {
+          "title": "Confirm Restore",
+          "critical": "Critical system operation",
+          "target": "Target Snapshot:",
+          "warningTitle": "WARNING: OVERWRITE PROTOCOL",
+          "warning1": "All current data will be permanently lost.",
+          "warning2": "All active connection sessions will be terminated.",
+          "warning3": "System will automatically logout after operation.",
+          "cancel": "Abort",
+          "confirm": "Execute Restore",
+          "executing": "Restoring...",
+          "error": "Restore failed"
+        },
+        "statusMapping": {
+          "success": "Success",
+          "error": "Error"
+        }
+      },
+      "logs": {
+        "tag": "Real-time Terminal",
+        "title": "Logs",
+        "system": "System",
+        "status": {
+          "pill": "Live Sync",
+          "lost": "Connection Lost"
+        },
+        "searchPlaceholder": "Search packets...",
+        "levels": {
+          "all": "All Levels",
+          "info": "Info & Up",
+          "warn": "Warning & Up",
+          "error": "Errors Only"
+        },
+        "limit": "{count} per page",
+        "pagination": {
+          "info": "Showing {count} of {total} entries",
+          "page": "P. {current} / {total}"
+        },
+        "actions": {
+          "resume": "Resume",
+          "pause": "Pause",
+          "clearConfirm": "Clear logs?",
+          "reconnect": "Reconnect Hub"
+        },
+        "empty": {
+          "noData": "No data found",
+          "connecting": "Re-establishing link..."
+        }
+      },
+      "preferences": {
+        "title": "Preferences",
+        "description": "Manage your interface settings",
+        "theme": {
+          "title": "Theme",
+          "darkMode": "Dark Mode",
+          "lightMode": "Light Mode",
+          "darkModeDesc": "Dark aesthetic",
+          "lightModeDesc": "Bright aesthetic"
+        },
+        "language": {
+          "title": "Language",
+          "english": "English",
+          "polish": "Polish"
+        },
+        "security": {
+          "title": "Security",
+          "password": {
+            "title": "Security Settings",
+            "description": "Update your password to keep your account secure.",
+            "fields": {
+              "current": "Current Password",
+              "currentPlaceholder": "Enter current password",
+              "new": "New Password",
+              "newPlaceholder": "Enter new password",
+              "confirm": "Confirm New Password",
+              "confirmPlaceholder": "Retype new password"
+            },
+            "validation": {
+              "requiredCurrent": "Current password is required",
+              "requiredNew": "New password is required",
+              "tooShort": "Must be at least 8 characters",
+              "noNumber": "Must contain a number",
+              "noSpecial": "Must contain a special character",
+              "requiredConfirm": "Confirmation is required",
+              "mismatch": "Passwords do not match"
+            },
+            "status": {
+              "success": "Password changed successfully.",
+              "error": "Failed to update password.",
+              "updating": "Updating..."
+            },
+            "updateBtn": "Update Password"
+          },
+          "twoFactor": {
+            "title": "Two-Factor Authentication",
+            "description": "Add an extra layer of security to your account by requiring a code from your authenticator app (Google Authenticator, Authy, etc.).",
+            "status": {
+              "enabled": "Enabled",
+              "disabled": "Disabled"
+            },
+            "actions": {
+              "setup": "Setup 2FA",
+              "enable": "Enable",
+              "disable": "Disable 2FA",
+              "verifying": "Verifying...",
+              "cancel": "Cancel Setup",
+              "loading": "Loading..."
+            },
+            "setup": {
+              "qrStep1": "1. Scan this QR code with your authenticator app.",
+              "manualStep": "Or enter this key manually:",
+              "verifyStep2": "2. Enter the 6-digit code from the app:"
+            },
+            "messages": {
+              "setupError": "Could not generate QR code.",
+              "enableSuccess": "Two-Factor Authentication enabled successfully!",
+              "disableConfirm": "Are you sure you want to disable 2FA? Your account will be less secure.",
+              "disableSuccess": "Two-Factor Authentication disabled."
+            }
+          }
+        }
+      },
+      "pageNotFound": "404 - Page not found"
+    }
+  },
+  "docsPage": {
+    "nav": {
+      "dashboard": "Dashboard"
+    },
+    "sidebar": {
+      "userManual": "User Manual",
+      "nav": {
+        "introduction": "Introduction",
+        "addingProducts": "Adding Products",
+        "monitoring": "Monitoring"
+      }
+    },
+    "content": {
+      "intro": {
+        "guide": "v1.0 Guide",
+        "title": "Welcome to Faraday WMS",
+        "description": "The Faraday system is an intelligent warehouse management tool featuring automated stock allocation and real-time environmental monitoring.",
+        "quickTip": {
+          "label": "Quick Tip:",
+          "text": "The system automatically selects the best storage location based on temperature requirements and dimensions. No manual allocation needed."
+        }
+      },
+      "addingProducts": {
+        "title": "Adding Products",
+        "steps": {
+          "step1": "Navigate to the Warehouse tab in your dashboard.",
+          "step2": "Click the Add Product button in the top-right corner.",
+          "step3": "Enter the barcode, dimensions, and specific temperature range requirements."
+        },
+        "hint": "Note: Each barcode must be unique within the global system database."
+      },
+      "monitoring": {
+        "title": "Environmental Monitoring",
+        "description": "Faraday provides real-time telemetry for shelf temperature and weight load.",
+        "indicators": {
+          "green": "Green: All parameters are within safe limits.",
+          "red": "Red: Threshold exceeded. Immediate intervention required."
+        }
+      }
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "description": "Customize your interface appearance and localization.",
+    "theme": {
+      "title": "Interface Theme",
+      "darkMode": "Dark Mode",
+      "darkModeDesc": "High contrast",
+      "lightMode": "Light Mode",
+      "lightModeDesc": "Standard bright"
+    },
+    "language": {
+      "title": "System Language",
+      "english": "English (US)",
+      "polish": "Polish (PL)"
+    }
+  },
+  "forgotPasswordPage": {
+    "visualSection": {
+      "title": "Recovery",
+      "description": "Lost your credentials? We'll help you get back on track."
+    },
+    "formSection": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive a reset link.",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name@company.com",
+      "emailRequired": "Email is required",
+      "sendButton": "Send Reset Link",
+      "backToLogin": "Back to Login",
+      "successMessage": "If an account exists for that email, we have sent password reset instructions.",
+      "returnToLogin": "Return to Login",
+      "genericError": "Something went wrong. Please try again."
+    }
+  },
+  "resetPasswordPage": {
+    "visualSection": {
+      "title": "Faraday Systems"
+    },
+    "formSection": {
+      "title": "Set New Password",
+      "subtitle": "Please enter your new credentials below.",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "resetButton": "Reset Password",
+      "passwordsMismatch": "Passwords do not match",
+      "resetError": "Failed to reset password. The link may have expired.",
+      "validation": {
+        "required": "Required",
+        "tooShort": "Min 8 chars",
+        "noNumber": "Need number",
+        "noSpecialChar": "Need symbol"
+      }
+    },
+    "invalidLink": {
+      "title": "Invalid Link",
+      "description": "This password reset link is invalid or missing a token."
+    }
+  }
+}

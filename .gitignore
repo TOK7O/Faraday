@@ -1,0 +1,60 @@
+# IDE and misc
+.DS_Store
+Thumbs.db
+desktop.ini
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# backend
+backend/**/bin/
+backend/**/obj/
+backend/**/wwwroot/
+backend/Faraday.API/Migrations
+
+TestResults/
+coverage/
+*.coveragereport
+
+secrets.json
+
+# logs
+*.log
+backend/**/Logs/
+
+# frontend
+frontend/node_modules/
+
+frontend/dist/
+frontend/build/
+
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Edytory kodu we frontendzie
+frontend/.eslintcache
+
+# db, ssl and docker
+postgres_data/
+.docker/
+ssl/
+
+# sqlite (just in case)
+*.db
+*.sqlite
+*.sqlite3
+/node_modules
+.env
+env

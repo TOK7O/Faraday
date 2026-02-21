@@ -1,0 +1,194 @@
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  animation: fadeIn 0.5s ease-out;
+
+  .stock-item-card {
+    background: rgba(var(--bg-input-rgb), 0.3);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-input);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-primary);
+      opacity: 0.5;
+    }
+
+    &:hover {
+      transform: translateY(-5px) scale(1.02);
+      border-color: var(--accent-primary);
+      background: rgba(var(--bg-input-rgb), 0.4);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &.highlight {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.2);
+      animation: pulseHighlight 2s infinite;
+    }
+
+    .stock-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+
+      .product-info {
+        h3 {
+          margin: 0.5rem 0 0 0;
+          font-size: 1.1rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: -0.5px;
+        }
+
+        .barcode-tag {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.7rem;
+          color: var(--accent-primary);
+          background: rgba(var(--accent-primary-rgb), 0.1);
+          padding: 2px 8px;
+          border-radius: 4px;
+          width: fit-content;
+        }
+      }
+
+      .location-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 900;
+        font-size: 0.8rem;
+        color: var(--text-main);
+        background: var(--bg-input);
+        padding: 6px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border-input);
+      }
+    }
+
+    .stock-item-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+
+        .label {
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+
+        .status-tag {
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: 0.7rem;
+
+          &.instock {
+            color: var(--success-color);
+          }
+          &.blocked {
+            color: var(--error-color);
+          }
+          &.reserved {
+            color: #facc15;
+          }
+        }
+      }
+    }
+
+    .stock-item-footer {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .storage-info {
+        display: flex;
+        gap: 10px;
+
+        .info-chip {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          background: rgba(var(--bg-input-rgb), 0.5);
+          padding: 4px 10px;
+          border-radius: 6px;
+          border: 1px solid var(--border-input);
+        }
+      }
+
+      .received-by {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        border-top: 1px solid var(--border-input);
+        padding-top: 10px;
+
+        strong {
+          color: var(--text-main);
+          font-weight: 700;
+        }
+      }
+
+      .btn-action-ht {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 800;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: 0.2s;
+        width: fit-content;
+
+        &:hover {
+          filter: brightness(1.1);
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
+}
+
+@keyframes pulseHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--accent-primary-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0);
+  }
+}

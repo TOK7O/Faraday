@@ -1,0 +1,354 @@
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using Faraday.API.Data;
+using Faraday.API.DTOs;
+using Faraday.API.Models;
+using Faraday.API.Services.Interfaces;
+using Npgsql;
+
+namespace Faraday.API.Services
+{
+    /// <summary>
+    /// Manages database backup and restoration processes for PostgreSQL.
+    /// Handles execution of external tools (pg_dump, pg_restore), AES-256 encryption/decryption,
+    /// and file system management for backup artifacts.
+    /// </summary>
+    public class BackupService : IBackupService
+    {
+        private readonly FaradayDbContext _dbContext;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<BackupService> _logger;
+        // Backup storage location inside the container
+        private readonly string _backupFolder = Path.Combine(Directory.GetCurrentDirectory(), "Backups");
+        
+        // Encryption keys loaded from environment variables (.env file)
+        // AES-256 requires a 32-byte key and 16-byte IV
+        private readonly byte[] _encryptionKey;
+        private readonly byte[] _iv;
+
+        public BackupService(FaradayDbContext dbContext, IConfiguration configuration, ILogger<BackupService> logger)
+        {
+            _dbContext = dbContext;
+            _configuration = configuration;
+            _logger = logger;
+
+            // Load encryption keys from the configuration (.env)
+            var keyString = _configuration["BACKUP_ENCRYPTION_KEY"] 
+                            ?? throw new InvalidOperationException("BACKUP_ENCRYPTION_KEY is missing in configuration.");
+            var ivString = _configuration["BACKUP_ENCRYPTION_IV"] 
+                           ?? throw new InvalidOperationException("BACKUP_ENCRYPTION_IV is missing in configuration.");
+
+            // Validate key lengths for AES-256
+            // Strict validation is necessary to prevent runtime cryptography errors during critical backup operations.
+            if (keyString.Length != 32)
+                throw new InvalidOperationException("BACKUP_ENCRYPTION_KEY must be exactly 32 characters (256 bits).");
+            
+            if (ivString.Length != 16)
+                throw new InvalidOperationException("BACKUP_ENCRYPTION_IV must be exactly 16 characters (128 bits).");
+
+            _encryptionKey = Encoding.UTF8.GetBytes(keyString);
+            _iv = Encoding.UTF8.GetBytes(ivString);
+
+            if (!Directory.Exists(_backupFolder))
+            {
+                Directory.CreateDirectory(_backupFolder);
+            }
+
+            _logger.LogInformation("Backup encryption keys loaded successfully from environment.");
+        }
+
+        /// <summary>
+        /// Creates a complete database dump, encrypts it on-the-fly, and saves it to disk.
+        /// </summary>
+        /// <returns>The filename of the created backup.</returns>
+        public async Task<string> CreateFullBackupAsync()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var fileName = $"backup_{timestamp}.enc"; // .enc - encrypted file extension
+            var filePath = Path.Combine(_backupFolder, fileName);
+
+            _logger.LogInformation($"Starting database backup: {fileName}");
+
+            // Get connection details from Config
+            var connectionString = _configuration.GetConnectionString("DefaultConnection");
+            // Parse connection string to get user, pass, host, db
+            var connParams = ParseConnectionString(connectionString!);
+
+            // Setup pg_dump process
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "pg_dump",
+                // Arguments: -Fc (Custom format, compressed), -h (host), -U (user), -d (db)
+                Arguments = $"-h {connParams.Host} -U {connParams.User} -d {connParams.Db} -F c",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true, // Capture errors if pg_dump fails
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                EnvironmentVariables =
+                {
+                    ["PGPASSWORD"] = connParams.Password
+                }
+            };
+
+            using var process = new Process();
+            process.StartInfo = processInfo;
+            
+            // Set up Encryption Streams
+            // This ensures the unencrypted SQL dump never touches the physical disk, enhancing security.
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
+            using var aes = Aes.Create();
+            aes.Key = _encryptionKey;
+            aes.IV = _iv;
+
+            await using var cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+            
+            process.Start();
+            
+            _logger.LogDebug("pg_dump process started for backup: {FileName}", fileName);
+            
+            // This is an async copy operation that bridges the external process output to our encryption stream.
+            await process.StandardOutput.BaseStream.CopyToAsync(cryptoStream);
+            
+            var errors = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                _logger.LogError($"pg_dump failed: {errors}");
+                // Cleanup partial file
+                File.Delete(filePath); 
+                throw new Exception($"Backup failed. Exit code: {process.ExitCode}. Details: {errors}");
+            }
+
+            _logger.LogInformation($"Backup completed successfully. Saved to: {filePath}");
+
+            // Log to Database
+            var fileInfo = new FileInfo(filePath);
+            var log = new BackupLog
+            {
+                FileName = fileName,
+                SizeBytes = fileInfo.Length,
+                IsSuccessful = true,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _dbContext.BackupLogs.Add(log);
+            await _dbContext.SaveChangesAsync();
+
+            return fileName;
+        }
+
+        public FileStream GetBackupFileStream(string fileName)
+        {
+            _logger.LogInformation("Backup file stream requested: {FileName}", fileName);
+            
+            var path = Path.Combine(_backupFolder, fileName);
+            if (!File.Exists(path))
+            {
+                _logger.LogWarning("Backup file not found for download: {FileName}", fileName);
+                throw new FileNotFoundException("Backup file not found.");
+            }
+            return new FileStream(path, FileMode.Open, FileAccess.Read);
+        }
+
+        public IEnumerable<BackupHistoryDto> GetBackupHistory()
+        {
+            _logger.LogInformation("Retrieving backup history");
+            if (!Directory.Exists(_backupFolder))
+            {
+                return Enumerable.Empty<BackupHistoryDto>();
+            }
+
+            var directoryInfo = new DirectoryInfo(_backupFolder);
+            return directoryInfo.GetFiles("*.enc")
+                .Select(f => new BackupHistoryDto
+                {
+                    FileName = f.Name,
+                    SizeBytes = f.Length,
+                    CreatedAt = f.CreationTimeUtc
+                })
+                .OrderByDescending(f => f.CreatedAt);
+        }
+
+        /// <summary>
+        /// Restores the database from an encrypted backup file.
+        /// <para>
+        /// WATCH OUT: This is a destructive operation. It terminates active connections
+        /// and overwrites existing data in the target database.
+        /// </para>
+        /// </summary>
+        public async Task RestoreFromBackupAsync(string fileName, int? restoredByUserId = null)
+        {
+            var encryptedFilePath = Path.Combine(_backupFolder, fileName);
+
+            if (!File.Exists(encryptedFilePath))
+            {
+                throw new FileNotFoundException($"Backup file '{fileName}' not found.");
+            }
+
+            _logger.LogWarning($"Starting database restore from: {fileName}. Terminating other connections...");
+            
+            // Clear the application's own connection pool
+            // Required because Npgsql pools connections, and we need to drop them to allow the restore.
+            NpgsqlConnection.ClearAllPools();
+
+            // Parse connection details
+            var connString = _configuration.GetConnectionString("DefaultConnection");
+            var connParams = ParseConnectionString(connString!);
+
+            // Connect to the maintenance database 'postgres' to kill sessions on 'faraday_db'
+            // (We cannot kill connections to the database we are currently connected to)
+            var masterConnString = $"Host={connParams.Host};Username={connParams.User};Password={connParams.Password};Database=postgres";
+
+            try 
+            {
+                await using (var conn = new NpgsqlConnection(masterConnString))
+                {
+                    await conn.OpenAsync();
+                    await using (var cmd = conn.CreateCommand())
+                    {
+                        // SQL: Terminate all backend processes connected to our target DB, except our own process
+                        // This forces a disconnection of all other users/services to remove locks on the DB.
+                        cmd.CommandText = $@"
+                            SELECT pg_terminate_backend(pg_stat_activity.pid)
+                            FROM pg_stat_activity
+                            WHERE pg_stat_activity.datname = '{connParams.Db}'
+                              AND pid <> pg_backend_pid();";
+                        
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                _logger.LogInformation("Successfully terminated all other database connections.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Could not terminate other connections (restore might hang if DB is locked): {ex.Message}");
+            }
+
+            // Decrypt and Restore
+
+            // Create a temporary path for the decrypted dump file
+            var tempDecryptedPath = Path.Combine(_backupFolder, $"temp_decrypt_{Guid.NewGuid()}.dump");
+            
+            _logger.LogInformation("Starting decryption of backup file: {FileName}", fileName);
+            try
+            {
+                // Decrypt the backup file
+                await using (var encryptedStream = new FileStream(encryptedFilePath, FileMode.Open, FileAccess.Read))
+                await using (var decryptedStream = new FileStream(tempDecryptedPath, FileMode.Create, FileAccess.Write))
+                {
+                    using var aes = Aes.Create();
+                    aes.Key = _encryptionKey;
+                    aes.IV = _iv;
+
+                    await using var cryptoStream = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
+                    await cryptoStream.CopyToAsync(decryptedStream);
+                    _logger.LogDebug("Backup file decrypted successfully. Size: {Size} bytes", new FileInfo(tempDecryptedPath).Length);
+                }
+
+                _logger.LogInformation("Backup decrypted successfully to temporary file.");
+
+                // Execute pg_restore
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = "pg_restore",
+                    // Arguments explanation:
+                    // -h, -U, -d: Connection details
+                    // --clean: Drop database objects before creating them (ensures clean state)
+                    // --if-exists: Prevents errors if we try to drop non-existent tables
+                    Arguments = $"-h {connParams.Host} -U {connParams.User} -d {connParams.Db} --clean --if-exists --no-owner --role={connParams.User} {tempDecryptedPath}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    EnvironmentVariables =
+                    {
+                        // Pass password securely via environment variable
+                        ["PGPASSWORD"] = connParams.Password
+                    }
+                };
+
+                using var process = new Process();
+                process.StartInfo = processInfo;
+                process.Start();
+
+                // Capture output logs
+                var errors = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                // Handle Result
+                if (process.ExitCode != 0)
+                {
+                    _logger.LogError($"pg_restore failed: {errors}");
+                    
+                    var failedLog = new BackupLog
+                    {
+                        FileName = fileName,
+                        SizeBytes = new FileInfo(encryptedFilePath).Length,
+                        IsSuccessful = false,
+                        ErrorMessage = $"Restore failed: {errors}",
+                        Timestamp = DateTime.UtcNow,
+                        CreatedByUserId = restoredByUserId
+                    };
+                    
+                    _dbContext.BackupLogs.Add(failedLog);
+                    await _dbContext.SaveChangesAsync();
+
+                    throw new Exception($"Database restore failed. Exit code: {process.ExitCode}. Details: {errors}");
+                }
+
+                _logger.LogInformation($"Database restored successfully from: {fileName}");
+
+                var successLog = new BackupLog
+                {
+                    FileName = $"RESTORE: {fileName}",
+                    SizeBytes = new FileInfo(encryptedFilePath).Length,
+                    IsSuccessful = true,
+                    Timestamp = DateTime.UtcNow,
+                    CreatedByUserId = restoredByUserId
+                };
+
+                _dbContext.BackupLogs.Add(successLog);
+                await _dbContext.SaveChangesAsync();
+            }
+            finally
+            {
+                // Cleanup security risk
+                // Ensure the unencrypted dump file is deleted even if the restore fails or throws an exception.
+                _logger.LogDebug("Cleanup: Checking for temporary decrypted file");
+                if (File.Exists(tempDecryptedPath))
+                {
+                    File.Delete(tempDecryptedPath);
+                    _logger.LogInformation("Temporary decrypted file removed.");
+                }
+                else _logger.LogInformation("Temporary decrypted file not found, proceeding.");
+            }
+        }
+        
+        // Helper to extract credentials from the connection string
+        private (string Host, string User, string Password, string Db) ParseConnectionString(string connString)
+        {
+            var dict = connString.Split(';')
+                .Where(part => !string.IsNullOrWhiteSpace(part) && part.Contains('='))
+                .Select(part => part.Split('=', 2))
+                .ToDictionary(part => part[0].Trim().ToLower(), part => part[1].Trim());
+            
+            string GetValue(string[] keys, string defaultValue)
+            {
+                foreach (var key in keys)
+                {
+                    if (dict.TryGetValue(key, out var value)) return value;
+                }
+                return defaultValue;
+            }
+
+            return (
+                Host: GetValue(["host", "server", "data source"], "db"),
+                User: GetValue(["username", "user id", "uid", "user"], "postgres"),
+                Password: GetValue(["password", "pwd"], "postgres"),
+                Db: GetValue(["database", "initial catalog"], "faraday_db")
+            );
+        }
+    }
+}
