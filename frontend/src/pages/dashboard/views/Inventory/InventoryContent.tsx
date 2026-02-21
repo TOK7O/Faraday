@@ -908,7 +908,7 @@ const InventoryContent = () => {
                 <span>{invT.managementCenter}</span>
               </div>
               <h1>
-                Inventory <span className="outline-text">Hub</span>
+                <span>{invT.inventoryHub}</span>
               </h1>
               <div
                 style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
@@ -937,7 +937,7 @@ const InventoryContent = () => {
                       borderColor: "var(--accent-primary)",
                     }}
                   >
-                    <BrainCircuit size={16} style={{ marginRight: 6 }} />{" "}
+                    <BrainCircuit size={16} style={{ marginRight: 6, marginTop: "2px"  }} />{" "}
                     Identify
                   </Tabs.Trigger>
                 </Tabs.List>
@@ -1195,7 +1195,6 @@ const InventoryContent = () => {
                 gap: "2rem",
               }}
             >
-              {/* LEWA KOLUMNA: IDENTYFIKACJA */}
               <div
                 style={{
                   display: "flex",
@@ -1224,7 +1223,7 @@ const InventoryContent = () => {
                   >
                     <BrainCircuit
                       size={48}
-                      style={{ color: "var(--accent-primary)" }}
+                      style={{ color: "var(--accent-primary)"}}
                     />
                   </div>
                   <div>
@@ -1264,7 +1263,6 @@ const InventoryContent = () => {
                     </button>
                   </div>
 
-                  {/* WYNIK IDENTYFIKACJI */}
                   {identifiedProduct && (
                     <div
                       style={{
@@ -1346,7 +1344,6 @@ const InventoryContent = () => {
                 </div>
               </div>
 
-              {/* PRAWA KOLUMNA: TRENING / ZARZĄDZANIE OBRAZAMI */}
               <div className="glass-card" style={{ padding: "2rem" }}>
                 <div
                   style={{
@@ -1433,7 +1430,6 @@ const InventoryContent = () => {
                         </div>
                       </div>
 
-                      {/* Tutaj wstawiamy komponent zarządzania zdjęciami */}
                       <ReferenceImageManager
                         productId={trainingProduct.id}
                         scanCode={trainingProduct.scanCode}

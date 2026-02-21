@@ -1,4 +1,17 @@
 {
+  "common": {
+    "brandName": "FaradaySystems"
+  },
+  "voiceAssistant": {
+    "title": "Asystent Głosowy",
+    "processing": "Przetwarzanie...",
+    "listening": "Słucham...",
+    "unsupported": "Brak wsparcia mowy.",
+    "success": "Sukces",
+    "failure": "Niepowodzenie",
+    "serverError": "Błąd serwera.",
+    "genericError": "Wystąpił błąd."
+  },
   "loginPage": {
     "visualSection": {
       "title": "Witaj w Systemie",
@@ -44,7 +57,15 @@
       },
       "buttons": {
         "submit": "Zaloguj się",
-        "forgotPassword": "Zapomniałeś hasła?"
+        "forgotPassword": "Zapomniałeś hasła?",
+        "verifyCode": "Weryfikuj kod",
+        "processing": "Przetwarzanie..."
+      },
+      "twoFactor": {
+        "header": "Weryfikacja bezpieczeństwa",
+        "subtitle": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej.",
+        "label": "Kod uwierzytelniający",
+        "placeholder": "000 000"
       },
       "footer": {
         "text": "Nie masz konta?",
@@ -156,9 +177,15 @@
         "backups": "Kopie zapasowe",
         "settings": "Preferencje",
         "theme": "Motyw",
-        "language": "Język"
+        "language": "Język",
+        "logs": "Logi systemowe"
       },
-      "logout": "Wyloguj się"
+      "logout": "Wyloguj się",
+      "session": {
+        "expiring": "Sesja wygasa",
+        "timeRemaining": "Pozostały czas:",
+        "extend": "Przedłuż sesję"
+      }
     },
     "navbar": {
       "path": "root / dashboard",
@@ -169,7 +196,12 @@
         "title": "Przegląd",
         "throughput": "Przepustowość w czasie rzeczywistym",
         "warehouseLoad": "Obciążenie magazynu",
-        "securityProtocol": "Protokół bezpieczeństwa aktywny"
+        "securityProtocol": "Protokół bezpieczeństwa aktywny",
+        "interactive": {
+          "title": "Wizualizacja magazynu w 3D",
+          "fetching": "Ładowanie...",
+          "controls": "Naciśnij na regał, aby do niego podejść • Scrolluj, aby przybliżyć i oddalić"
+        }
       },
       "inventory": {
         "title": "System Inwentaryzacji (M x N)",
@@ -178,7 +210,7 @@
         "dimensions": "Wymiary",
         "temp": "Temp",
         "managementCenter": "Centrum Zarządzania Magazynem",
-        "inventoryHub": "Inventory Hub",
+        "inventoryHub": "Inwentarz",
         "racksStructure": "Struktura Regałów",
         "productCatalog": "Katalog Produktów",
         "importCSV": "Importuj CSV",
@@ -290,6 +322,16 @@
         "scanner": {
           "title": "Skaner kodów",
           "description": "Użyj kamery, aby zeskanować kod kreskowy produktu."
+        },
+        "referenceMedia": {
+          "title": "Zdjęcia referencyjne",
+          "countMaxSuffix": "/ 10 maks",
+          "addPhoto": "Dodaj zdjęcie",
+          "removeTooltip": "Usuń wzorzec",
+          "trainingTip": "Wskazówka treningowa: Prześlij zdjęcia produktu z różnych kątów i w różnych warunkach oświetleniowych. Pliki są wysyłane na serwer w celu zbudowania modelu AI przed rozpoczęciem rozpoznawania.",
+          "confirmDelete": "Czy na pewno chcesz usunąć to zdjęcie referencyjne? Może to wpłynąć na dokładność AI.",
+          "uploadFailed": "Nie udało się przesłać zdjęć. Upewnij się, że to poprawne obrazy mniejsze niż 10MB.",
+          "deleteFailed": "Nie udało się usunąć zdjęcia."
         },
         "operations": {
           "inbound": {
@@ -716,7 +758,7 @@
         "title": "Logi",
         "system": "Systemowe",
         "status": {
-          "pill": "Live Sync",
+          "pill": "Online",
           "lost": "Połączenie utracone"
         },
         "searchPlaceholder": "Szukaj pakietów...",
@@ -749,8 +791,8 @@
           "title": "Motyw",
           "darkMode": "Tryb Ciemny",
           "lightMode": "Tryb Jasny",
-          "darkModeDesc": "Ciemna estetyka",
-          "lightModeDesc": "Jasna estetyka"
+          "darkModeDesc": "Ciemny motyw",
+          "lightModeDesc": "Jasny motyw"
         },
         "language": {
           "title": "Język",

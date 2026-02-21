@@ -20,6 +20,7 @@ import type {
   Rack,
   FullInventoryItem,
 } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
+import { useTranslation } from "@/context/LanguageContext";
 
 const Rack3D = ({
   position,
@@ -104,6 +105,7 @@ const Rack3D = ({
 };
 
 const OverviewContent = () => {
+  const { t } = useTranslation();
   const [racks, setRacks] = useState<Rack[]>([]);
   const [inventory, setInventory] = useState<FullInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -219,8 +221,7 @@ const OverviewContent = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <MousePointer2 size={12} /> Click rack to focus • Scroll to zoom •
-              Drag to rotate
+              <MousePointer2 size={12} /> {t.dashboardPage.content.overview.interactive.controls}
             </div>
           </div>
 
@@ -233,7 +234,7 @@ const OverviewContent = () => {
             }}
           >
             <div className="card-header" style={{ color: "white" }}>
-              <Box size={14} /> Interactive Warehouse
+              <Box size={14} /> {t.dashboardPage.content.overview.interactive.title}
             </div>
             {isLoading && (
               <div
@@ -246,8 +247,7 @@ const OverviewContent = () => {
                   fontSize: "0.8rem",
                 }}
               >
-                <Loader2 size={12} className="animate-spin" /> Fetching live
-                data...
+                <Loader2 size={12} className="animate-spin" /> {t.dashboardPage.content.overview.interactive.fetching}
               </div>
             )}
           </div>

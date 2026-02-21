@@ -5,6 +5,7 @@ import {
   uploadReferenceImages,
   deleteReferenceImage,
 } from "@/api/axios";
+import { useTranslation } from "@/context/LanguageContext";
 
 interface ReferenceImageManagerProps {
   productId: number;
@@ -15,6 +16,8 @@ export const ReferenceImageManager = ({
   productId,
   scanCode,
 }: ReferenceImageManagerProps) => {
+  const { t } = useTranslation();
+  const refT: any = t.dashboardPage.content.inventory.referenceMedia;
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -50,9 +53,7 @@ export const ReferenceImageManager = ({
       await fetchImages(); // Odśwież listę po udanym uploadzie
     } catch (error) {
       console.error("Upload failed", error);
-      alert(
-        "Failed to upload images. Ensure files are valid images and under 10MB.",
-      );
+      alert(refT.uploadFailed);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -61,18 +62,14 @@ export const ReferenceImageManager = ({
 
   // Usuwanie błędnych wzorców
   const handleDelete = async (imageId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this reference image? This will affect AI accuracy.",
-      )
-    )
+    if (!confirm(refT.confirmDelete))
       return;
     try {
       await deleteReferenceImage(imageId);
       setImages(images.filter((img) => img.id !== imageId));
     } catch (error) {
       console.error("Delete failed", error);
-      alert("Failed to delete image.");
+      alert(refT.deleteFailed);
     }
   };
 
@@ -96,10 +93,10 @@ export const ReferenceImageManager = ({
           }}
         >
           <ImageIcon size={18} className="icon-accent" />
-          Reference Images
+          {refT.title}
         </h4>
         <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-          {images.length} / 10 max
+          {images.length} {refT.countMaxSuffix}
         </div>
       </div>
 
@@ -169,7 +166,7 @@ export const ReferenceImageManager = ({
                       cursor: "pointer",
                       display: "flex",
                     }}
-                    title="Remove Reference"
+                    title={refT.removeTooltip}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -208,7 +205,7 @@ export const ReferenceImageManager = ({
                     fontWeight: 600,
                   }}
                 >
-                  Add Photo
+                  {refT.addPhoto}
                 </span>
               </button>
             )}
@@ -234,10 +231,7 @@ export const ReferenceImageManager = ({
         }}
       >
         <p style={{ fontSize: "0.8rem", color: "#fef08a", margin: 0 }}>
-          <strong>Training Tip:</strong> Upload photos of the product from
-          different angles and lighting conditions. These files are sent to the
-          server to build the AI model <em>before</em> recognition can be
-          performed.
+          {refT.trainingTip}
         </p>
       </div>
     </div>
