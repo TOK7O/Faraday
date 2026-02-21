@@ -114,11 +114,11 @@ const LoginPage = () => {
       <section className="auth-form">
         <div className="form-header">
           <h1>
-            {status.requires2FA ? "Security Check" : loginStrings.header.title}
+            {status.requires2FA ? loginStrings.twoFactor.header : loginStrings.header.title}
           </h1>
           <p className="subtitle">
             {status.requires2FA
-              ? "Please enter the 6-digit code from your authenticator app."
+              ? loginStrings.twoFactor.subtitle
               : loginStrings.header.subtitle}
           </p>
         </div>
@@ -165,7 +165,7 @@ const LoginPage = () => {
                   className="ht-label"
                   style={{ color: "var(--accent-primary)" }}
                 >
-                  Authenticator Code
+                  {loginStrings.twoFactor.label}
                 </Form.Label>
               </div>
 
@@ -191,7 +191,7 @@ const LoginPage = () => {
                     type="text"
                     value={twoFactorCode}
                     onChange={(e) => setTwoFactorCode(e.target.value)}
-                    placeholder="000 000"
+                    placeholder={loginStrings.twoFactor.placeholder}
                     required
                     autoFocus
                     autoComplete="off"
@@ -217,10 +217,10 @@ const LoginPage = () => {
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
                 <Loader2 className="animate-spin" size={20} />
-                <span>Processing...</span>
+                <span>{loginStrings.buttons.processing}</span>
               </div>
             ) : status.requires2FA ? (
-              "Verify Code"
+              loginStrings.buttons.verifyCode
             ) : (
               loginStrings.buttons.submit
             )}

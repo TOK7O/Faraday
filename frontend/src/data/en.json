@@ -1,4 +1,17 @@
 {
+  "common": {
+    "brandName": "FaradaySystems"
+  },
+  "voiceAssistant": {
+    "title": "Voice Assistant",
+    "processing": "Processing...",
+    "listening": "Listening...",
+    "unsupported": "Speech recognition not supported.",
+    "success": "Success",
+    "failure": "Failure",
+    "serverError": "Server error.",
+    "genericError": "An error occurred."
+  },
   "loginPage": {
     "visualSection": {
       "title": "Welcome to the System",
@@ -44,7 +57,15 @@
       },
       "buttons": {
         "submit": "Sign In",
-        "forgotPassword": "Forgot password?"
+        "forgotPassword": "Forgot password?",
+        "verifyCode": "Verify Code",
+        "processing": "Processing..."
+      },
+      "twoFactor": {
+        "header": "Security Check",
+        "subtitle": "Please enter the 6-digit code from your authenticator app.",
+        "label": "Authenticator Code",
+        "placeholder": "000 000"
       },
       "footer": {
         "text": "Don't have an account?",
@@ -156,9 +177,15 @@
         "backups": "Backups",
         "settings": "Preferences",
         "theme": "Theme",
-        "language": "Language"
+        "language": "Language",
+        "logs": "System Logs"
       },
-      "logout": "Logout"
+      "logout": "Logout",
+      "session": {
+        "expiring": "Session Expiring",
+        "timeRemaining": "Time remaining:",
+        "extend": "Extend Session"
+      }
     },
     "navbar": {
       "path": "root / dashboard",
@@ -169,7 +196,12 @@
         "title": "Overview",
         "throughput": "Real-time Throughput",
         "warehouseLoad": "Warehouse Load",
-        "securityProtocol": "Security Protocol Active"
+        "securityProtocol": "Security Protocol Active",
+        "interactive": {
+          "title": "Interactive Warehouse",
+          "fetching": "Fetching live data...",
+          "controls": "Click rack to focus • Scroll to zoom • Drag to rotate"
+        }
       },
       "inventory": {
         "title": "Inventory System (M x N)",
@@ -290,6 +322,16 @@
         "scanner": {
           "title": "Barcode Scanner",
           "description": "Use camera to scan product barcode."
+        },
+        "referenceMedia": {
+          "title": "Reference Images",
+          "countMaxSuffix": "/ 10 max",
+          "addPhoto": "Add Photo",
+          "removeTooltip": "Remove Reference",
+          "trainingTip": "Training Tip: Upload photos of the product from different angles and lighting conditions. These files are sent to the server to build the AI model before recognition can be performed.",
+          "confirmDelete": "Are you sure you want to delete this reference image? This will affect AI accuracy.",
+          "uploadFailed": "Failed to upload images. Ensure files are valid images and under 10MB.",
+          "deleteFailed": "Failed to delete image."
         },
         "operations": {
           "inbound": {
