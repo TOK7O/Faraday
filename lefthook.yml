@@ -5,7 +5,7 @@ pre-commit:
       files: git diff --name-only --cached --diff-filter=ACM
       glob: "frontend/**/*.{js,jsx,ts,tsx}"
       run: cd frontend && npx eslint --fix ../{staged_files} && git add ../{staged_files}
-    
+
     backend-linter:
       glob: "backend/**/*.cs"
       root: "backend/"

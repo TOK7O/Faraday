@@ -10,11 +10,7 @@ import {
   Bounds,
   useBounds,
 } from "@react-three/drei";
-import {
-  Box,
-  MousePointer2,
-  Loader2,
-} from "lucide-react";
+import { Box, MousePointer2, Loader2 } from "lucide-react";
 import { getRacks, getFullInventoryList } from "@/api/axios";
 import type {
   Rack,
@@ -221,7 +217,8 @@ const OverviewContent = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <MousePointer2 size={12} /> {t.dashboardPage.content.overview.interactive.controls}
+              <MousePointer2 size={12} />{" "}
+              {t.dashboardPage.content.overview.interactive.controls}
             </div>
           </div>
 
@@ -234,7 +231,8 @@ const OverviewContent = () => {
             }}
           >
             <div className="card-header" style={{ color: "white" }}>
-              <Box size={14} /> {t.dashboardPage.content.overview.interactive.title}
+              <Box size={14} />{" "}
+              {t.dashboardPage.content.overview.interactive.title}
             </div>
             {isLoading && (
               <div
@@ -247,7 +245,8 @@ const OverviewContent = () => {
                   fontSize: "0.8rem",
                 }}
               >
-                <Loader2 size={12} className="animate-spin" /> {t.dashboardPage.content.overview.interactive.fetching}
+                <Loader2 size={12} className="animate-spin" />{" "}
+                {t.dashboardPage.content.overview.interactive.fetching}
               </div>
             )}
           </div>

@@ -62,8 +62,7 @@ export const ReferenceImageManager = ({
 
   // Usuwanie błędnych wzorców
   const handleDelete = async (imageId: number) => {
-    if (!confirm(refT.confirmDelete))
-      return;
+    if (!confirm(refT.confirmDelete)) return;
     try {
       await deleteReferenceImage(imageId);
       setImages(images.filter((img) => img.id !== imageId));

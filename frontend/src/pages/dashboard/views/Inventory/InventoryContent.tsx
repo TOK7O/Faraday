@@ -937,7 +937,10 @@ const InventoryContent = () => {
                       borderColor: "var(--accent-primary)",
                     }}
                   >
-                    <BrainCircuit size={16} style={{ marginRight: 6, marginTop: "2px"  }} />{" "}
+                    <BrainCircuit
+                      size={16}
+                      style={{ marginRight: 6, marginTop: "2px" }}
+                    />{" "}
                     {invT.identify.tabTitle}
                   </Tabs.Trigger>
                 </Tabs.List>
@@ -1223,7 +1226,7 @@ const InventoryContent = () => {
                   >
                     <BrainCircuit
                       size={48}
-                      style={{ color: "var(--accent-primary)"}}
+                      style={{ color: "var(--accent-primary)" }}
                     />
                   </div>
                   <div>
@@ -1247,7 +1250,8 @@ const InventoryContent = () => {
                       style={{ padding: "0.8rem 1.5rem" }}
                       onClick={() => setIsAiScannerOpen(true)}
                     >
-                      <Camera size={20} /> {invT.identify.identifyCard.cameraBtn}
+                      <Camera size={20} />{" "}
+                      {invT.identify.identifyCard.cameraBtn}
                     </button>
                     <button
                       className="btn-secondary"
@@ -1259,7 +1263,8 @@ const InventoryContent = () => {
                       }}
                       onClick={() => aiFileInputRef.current?.click()}
                     >
-                      <Upload size={20} /> {invT.identify.identifyCard.uploadBtn}
+                      <Upload size={20} />{" "}
+                      {invT.identify.identifyCard.uploadBtn}
                     </button>
                   </div>
 
@@ -1335,8 +1340,8 @@ const InventoryContent = () => {
                         <div>
                           {invT.identify.identifyCard.hazardousLabel}{" "}
                           <strong>
-                            {identifiedProduct.isHazardous 
-                              ? invT.identify.identifyCard.yes 
+                            {identifiedProduct.isHazardous
+                              ? invT.identify.identifyCard.yes
                               : invT.identify.identifyCard.no}
                           </strong>
                         </div>
@@ -1392,7 +1397,9 @@ const InventoryContent = () => {
                         setTrainingProduct(prod || null);
                       }}
                     >
-                      <option value="">{invT.identify.trainingCard.chooseProduct}</option>
+                      <option value="">
+                        {invT.identify.trainingCard.chooseProduct}
+                      </option>
                       {products.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.scanCode})
@@ -1428,7 +1435,8 @@ const InventoryContent = () => {
                           {trainingProduct.name}
                         </div>
                         <div style={{ fontFamily: "monospace", opacity: 0.8 }}>
-                          {invT.identify.trainingCard.barcodeLabel} {trainingProduct.scanCode}
+                          {invT.identify.trainingCard.barcodeLabel}{" "}
+                          {trainingProduct.scanCode}
                         </div>
                       </div>
 
@@ -1452,9 +1460,7 @@ const InventoryContent = () => {
                         size={32}
                         style={{ opacity: 0.3, marginBottom: "1rem" }}
                       />
-                      <p>
-                        {invT.identify.trainingCard.emptyState}
-                      </p>
+                      <p>{invT.identify.trainingCard.emptyState}</p>
                     </div>
                   )}
                 </div>
