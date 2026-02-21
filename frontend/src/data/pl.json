@@ -333,6 +333,29 @@
           "uploadFailed": "Nie udało się przesłać zdjęć. Upewnij się, że to poprawne obrazy mniejsze niż 10MB.",
           "deleteFailed": "Nie udało się usunąć zdjęcia."
         },
+        "identify": {
+          "tabTitle": "Rozpoznaj z AI",
+          "identifyCard": {
+            "title": "Identyfikuj Produkt",
+            "subtitle": "Zrób zdjęcie, aby zidentyfikować istniejący produkt.",
+            "cameraBtn": "Aparat",
+            "uploadBtn": "Wyślij plik",
+            "resultHeader": "WYNIK",
+            "weightLabel": "Waga:",
+            "hazardousLabel": "Niebezpieczny:",
+            "yes": "Tak",
+            "no": "Nie"
+          },
+          "trainingCard": {
+            "title": "Studio Treningowe AI",
+            "subtitle": "Przypisz zdjęcia referencyjne do kodów kreskowych.",
+            "selectLabel": "Wybierz produkt do treningu",
+            "chooseProduct": "-- Wybierz produkt --",
+            "activeContext": "Aktywny Kontekst:",
+            "barcodeLabel": "Kod:",
+            "emptyState": "Wybierz produkt z listy powyżej, aby zarządzać jego zdjęciami referencyjnymi dla AI."
+          }
+        },
         "operations": {
           "inbound": {
             "title": "Przyjęcia",
