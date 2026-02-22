@@ -1157,7 +1157,8 @@ const InventoryContent = () => {
                           <Box size={12} /> {item.productWeightKg}kg
                         </div>
                         <div className="info-chip">
-                          <RefreshCw size={12} /> {item.currentRackTemperature}
+                          <RefreshCw size={12} />{" "}
+                          {item.currentRackTemperature.toFixed(1)}
                           °C
                         </div>
                       </div>

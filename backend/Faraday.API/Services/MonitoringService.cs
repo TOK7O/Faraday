@@ -78,7 +78,7 @@ namespace Faraday.API.Services
             if (temperature > rack.MaxTemperature || temperature < rack.MinTemperature)
             {
                 await CreateAlertIfNotExists(rackId, AlertType.TemperatureMismatch, 
-                    $"CRITICAL: Temperature {temperature:F1}°C is out of bounds ({rack.MinTemperature}-{rack.MaxTemperature}°C)!");
+                    $"CRITICAL: Temperature {temperature:F1}°C is out of bounds ({rack.MinTemperature:F1}-{rack.MaxTemperature:F1}°C)!");
             }
             else
             {
