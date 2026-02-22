@@ -147,6 +147,11 @@ const ReportsContent = () => {
     handleFetchData();
   }, [activeTab]);
 
+  const formatWarningText = (text) => {
+    if (!text) return "";
+    return text.replace(/([a-z])([A-Z])/g, "$1 $2");
+  };
+
   const fetchDashboardStats = async () => {
     try {
       const data = await getDashboardStats();
@@ -331,7 +336,7 @@ const ReportsContent = () => {
                           : "inherit",
                     }}
                   >
-                    {item.currentRackTemperature}°C
+                    {item.currentRackTemperature.toFixed(1)}°C
                   </span>
                 </td>
                 <td>{formatDate(item.entryDate)}</td>
@@ -443,9 +448,10 @@ const ReportsContent = () => {
                   {reportsT.common?.rackPrefix || "Rack"} {v.rackCode}
                 </td>
                 <td>-</td>
-                <td>{v.recordedTemperature}°C</td>
+                <td>{v.recordedTemperature.toFixed(1)}°C</td>
                 <td>
-                  {v.allowedMinTemperature} - {v.allowedMaxTemperature}°C
+                  {v.allowedMinTemperature.toFixed(1)} -{" "}
+                  {v.allowedMaxTemperature.toFixed(1)}°C
                 </td>
                 <td>
                   <span className="badge danger">
@@ -461,9 +467,10 @@ const ReportsContent = () => {
                 <td>
                   {v.productName} ({v.rackCode})
                 </td>
-                <td>{v.recordedTemperature}°C</td>
+                <td>{v.recordedTemperature.toFixed(1)}°C</td>
                 <td>
-                  {v.requiredMinTemperature} - {v.requiredMaxTemperature}°C
+                  {v.requiredMinTemperature.toFixed(1)} -{" "}
+                  {v.requiredMaxTemperature.toFixed(1)}°C
                 </td>
                 <td>
                   <span className="badge danger">
@@ -507,7 +514,7 @@ const ReportsContent = () => {
               {tempHistory.map((t) => (
                 <tr key={t.id}>
                   <td>{t.rackCode}</td>
-                  <td>{t.recordedTemperature}°C</td>
+                  <td>{t.recordedTemperature.toFixed(1)}°C</td>
                   <td>{formatDate(t.timestamp)}</td>
                 </tr>
               ))}
@@ -574,7 +581,8 @@ const ReportsContent = () => {
                   <span
                     className={`badge ${a.type === "Critical" ? "danger" : "warn"}`}
                   >
-                    {reportsT.alerts.severityLevels?.[a.type] || a.type}
+                    {reportsT.alerts.severityLevels?.[a.type] ||
+                      formatWarningText(a.type)}
                   </span>
                 </td>
                 <td>{a.rackCode || reportsT.alerts.general}</td>

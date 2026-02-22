@@ -53,7 +53,8 @@ export const ProductCatalog = ({
                   <Weight size={12} /> {p.weightKg} kg
                 </span>
                 <span>
-                  <Thermometer size={12} /> {p.tempRequired}°C
+                  <Thermometer size={12} /> {p.tempRequired?.toFixed(1) ?? "-"}
+                  °C
                 </span>
               </div>
             </div>
@@ -117,7 +118,7 @@ export const ProductCatalog = ({
               <td>
                 {p.widthMm}x{p.heightMm}x{p.depthMm} mm
               </td>
-              <td>{p.tempRequired}°C</td>
+              <td>{p.tempRequired?.toFixed(1) ?? "-"}°C</td>
               <td>
                 {p.isHazardous ? (
                   <span className="badge-adr">
