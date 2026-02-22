@@ -54,6 +54,11 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--bg-form);
 }
 
+.operation-barcode-input
+{
+  height: 3.5rem !important;
+}
+
 .inventory-container {
   padding: 2rem;
 
