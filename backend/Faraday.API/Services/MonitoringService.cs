@@ -186,7 +186,7 @@ namespace Faraday.API.Services
                 // Check if the product is already expired
                 if (expirationDate < now)
                 {
-                    var daysOverdue = (now - expirationDate).Days;
+                    var daysOverdue = (now.Date - expirationDate.Date).Days;
                     var message = $"EXPIRED: {count}x '{product.Name}' (Barcode: {product.ScanCode}) " +
                                  $"in rack {rack.Code} expired on {expirationDate:yyyy-MM-dd}. " +
                                  $"Days overdue: {daysOverdue}";
@@ -196,7 +196,7 @@ namespace Faraday.API.Services
                 // Check if the product is expiring soon (within a warning threshold)
                 else if (expirationDate <= warningThreshold)
                 {
-                    var daysRemaining = (expirationDate - now).Days;
+                    var daysRemaining = (expirationDate.Date - now.Date).Days;
                     var message = $"WARNING: {count}x '{product.Name}' (Barcode: {product.ScanCode}) " +
                                  $"in rack {rack.Code} expires in {daysRemaining} days " +
                                  $"(Expiration: {expirationDate:yyyy-MM-dd}).";
