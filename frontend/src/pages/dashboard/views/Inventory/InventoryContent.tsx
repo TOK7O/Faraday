@@ -42,7 +42,6 @@ import {
   recognizeProduct, // <--- NOWA FUNKCJA API
 } from "@/api/axios";
 
-// POPRAWIONY IMPORT TYPÓW (TS1484)
 import type {
   Rack,
   Product,
@@ -1491,7 +1490,7 @@ const InventoryContent = () => {
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input
+                      <input className="operation-barcode-input"
                         value={inboundBarcode}
                         onChange={(e) => setInboundBarcode(e.target.value)}
                         placeholder={invT.operations.inbound.placeholder}
@@ -1558,7 +1557,7 @@ const InventoryContent = () => {
                 <div className="ht-form">
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input
+                      <input className="operation-barcode-input"
                         type="text"
                         placeholder={invT.operations.move.placeholder}
                         value={moveBarcode}
@@ -1668,7 +1667,7 @@ const InventoryContent = () => {
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input
+                      <input className="operation-barcode-input"
                         value={outboundBarcode}
                         onChange={(e) => setOutboundBarcode(e.target.value)}
                         placeholder={invT.operations.outbound.placeholder}
