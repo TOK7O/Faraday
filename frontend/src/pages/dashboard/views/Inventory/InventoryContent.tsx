@@ -1137,7 +1137,7 @@ const InventoryContent = () => {
                           <span
                             className={
                               item.daysUntilExpiration &&
-                              item.daysUntilExpiration < 5
+                              item.daysUntilExpiration <= 7
                                 ? "text-danger"
                                 : ""
                             }
@@ -1490,7 +1490,8 @@ const InventoryContent = () => {
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input className="operation-barcode-input"
+                      <input
+                        className="operation-barcode-input"
                         value={inboundBarcode}
                         onChange={(e) => setInboundBarcode(e.target.value)}
                         placeholder={invT.operations.inbound.placeholder}
@@ -1557,7 +1558,8 @@ const InventoryContent = () => {
                 <div className="ht-form">
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input className="operation-barcode-input"
+                      <input
+                        className="operation-barcode-input"
                         type="text"
                         placeholder={invT.operations.move.placeholder}
                         value={moveBarcode}
@@ -1667,7 +1669,8 @@ const InventoryContent = () => {
                 >
                   <div className="input-group">
                     <div className="input-wrapper">
-                      <input className="operation-barcode-input"
+                      <input
+                        className="operation-barcode-input"
                         value={outboundBarcode}
                         onChange={(e) => setOutboundBarcode(e.target.value)}
                         placeholder={invT.operations.outbound.placeholder}

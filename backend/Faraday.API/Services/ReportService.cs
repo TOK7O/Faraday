@@ -104,7 +104,7 @@ namespace Faraday.API.Services
                     ProductName = i.Product.Name,
                     Barcode = i.Product.ScanCode,
                     ExpirationDate = i.ExpirationDate,
-                    DaysRemaining = (i.ExpirationDate!.Value - DateTime.UtcNow).Days,
+                    DaysRemaining = (i.ExpirationDate!.Value.Date - DateTime.UtcNow.Date).Days,
                     LocationCode = $"{i.Slot.Rack.Code} [{i.Slot.X},{i.Slot.Y}]"
                 })
                 .ToListAsync();

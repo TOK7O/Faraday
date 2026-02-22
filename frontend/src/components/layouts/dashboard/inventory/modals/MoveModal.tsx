@@ -77,8 +77,8 @@ export const MoveModal = ({
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay-ht" />
         <Dialog.Content
-            className="dialog-content-ht"
-            style={{ maxHeight: '80vh', overflowY: 'auto' }}
+          className="dialog-content-ht"
+          style={{ maxHeight: "80vh", overflowY: "auto" }}
         >
           <div className="modal-accent-line" />
           <div className="modal-header">
