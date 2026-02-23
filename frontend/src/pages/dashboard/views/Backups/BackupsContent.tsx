@@ -120,9 +120,7 @@ const BackupsContent = () => {
       localStorage.removeItem("token");
       window.location.href = "/login?msg=restored";
     } catch (error: any) {
-      alert(
-        `${backupT.restore.error}: ${error.response?.data}`,
-      );
+      alert(`${backupT.restore.error}: ${error.response?.data}`);
     } finally {
       setIsRestoring(false);
       setRestoreModalOpen(false);

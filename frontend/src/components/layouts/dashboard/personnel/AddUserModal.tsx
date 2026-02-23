@@ -102,8 +102,7 @@ export const AddUserModal = ({
       setConfirmPassword("");
       setRole(UserRole.WarehouseWorker);
     } catch (err: any) {
-      const msg =
-        err.response?.data || tAdd.errors.createError;
+      const msg = err.response?.data || tAdd.errors.createError;
       setError(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setIsLoading(false);

@@ -57,8 +57,7 @@ const PreferencesContent = () => {
       setMessage({
         type: "error",
         text:
-          error.response?.data ||
-          prefT.security.twoFactor.messages.setupError,
+          error.response?.data || prefT.security.twoFactor.messages.setupError,
       });
     } finally {
       setLoading2fa(false);
