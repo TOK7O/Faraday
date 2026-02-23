@@ -18,11 +18,13 @@ namespace Faraday.API.Middleware
 
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var code = HttpStatusCode.InternalServerError;
-
-            if (exception is InvalidOperationException) code = HttpStatusCode.BadRequest; // 400
-            if (exception is KeyNotFoundException) code = HttpStatusCode.NotFound; // 404
-            if (exception is UnauthorizedAccessException) code = HttpStatusCode.Forbidden; // 403
+            var code = exception switch
+            {
+                InvalidOperationException => HttpStatusCode.BadRequest,
+                KeyNotFoundException => HttpStatusCode.NotFound,
+                UnauthorizedAccessException => HttpStatusCode.Forbidden,
+                _ => HttpStatusCode.InternalServerError
+            };
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)code;
