@@ -86,7 +86,7 @@ namespace Faraday.API.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Alert>()
-                .HasIndex(a => new { a.RackId, a.Type, a.IsResolved })
+                .HasIndex(a => new { a.RackId, a.Type, a.ProductDefinitionId, a.IsResolved })
                 .HasFilter("\"IsResolved\" = false")
                 .IsUnique();
         }
