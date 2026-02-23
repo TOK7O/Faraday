@@ -70,8 +70,7 @@ export const ChangePasswordForm = () => {
       setMessage({ type: "success", text: securityT.status.success });
       form.reset();
     } catch (err: any) {
-      const errorMsg =
-        err.response?.data || securityT.status.error;
+      const errorMsg = err.response?.data || securityT.status.error;
       setMessage({ type: "error", text: errorMsg });
     } finally {
       setIsLoading(false);
