@@ -158,9 +158,12 @@ const InventoryContent = () => {
       } else {
         alert(invT.errors.notFound || "Product not recognized");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Recognition failed", error);
-      alert("Recognition failed. Please check your internet connection.");
+      alert(
+        error.response?.data?.message ||
+          "Recognition failed. Please check your internet connection.",
+      );
     } finally {
       setAiProcessing(false);
     }
@@ -789,8 +792,8 @@ const InventoryContent = () => {
     try {
       await deleteRack(id);
       await fetchData();
-    } catch (e) {
-      alert(invT.errors.deleteRack);
+    } catch (e: any) {
+      alert(e.response?.data?.message || invT.errors.deleteRack);
     } finally {
       setIsLoading(false);
     }
@@ -802,8 +805,8 @@ const InventoryContent = () => {
     try {
       await deleteProduct(id);
       await fetchData();
-    } catch (e) {
-      alert(invT.errors.deleteProduct);
+    } catch (e: any) {
+      alert(e.response?.data?.message || invT.errors.deleteProduct);
     } finally {
       setIsLoading(false);
     }
