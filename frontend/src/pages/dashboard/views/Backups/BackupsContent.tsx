@@ -74,8 +74,7 @@ const BackupsContent = () => {
       setStatus({
         type: "error",
         message:
-          error.response?.data?.message ||
-          error.message ||
+          error.response?.data ||
           backupT.error ||
           "An unexpected error occurred.",
       });
@@ -122,7 +121,7 @@ const BackupsContent = () => {
       window.location.href = "/login?msg=restored";
     } catch (error: any) {
       alert(
-        `${backupT.restore.error}: ${error.response?.data?.message || error.message}`,
+        `${backupT.restore.error}: ${error.response?.data}`,
       );
     } finally {
       setIsRestoring(false);

@@ -57,7 +57,7 @@ const PreferencesContent = () => {
       setMessage({
         type: "error",
         text:
-          error.response?.data?.message ||
+          error.response?.data ||
           prefT.security.twoFactor.messages.setupError,
       });
     } finally {
@@ -80,7 +80,7 @@ const PreferencesContent = () => {
     } catch (error: any) {
       setMessage({
         type: "error",
-        text: error.response?.data?.message || error.message,
+        text: error.response?.data || error.message,
       });
     } finally {
       setLoading2fa(false);
@@ -101,7 +101,7 @@ const PreferencesContent = () => {
       setMessage({
         type: "error",
         text:
-          error.response?.data?.message ||
+          error.response?.data ||
           prefT.security.twoFactor.status.errorGen ||
           "Error",
       });
