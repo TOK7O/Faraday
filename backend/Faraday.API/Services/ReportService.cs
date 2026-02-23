@@ -310,7 +310,6 @@ namespace Faraday.API.Services
                     Message = a.Message,
                     Type = a.Type.ToString(),
                     CreatedAt = a.CreatedAt,
-                    // Calculate the duration in minutes from creation to now
                     DurationMinutes = (int)(DateTime.UtcNow - a.CreatedAt).TotalMinutes
                 })
                 .ToListAsync();
