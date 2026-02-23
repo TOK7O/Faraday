@@ -51,7 +51,7 @@ const ResetPasswordPage = () => {
       await resetPassword(token, newPassword);
       navigate("/login");
     } catch (err: any) {
-      const msg = err.response?.data?.message || pageT.formSection.resetError;
+      const msg = err.response?.data || pageT.formSection.resetError;
       setError(msg);
     } finally {
       setIsLoading(false);

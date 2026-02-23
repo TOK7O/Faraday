@@ -39,7 +39,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  recognizeProduct, // <--- NOWA FUNKCJA API
+  recognizeProduct,
 } from "@/api/axios";
 
 import type {
@@ -161,7 +161,7 @@ const InventoryContent = () => {
     } catch (error: any) {
       console.error("AI Recognition failed", error);
       alert(
-        error.response?.data?.message ||
+        error.response?.data ||
           "Recognition failed. Please check your internet connection.",
       );
     } finally {
@@ -615,7 +615,7 @@ const InventoryContent = () => {
         const identifier =
           item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
         errors.push(
-          `Błąd dla ${identifier}: ${err.response?.data?.message || err.message}`,
+          `Błąd dla ${identifier}: ${err.response?.data || err.message}`,
         );
       }
     }
@@ -718,7 +718,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setInboundResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.inbound,
+        message: e.response?.data || invT.errors.inbound,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -739,7 +739,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setOutboundResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.outbound,
+        message: e.response?.data || invT.errors.outbound,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -776,7 +776,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setMoveResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.move,
+        message: e.response?.data || invT.errors.move,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -793,7 +793,7 @@ const InventoryContent = () => {
       await deleteRack(id);
       await fetchData();
     } catch (e: any) {
-      alert(e.response?.data?.message || invT.errors.deleteRack);
+      alert(e.response?.data || invT.errors.deleteRack);
     } finally {
       setIsLoading(false);
     }
@@ -806,7 +806,7 @@ const InventoryContent = () => {
       await deleteProduct(id);
       await fetchData();
     } catch (e: any) {
-      alert(e.response?.data?.message || invT.errors.deleteProduct);
+      alert(e.response?.data || invT.errors.deleteProduct);
     } finally {
       setIsLoading(false);
     }
@@ -850,7 +850,7 @@ const InventoryContent = () => {
       await fetchData();
       closeModal();
     } catch (error: any) {
-      alert(error.response?.data?.message || invT.errors.connection);
+      alert(error.response?.data || invT.errors.connection);
     } finally {
       setIsLoading(false);
     }
@@ -885,7 +885,7 @@ const InventoryContent = () => {
       await fetchData();
       closeModal();
     } catch (error: any) {
-      alert(error.response?.data?.message || invT.errors.connection);
+      alert(error.response?.data || invT.errors.connection);
     } finally {
       setIsLoading(false);
     }

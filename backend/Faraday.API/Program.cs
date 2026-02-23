@@ -203,6 +203,9 @@ startupLogger.LogInformation("Background workers registered successfully");
 
 var app = builder.Build();
 
+// Make sure this is added early in the pipeline, right after builder.Build()
+app.UseMiddleware<Faraday.API.Middleware.ErrorHandlingMiddleware>();
+
 
 // Register SignalR Logger Provider
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();

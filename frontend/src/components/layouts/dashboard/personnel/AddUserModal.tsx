@@ -103,7 +103,7 @@ export const AddUserModal = ({
       setRole(UserRole.WarehouseWorker);
     } catch (err: any) {
       const msg =
-        err.response?.data?.message || err.message || tAdd.errors.createError;
+        err.response?.data || tAdd.errors.createError;
       setError(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setIsLoading(false);

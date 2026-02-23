@@ -190,7 +190,7 @@ export const VoiceControlFAB = () => {
       } catch (error: any) {
         console.error("[Faraday Voice] API Error:", error);
         const apiErrorMsg =
-          error.response?.data?.message ||
+          error.response?.data ||
           t.voiceAssistant?.serverError ||
           (lang === "pl" ? "Błąd serwera." : "Server error.");
         setFeedback({ type: "error", msg: apiErrorMsg });
