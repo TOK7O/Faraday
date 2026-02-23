@@ -50,8 +50,9 @@ const ResetPasswordPage = () => {
     try {
       await resetPassword(token, newPassword);
       navigate("/login");
-    } catch (err) {
-      setError(pageT.formSection.resetError);
+    } catch (err: any) {
+      const msg = err.response?.data || pageT.formSection.resetError;
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

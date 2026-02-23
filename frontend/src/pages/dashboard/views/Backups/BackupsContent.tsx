@@ -74,7 +74,9 @@ const BackupsContent = () => {
       setStatus({
         type: "error",
         message:
-          error.message || backupT.error || "An unexpected error occurred.",
+          error.response?.data ||
+          backupT.error ||
+          "An unexpected error occurred.",
       });
     } finally {
       setIsLoading(false);
@@ -118,7 +120,9 @@ const BackupsContent = () => {
       localStorage.removeItem("token");
       window.location.href = "/login?msg=restored";
     } catch (error: any) {
-      alert(`${backupT.restore.error}: ${error.message}`);
+      alert(
+        `${backupT.restore.error}: ${error.response?.data}`,
+      );
     } finally {
       setIsRestoring(false);
       setRestoreModalOpen(false);
