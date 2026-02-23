@@ -145,8 +145,8 @@ const PersonnelContent = () => {
     try {
       await updateUser(userId, { isActive: !isCurrentlyActive });
       await fetchStaff();
-    } catch (error) {
-      alert(tPers.messages.updateError);
+    } catch (error: any) {
+      alert(error.response?.data?.message || tPers.messages.updateError);
     }
   };
 
@@ -166,8 +166,8 @@ const PersonnelContent = () => {
       await resetUser2FA(userId);
       alert(tPers.messages.reset2faSuccess);
       await fetchStaff();
-    } catch (error) {
-      alert(tPers.messages.error);
+    } catch (error: any) {
+      alert(error.response?.data?.message || tPers.messages.error);
     }
   };
 
@@ -194,8 +194,8 @@ const PersonnelContent = () => {
       });
       setIsEditUserOpen(false);
       await fetchStaff();
-    } catch (error) {
-      alert(tPers.messages.updateError);
+    } catch (error: any) {
+      alert(error.response?.data?.message || tPers.messages.updateError);
     }
   };
 
@@ -216,8 +216,8 @@ const PersonnelContent = () => {
       await resetUserPassword(selectedUser.realId, passwordToSet);
       alert(tPers.messages.resetPassSuccess);
       setIsResetPassOpen(false);
-    } catch (error) {
-      alert(tPers.messages.resetPassError);
+    } catch (error: any) {
+      alert(error.response?.data?.message || tPers.messages.resetPassError);
     }
   };
 
