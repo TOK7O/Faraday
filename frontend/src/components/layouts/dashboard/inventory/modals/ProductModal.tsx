@@ -168,9 +168,11 @@ export const ProductModal = ({
                 <label>{invT.barcode}</label>
                 <input
                   name="scanCode"
+                  className={hasInventoryItems ? "readonly-field" : ""}
                   defaultValue={editingProduct?.scanCode}
                   required
                   onChange={handleChange}
+                  readOnly={hasInventoryItems}
                 />
                 <ErrorMsg field="scanCode" />
               </div>
