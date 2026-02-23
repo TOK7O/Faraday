@@ -530,7 +530,7 @@ const InventoryContent = () => {
         setIsImportPreviewModalOpen(true);
       } catch (err) {
         console.error("CSV Import error:", err);
-        alert(invT.errors.csv.parseError);
+        alert(err.response?.data || invT.errors.csv.parseError);
       }
     };
     reader.onerror = () => alert(invT.errors.csv.readError);
@@ -558,7 +558,7 @@ const InventoryContent = () => {
         setIsImportPreviewModalOpen(true);
       } catch (err) {
         console.error("Product CSV Import error:", err);
-        alert(invT.errors.csv.parseError);
+        alert(err.response?.data || invT.errors.csv.parseError);
       }
     };
     reader.onerror = () => alert(invT.errors.csv.readError);
