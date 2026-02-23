@@ -104,12 +104,26 @@ namespace Faraday.API.Services
             await context.SaveChangesAsync();
         }
 
-        // Helper method to prevent spamming the database with duplicate active alerts
-        // Ensures we only have one active alert of a specific type per rack at any given time.
-        private async Task CreateAlertIfNotExists(int rackId, AlertType type, string message)
+        // Helper method to prevent spamming the database with duplicate active alerts.
+        // For expiration alerts: deduplicates by (rackId, type, productId) so each product gets its own alert.
+        // For other alerts (temperature, weight): deduplicates by (rackId, type) as before.
+        private async Task CreateAlertIfNotExists(int rackId, AlertType type, string message, int? productId = null)
         {
-            bool activeAlertExists = await context.Alerts
-                .AnyAsync(a => a.RackId == rackId && a.Type == type && !a.IsResolved);
+            bool activeAlertExists;
+            
+            if (productId.HasValue)
+            {
+                // Expiration alerts: one per product-rack-type combination
+                activeAlertExists = await context.Alerts
+                    .AnyAsync(a => a.RackId == rackId && a.Type == type 
+                                   && a.ProductDefinitionId == productId.Value && !a.IsResolved);
+            }
+            else
+            {
+                // Temperature/Weight alerts: one per rack-type combination
+                activeAlertExists = await context.Alerts
+                    .AnyAsync(a => a.RackId == rackId && a.Type == type && !a.IsResolved);
+            }
 
             if (!activeAlertExists)
             {
@@ -118,6 +132,7 @@ namespace Faraday.API.Services
                     RackId = rackId,
                     Type = type,
                     Message = message,
+                    ProductDefinitionId = productId,
                     CreatedAt = DateTime.UtcNow,
                     IsResolved = false
                 };
@@ -150,7 +165,8 @@ namespace Faraday.API.Services
         
         /// <summary>
         /// Scheduled task to check for expired or soon-to-expire inventory items.
-        /// Scans all in-stock items and generates alerts based on configuration thresholds.
+        /// Scans ALL in-stock items and generates alerts per product-rack combination.
+        /// Also resolves orphaned alerts for products that are no longer in stock.
         /// </summary>
         public async Task CheckExpirationDatesAsync()
         {
@@ -159,8 +175,8 @@ namespace Faraday.API.Services
             var now = DateTime.UtcNow;
             var warningThreshold = now.AddDays(warningDays);
 
-            // Group items by product and rack to avoid duplicate alerts
-            // We want one alert per Product-Rack combination.
+            // Get ALL items with expiration dates, grouped by product + rack.
+            // Each product-rack combo is evaluated independently (one alert per product per rack).
             var itemsWithExpiration = await context.InventoryItems
                 .Include(i => i.Product)
                 .Include(i => i.Slot)
@@ -175,8 +191,13 @@ namespace Faraday.API.Services
                 })
                 .ToListAsync();
 
+            // Track which (productId, rackId) combos still have items in stock
+            var activeProductRackPairs = new HashSet<(int productId, int rackId)>();
+
             foreach (var group in itemsWithExpiration)
             {
+                activeProductRackPairs.Add((group.ProductId, group.RackId));
+                
                 var earliestItem = group.Items.First();
                 var expirationDate = earliestItem.ExpirationDate!.Value;
                 var rack = earliestItem.Slot.Rack;
@@ -191,7 +212,10 @@ namespace Faraday.API.Services
                                  $"in rack {rack.Code} expired on {expirationDate:yyyy-MM-dd}. " +
                                  $"Days overdue: {daysOverdue}";
 
-                    await CreateAlertIfNotExists(rack.Id, AlertType.ExpirationExpired, message);
+                    await CreateAlertIfNotExists(rack.Id, AlertType.ExpirationExpired, message, product.Id);
+                    
+                    // If product went from warning to expired, resolve the old warning
+                    await ResolveExpirationAlertsForProduct(product.Id, rack.Id, AlertType.ExpirationWarning);
                 }
                 // Check if the product is expiring soon (within a warning threshold)
                 else if (expirationDate <= warningThreshold)
@@ -201,33 +225,148 @@ namespace Faraday.API.Services
                                  $"in rack {rack.Code} expires in {daysRemaining} days " +
                                  $"(Expiration: {expirationDate:yyyy-MM-dd}).";
 
-                    await CreateAlertIfNotExists(rack.Id, AlertType.ExpirationWarning, message);
+                    await CreateAlertIfNotExists(rack.Id, AlertType.ExpirationWarning, message, product.Id);
                 }
                 else
                 {
                     // Product is still fresh - auto-resolve any existing expiration alerts
-                    // This handles cases where expired items were removed, leaving only fresh ones.
                     await ResolveExpirationAlertsForProduct(product.Id, rack.Id);
+                }
+            }
+
+            // Orphan sweep: resolve alerts for products that are no longer in stock on their rack.
+            // This handles outbound/removal cases where the product disappears from the query entirely.
+            var orphanedAlerts = await context.Alerts
+                .Where(a => !a.IsResolved &&
+                            (a.Type == AlertType.ExpirationWarning || a.Type == AlertType.ExpirationExpired))
+                .ToListAsync();
+
+            foreach (var alert in orphanedAlerts)
+            {
+                if (alert.RackId.HasValue && alert.ProductDefinitionId.HasValue)
+                {
+                    if (!activeProductRackPairs.Contains((alert.ProductDefinitionId.Value, alert.RackId.Value)))
+                    {
+                        alert.IsResolved = true;
+                        alert.ResolvedAt = DateTime.UtcNow;
+                        alert.Message += " [RESOLVED: Product no longer in stock on this rack]";
+                        logger.LogInformation($"Orphaned expiration alert {alert.Id} auto-resolved (product {alert.ProductDefinitionId} no longer on rack {alert.RackId})");
+                    }
+                }
+                else if (!alert.ProductDefinitionId.HasValue)
+                {
+                    // Legacy alert without ProductDefinitionId - resolve it since we can't track it properly
+                    alert.IsResolved = true;
+                    alert.ResolvedAt = DateTime.UtcNow;
+                    alert.Message += " [RESOLVED: Legacy alert migrated]";
+                    logger.LogInformation($"Legacy expiration alert {alert.Id} auto-resolved (no ProductDefinitionId)");
                 }
             }
 
             await context.SaveChangesAsync();
         }
-        
-        // Helper method to auto-resolve expiration alerts when an item is OK or removed
-        private async Task ResolveExpirationAlertsForProduct(int productId, int rackId)
+
+        /// <summary>
+        /// Targeted expiration check for a specific rack. Called after inbound/outbound/move operations
+        /// for immediate alert response without waiting for the periodic worker.
+        /// </summary>
+        public async Task CheckExpirationDatesForRackAsync(int rackId)
         {
-            var activeAlerts = await context.Alerts
-                .Where(a => a.RackId == rackId &&
-                            !a.IsResolved &&
+            var warningDays = configuration.GetValue("Monitoring:ExpirationWarningDays", 7);
+            var now = DateTime.UtcNow;
+            var warningThreshold = now.AddDays(warningDays);
+
+            var itemsOnRack = await context.InventoryItems
+                .Include(i => i.Product)
+                .Include(i => i.Slot)
+                .ThenInclude(s => s.Rack)
+                .Where(i => i.Slot.RackId == rackId && i.ExpirationDate != null && i.Status == ItemStatus.InStock)
+                .GroupBy(i => i.ProductDefinitionId)
+                .Select(g => new
+                {
+                    ProductId = g.Key,
+                    Items = g.OrderBy(x => x.ExpirationDate).ToList()
+                })
+                .ToListAsync();
+
+            // Track active products on this rack
+            var activeProductIds = new HashSet<int>();
+
+            foreach (var group in itemsOnRack)
+            {
+                activeProductIds.Add(group.ProductId);
+                
+                var earliestItem = group.Items.First();
+                var expirationDate = earliestItem.ExpirationDate!.Value;
+                var product = earliestItem.Product;
+                var count = group.Items.Count;
+
+                if (expirationDate < now)
+                {
+                    var rack = earliestItem.Slot.Rack;
+                    var daysOverdue = (now.Date - expirationDate.Date).Days;
+                    var message = $"EXPIRED: {count}x '{product.Name}' (Barcode: {product.ScanCode}) " +
+                                 $"in rack {rack.Code} expired on {expirationDate:yyyy-MM-dd}. " +
+                                 $"Days overdue: {daysOverdue}";
+
+                    await CreateAlertIfNotExists(rackId, AlertType.ExpirationExpired, message, product.Id);
+                    await ResolveExpirationAlertsForProduct(product.Id, rackId, AlertType.ExpirationWarning);
+                }
+                else if (expirationDate <= warningThreshold)
+                {
+                    var rack = earliestItem.Slot.Rack;
+                    var daysRemaining = (expirationDate.Date - now.Date).Days;
+                    var message = $"WARNING: {count}x '{product.Name}' (Barcode: {product.ScanCode}) " +
+                                 $"in rack {rack.Code} expires in {daysRemaining} days " +
+                                 $"(Expiration: {expirationDate:yyyy-MM-dd}).";
+
+                    await CreateAlertIfNotExists(rackId, AlertType.ExpirationWarning, message, product.Id);
+                }
+                else
+                {
+                    await ResolveExpirationAlertsForProduct(product.Id, rackId);
+                }
+            }
+
+            // Resolve alerts for products no longer present on this rack
+            var orphanedAlerts = await context.Alerts
+                .Where(a => a.RackId == rackId && !a.IsResolved && a.ProductDefinitionId.HasValue &&
                             (a.Type == AlertType.ExpirationWarning || a.Type == AlertType.ExpirationExpired))
                 .ToListAsync();
 
-            // Get product info for matching to ensure we only resolve alerts for this specific product
-            var product = await context.Products.FindAsync(productId);
-            if (product == null) return;
+            foreach (var alert in orphanedAlerts.Where(a => !activeProductIds.Contains(a.ProductDefinitionId!.Value)))
+            {
+                alert.IsResolved = true;
+                alert.ResolvedAt = DateTime.UtcNow;
+                alert.Message += " [RESOLVED: Product no longer in stock on this rack]";
+                logger.LogInformation($"Expiration alert {alert.Id} auto-resolved after operation (product {alert.ProductDefinitionId} removed from rack {rackId})");
+            }
 
-            foreach (var alert in activeAlerts.Where(a => a.Message.Contains(product.ScanCode)))
+            await context.SaveChangesAsync();
+        }
+        
+        // Helper method to auto-resolve expiration alerts for a specific product on a rack.
+        // Uses ProductDefinitionId FK for precise matching instead of string-based message scanning.
+        // Optionally filter by a specific alert type (e.g. resolve only warnings when product expires).
+        private async Task ResolveExpirationAlertsForProduct(int productId, int rackId, AlertType? specificType = null)
+        {
+            var query = context.Alerts
+                .Where(a => a.RackId == rackId &&
+                            a.ProductDefinitionId == productId &&
+                            !a.IsResolved);
+
+            if (specificType.HasValue)
+            {
+                query = query.Where(a => a.Type == specificType.Value);
+            }
+            else
+            {
+                query = query.Where(a => a.Type == AlertType.ExpirationWarning || a.Type == AlertType.ExpirationExpired);
+            }
+
+            var activeAlerts = await query.ToListAsync();
+
+            foreach (var alert in activeAlerts)
             {
                 alert.IsResolved = true;
                 alert.ResolvedAt = DateTime.UtcNow;

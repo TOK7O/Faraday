@@ -17,6 +17,9 @@ namespace Faraday.API.Models
         public int? RackId { get; set; } 
         public Rack? Rack { get; set; }
 
+        public int? ProductDefinitionId { get; set; }
+        public ProductDefinition? Product { get; set; }
+
         [Required]
         public string Message { get; set; } = string.Empty;
 

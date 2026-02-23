@@ -14,6 +14,7 @@ namespace Faraday.API.Services
     public class OperationService(
         FaradayDbContext context,
         IWarehouseAlgorithmService algorithm,
+        IServiceProvider serviceProvider,
         ILogger<OperationService> logger)
         : IOperationService
     {
@@ -80,6 +81,9 @@ namespace Faraday.API.Services
                 await transaction.CommitAsync();
 
                 logger.LogInformation($"Inbound success: {product.Name} -> {targetSlot.Rack.Code}");
+
+                // Trigger expiration check for the target rack after successful inbound
+                await TriggerExpirationCheckAsync(targetSlot.Rack.Id);
 
                 return new OperationResultDto
                 {
@@ -150,6 +154,9 @@ namespace Faraday.API.Services
                 await transaction.CommitAsync();
 
                 logger.LogInformation($"Outbound success: {request.Barcode} from {rackCode}");
+
+                // Trigger expiration check to resolve alerts for removed products
+                await TriggerExpirationCheckAsync(rackId);
 
                 return new OperationResultDto
                 {
@@ -258,6 +265,9 @@ namespace Faraday.API.Services
                     throw new InvalidOperationException("Target rack weight limit exceeded.");
                 }
 
+                // Capture source rack ID before the move changes the entity
+                var sourceRackId = itemToMove.Slot.Rack.Id;
+
                 // Execute the move
                 itemToMove.Slot.CurrentItem = null; // Clear old
                 itemToMove.RackSlotId = targetSlot.Id;
@@ -282,6 +292,10 @@ namespace Faraday.API.Services
 
                 logger.LogInformation($"Moved item {product.ScanCode} from {request.SourceRackCode} to {request.TargetRackCode}");
 
+                // Trigger expiration check for both source (resolve) and target (create) racks
+                await TriggerExpirationCheckAsync(sourceRackId);
+                await TriggerExpirationCheckAsync(targetRack.Id);
+
                 return new OperationResultDto
                 {
                     Success = true,
@@ -297,6 +311,24 @@ namespace Faraday.API.Services
                 await transaction.RollbackAsync();
                 logger.LogError(ex, "Movement failed.");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Triggers an expiration check in a NEW DI scope so it gets its own DbContext,
+        /// avoiding conflicts with the operation's already-committed transaction.
+        /// </summary>
+        private async Task TriggerExpirationCheckAsync(int rackId)
+        {
+            try
+            {
+                using var scope = serviceProvider.CreateScope();
+                var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
+                await monitoringService.CheckExpirationDatesForRackAsync(rackId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Post-operation expiration check failed for rack {RackId}. The operation itself succeeded.", rackId);
             }
         }
 

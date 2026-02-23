@@ -18,8 +18,8 @@ namespace Faraday.API.Workers
             _serviceProvider = serviceProvider;
             _logger = logger;
 
-            var intervalHours = configuration.GetValue("Monitoring:ExpirationCheckIntervalHours", 1);
-            _period = TimeSpan.FromHours(intervalHours);
+            var intervalMinutes = configuration.GetValue("Monitoring:ExpirationCheckIntervalMinutes", 5);
+            _period = TimeSpan.FromMinutes(intervalMinutes);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
