@@ -48,19 +48,17 @@ export const ReferenceImageManager = ({
 
     setUploading(true);
     try {
-      // Wywołanie endpointu /upload-reference
       await uploadReferenceImages(scanCode, Array.from(files));
-      await fetchImages(); // Odśwież listę po udanym uploadzie
+      await fetchImages();
     } catch (error) {
       console.error("Upload failed", error);
-      alert(refT.uploadFailed);
+      alert(error.response?.data || refT.uploadFailed);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  // Usuwanie błędnych wzorców
   const handleDelete = async (imageId: number) => {
     if (!confirm(refT.confirmDelete)) return;
     try {
@@ -68,7 +66,7 @@ export const ReferenceImageManager = ({
       setImages(images.filter((img) => img.id !== imageId));
     } catch (error) {
       console.error("Delete failed", error);
-      alert(refT.deleteFailed);
+      alert(error.response?.data || refT.deleteFailed);
     }
   };
 
