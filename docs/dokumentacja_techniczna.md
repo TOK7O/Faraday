@@ -587,16 +587,16 @@ Wrażliwe dane konfiguracyjne są przechowywane w pliku `.env` i nie są commito
 
 Aplikacja kliencka to SPA (Single Page Application). Główne sekcje:
 
-| Widok             | Opis                                                      |
-| ----------------- | --------------------------------------------------------- |
-| Dashboard         | Statystyki zajętości, wagi, operacji dziennych            |
-| Inwentarz         | Interaktywna siatka regałów, katalog produktów, operacje  |
-| Personel          | Zarządzanie użytkownikami, rolami, 2FA                    |
-| Historia operacji | Chronologiczny log operacji magazynowych                  |
-| Raporty           | 4 zakładki: Inwentarz, Utylizacja, Czujniki, Alarmy       |
-| Kopie zapasowe    | Tworzenie, pobieranie, przywracanie backupów              |
-| Terminal logów    | Konsola logów systemowych w czasie rzeczywistym (SignalR) |
-| Preferencje       | Motyw, język (PL/EN), zmiana hasła, konfiguracja 2FA      |
+| Widok             | Opis                                                            |
+| ----------------- | --------------------------------------------------------------- |
+| Dashboard         | Statystyki zajętości, wagi, operacji dziennych                  |
+| Inwentarz         | Interaktywna siatka regałów, katalog produktów, operacje        |
+| Personel          | Zarządzanie użytkownikami, rolami, 2FA                          |
+| Historia operacji | Chronologiczny log operacji magazynowych                        |
+| Raporty           | 4 zakładki: Inwentarz, Wykorzystanie magazynu, Czujniki, Alarmy |
+| Kopie zapasowe    | Tworzenie, pobieranie, przywracanie backupów                    |
+| Terminal logów    | Konsola logów systemowych w czasie rzeczywistym (SignalR)       |
+| Preferencje       | Motyw, język (PL/EN), zmiana hasła, konfiguracja 2FA            |
 
 ---
 

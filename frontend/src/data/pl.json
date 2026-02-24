@@ -223,7 +223,7 @@
         "sectionPlaceholder": "np. Sektor A",
         "rowsM": "Rzędy (M)",
         "colsN": "Kolumny (N)",
-        "maxWeightKg": "Max waga (kg)",
+        "maxWeightKg": "Max obciążenie (kg)",
         "tempMinMax": "Temp. Min/Max",
         "slotDimensionsMm": "Wymiary slotu (mm)",
         "confirmChanges": "Zatwierdź zmiany",
@@ -452,7 +452,7 @@
             "depth": "Głęb.",
             "comment": "Komentarz",
             "adrClass": "Klasyfikacja ADR",
-            "validity": "Ważność (dni)",
+            "validity": "Termin ważności (dni)",
             "submitNew": "Zapisz w systemie",
             "submitEdit": "Zaktualizuj produkt",
             "errors": {
@@ -641,19 +641,19 @@
         },
         "tabs": {
           "inventory": "Inwentarz",
-          "utilization": "Utylizacja",
+          "utilization": "Wykorzystanie magazynu",
           "sensors": "Czujniki i Naruszenia",
           "alerts": "Alarmy"
         },
         "stats": {
-          "occupancy": "Zajętość",
+          "occupancy": "% zajęcia magazynu",
           "slots": "Sloty",
-          "totalWeight": "Waga Całkowita",
+          "totalWeight": "Całkowita Waga Inwentarza",
           "cap": "Poj.",
           "opsToday": "Operacje Dzisiaj",
           "totalItems": "Wszystkie Towary",
           "blockedItems": "Zablokowane",
-          "expiring": "Wygasające (7 dni)"
+          "expiring": "Towary z upływającym terminem ważności"
         },
         "filters": {
           "rackId": "ID Regału",
@@ -663,9 +663,9 @@
           "refresh": "Odśwież"
         },
         "inventory": {
-          "expiringTitle": "Towary Wygasające Wkrótce",
+          "expiringTitle": "Towary z upływającym terminem ważności",
           "fullTitle": "Pełna Lista Inwentarza",
-          "emptyExpiring": "Brak towarów wygasających wkrótce.",
+          "emptyExpiring": "Brak towarów z upływającym terminem ważności.",
           "showingFirst": "Pokazano pierwsze {count} z {total} pozycji",
           "table": {
             "product": "Produkt",
@@ -680,12 +680,12 @@
           "days": "dni"
         },
         "utilization": {
-          "title": "Utylizacja Regałów",
+          "title": "Wykorzystanie Regałów",
           "table": {
             "rack": "Regał",
-            "occupancy": "Zajętość (Sloty)",
-            "weight": "Obciążenie Wagowe",
-            "maxWeight": "Max Waga"
+            "occupancy": "% zajęcia regału",
+            "weight": "Obciążenie (kg)",
+            "maxWeight": "Max Obciążenie (kg)"
           }
         },
         "sensors": {
@@ -710,7 +710,7 @@
           "historyTitle": "Historia Alarmów",
           "emptyActive": "Brak aktywnych alarmów. System sprawny.",
           "table": {
-            "severity": "Ważność",
+            "severity": "Typ alarmu",
             "rack": "Regał",
             "message": "Wiadomość",
             "duration": "Czas trwania",
