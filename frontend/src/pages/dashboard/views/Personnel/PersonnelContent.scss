@@ -547,7 +547,7 @@ $radius-modal: 24px;
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-input);
     border-radius: 20px;
-    overflow-x: scroll;
+    overflow-x: auto;
     margin-top: 1rem;
 
     .ht-table {
