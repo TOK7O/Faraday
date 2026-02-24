@@ -432,7 +432,7 @@ public class VoiceCommandService(
         return result;
     }
 
-    private Dictionary<string, object> ReplaceVariablesInDictionary(Dictionary<string, object> dict, Dictionary<string, object> variables)
+    private static Dictionary<string, object> ReplaceVariablesInDictionary(Dictionary<string, object> dict, Dictionary<string, object> variables)
     {
         var result = new Dictionary<string, object>();
 
