@@ -6,7 +6,7 @@
     "title": "Voice Assistant",
     "processing": "Processing...",
     "listening": "Listening...",
-    "unsupported": "Speech recognition not supported.",
+    "unsupported": "Speech recognition not supported on this browser. Please use a chromium-based browser or Safari",
     "success": "Success",
     "failure": "Failure",
     "serverError": "Server error.",
