@@ -274,8 +274,8 @@
           "outbound": "Błąd podczas wydawania produktu."
         },
         "import": {
-          "racksTitle": "Import: Regały",
-          "productsTitle": "Import: Produkty",
+          "racksTitle": "Regały",
+          "productsTitle": "Produkty",
           "processing": "Przetwarzanie importu...",
           "processed": "{current} z {total} operacji zakończonych",
           "summary": {

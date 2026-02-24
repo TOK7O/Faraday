@@ -455,11 +455,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--accent-primary);
     border-color: var(--accent-primary);
     color: #000;
-
-    svg {
-      transform: rotate(90deg) scale(1.1);
-      filter: none;
-    }
   }
 
   &.btn-delete-ht:hover {
@@ -959,33 +954,20 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       letter-spacing: -1px;
       margin: 0;
       color: var(--text-main);
-
-      &::before {
-        content: "[ ";
-        color: var(--accent-primary);
-        opacity: 0.5;
-      }
-      &::after {
-        content: " ]";
-        color: var(--accent-primary);
-        opacity: 0.5;
-      }
     }
 
     .close-btn {
       background: rgba(var(--bg-input-rgb), 0.5);
       border: 1px solid var(--border-input);
       color: var(--text-muted);
-      padding: 8px;
+      display:flex;
+      justify-content: center;
+      align-items: center;
+      padding: 6px;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
       &:hover {
-        color: var(--error-color);
-        border-color: var(--error-color);
-        transform: rotate(90deg);
-        background: var(--error-bg-subtle);
+        color: var(--white);
       }
     }
   }
