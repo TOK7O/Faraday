@@ -1,59 +1,58 @@
 ﻿using Faraday.API.Services.Interfaces;
 
-namespace Faraday.API.Workers
+namespace Faraday.API.Workers;
+
+public class ExpirationMonitoringWorker : BackgroundService
 {
-    public class ExpirationMonitoringWorker : BackgroundService
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ExpirationMonitoringWorker> _logger;
+
+    // Read from config instead of hardcoded
+    private readonly TimeSpan _period;
+
+    public ExpirationMonitoringWorker(
+        IServiceProvider serviceProvider,
+        ILogger<ExpirationMonitoringWorker> logger,
+        IConfiguration configuration)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<ExpirationMonitoringWorker> _logger;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
 
-        // Read from config instead of hardcoded
-        private readonly TimeSpan _period;
+        var intervalMinutes = configuration.GetValue("Monitoring:ExpirationCheckIntervalMinutes", 5);
+        _period = TimeSpan.FromMinutes(intervalMinutes);
+    }
 
-        public ExpirationMonitoringWorker(
-            IServiceProvider serviceProvider, 
-            ILogger<ExpirationMonitoringWorker> logger,
-            IConfiguration configuration)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("Expiration Monitoring Worker started.");
+
+        // Run check immediately on startup to catch any issues right away
+        await RunExpirationCheckAsync();
+
+        using var timer = new PeriodicTimer(_period);
+
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            _serviceProvider = serviceProvider;
-            _logger = logger;
-
-            var intervalMinutes = configuration.GetValue("Monitoring:ExpirationCheckIntervalMinutes", 5);
-            _period = TimeSpan.FromMinutes(intervalMinutes);
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Expiration Monitoring Worker started.");
-
-            // Run check immediately on startup to catch any issues right away
             await RunExpirationCheckAsync();
-
-            using var timer = new PeriodicTimer(_period);
-
-            while (await timer.WaitForNextTickAsync(stoppingToken))
-            {
-                await RunExpirationCheckAsync();
-            }
         }
+    }
 
-        private async Task RunExpirationCheckAsync()
+    private async Task RunExpirationCheckAsync()
+    {
+        try
         {
-            try
-            {
-                _logger.LogInformation("Running scheduled expiration date check...");
-                
-                using var scope = _serviceProvider.CreateScope();
-                var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
-                
-                await monitoringService.CheckExpirationDatesAsync();
-                
-                _logger.LogInformation("Expiration check completed successfully.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during expiration date check.");
-            }
+            _logger.LogInformation("Running scheduled expiration date check...");
+
+            using var scope = _serviceProvider.CreateScope();
+            var monitoringService = scope.ServiceProvider.GetRequiredService<IMonitoringService>();
+
+            await monitoringService.CheckExpirationDatesAsync();
+
+            _logger.LogInformation("Expiration check completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during expiration date check.");
         }
     }
 }

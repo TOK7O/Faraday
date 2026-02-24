@@ -1,8 +1,7 @@
-﻿namespace Faraday.API.Models
+﻿namespace Faraday.API.Models;
+
+public enum RackSlotStatus
 {
-    public enum RackSlotStatus
-    {
-        Available,
-        Reserved
-    }
+    Available,
+    Reserved
 }

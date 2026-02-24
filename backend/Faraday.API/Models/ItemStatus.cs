@@ -1,7 +1,6 @@
-﻿namespace Faraday.API.Models
+﻿namespace Faraday.API.Models;
+
+public enum ItemStatus
 {
-    public enum ItemStatus
-    {
-        InStock
-    }
+    InStock
 }
