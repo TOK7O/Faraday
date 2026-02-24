@@ -6,7 +6,7 @@
     "title": "Asystent Głosowy",
     "processing": "Przetwarzanie...",
     "listening": "Słucham...",
-    "unsupported": "Brak wsparcia mowy.",
+    "unsupported": "Ta przeglądarka nie wspiera rozpoznawania mowy. Użyj przeglądarki opartej na Chromium lub Safari.",
     "success": "Sukces",
     "failure": "Niepowodzenie",
     "serverError": "Błąd serwera.",
