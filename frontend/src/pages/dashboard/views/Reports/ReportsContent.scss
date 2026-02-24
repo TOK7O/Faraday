@@ -276,15 +276,20 @@
 
   progress {
     appearance: none;
+    border: none;
     height: 8px;
     width: 100px;
     border-radius: 10px;
     overflow: hidden;
 
+    background: var(--bg-input);
     &::-webkit-progress-bar {
       background: var(--bg-input);
     }
     &::-webkit-progress-value {
+      background: var(--accent-primary);
+    }
+    &::-moz-progress-bar {
       background: var(--accent-primary);
     }
   }
