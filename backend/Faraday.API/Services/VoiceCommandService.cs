@@ -347,7 +347,7 @@ public class VoiceCommandService(
         }
     }
 
-    private T GetParameter<T>(Dictionary<string, object> parameters, string key)
+    private static T GetParameter<T>(Dictionary<string, object> parameters, string key)
     {
         if (!parameters.TryGetValue(key, out var value))
             throw new InvalidOperationException($"Missing required parameter: {key}");
@@ -416,7 +416,7 @@ public class VoiceCommandService(
         throw new InvalidOperationException($"Cannot convert JsonElement to bool: {element}");
 
     }
-    private string ReplaceVariables(string template, Dictionary<string, object> variables)
+    private static string ReplaceVariables(string template, Dictionary<string, object> variables)
     {
         var result = template;
         var regex = new Regex(@"\{\{([^}]+)\}\}");
@@ -457,7 +457,7 @@ public class VoiceCommandService(
 
         return result;
     }
-    private object ConvertJsonElementToObject(JsonElement element)
+    private static object ConvertJsonElementToObject(JsonElement element)
     {
         switch (element.ValueKind)
         {
@@ -496,7 +496,7 @@ public class VoiceCommandService(
                 return element.ToString();
         }
     }
-    private object? GetNestedValue(Dictionary<string, object> variables, string path)
+    private static object? GetNestedValue(Dictionary<string, object> variables, string path)
     {
         var parts = path.Split('.');
 
