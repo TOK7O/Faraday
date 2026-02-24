@@ -183,9 +183,7 @@ export const VoiceControlFAB = () => {
         let dataToDisplay = null;
         if (result.data?.results) {
           const res = result.data.results;
-          const arrayKey = Object.keys(res).find((k) =>
-            Array.isArray(res[k]),
-          );
+          const arrayKey = Object.keys(res).find((k) => Array.isArray(res[k]));
           if (arrayKey) {
             dataToDisplay = res[arrayKey];
           } else {
@@ -220,7 +218,7 @@ export const VoiceControlFAB = () => {
       setFeedback({ type: "error", msg: apiErrorMsg });
       speak(
         t.voiceAssistant?.genericError ||
-        (lang === "pl" ? "Wystąpił błąd." : "An error occurred."),
+          (lang === "pl" ? "Wystąpił błąd." : "An error occurred."),
       );
     } finally {
       setIsProcessing(false);
@@ -324,8 +322,8 @@ export const VoiceControlFAB = () => {
                 : feedback
                   ? feedback.msg
                   : transcript ||
-                  t.voiceAssistant?.listening ||
-                  (lang === "pl" ? "Słucham..." : "Listening...")}
+                    t.voiceAssistant?.listening ||
+                    (lang === "pl" ? "Słucham..." : "Listening...")}
             </span>
             <div className="bubble-actions">
               {responseData && (
