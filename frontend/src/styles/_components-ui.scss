@@ -376,11 +376,6 @@
         box-shadow:
           0 0 20px rgba(var(--accent-primary-rgb), 0.4),
           0 0 40px rgba(var(--accent-primary-rgb), 0.1);
-
-        svg {
-          transform: rotate(90deg) scale(1.1);
-          filter: none;
-        }
       }
 
       &.btn-delete-ht:hover {

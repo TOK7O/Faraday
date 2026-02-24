@@ -274,8 +274,8 @@
           "outbound": "Error during outbound."
         },
         "import": {
-          "racksTitle": "Import: Racks",
-          "productsTitle": "Import: Products",
+          "racksTitle": "Racks",
+          "productsTitle": "Products",
           "processing": "Processing import...",
           "processed": "{current} of {total} operations finished",
           "summary": {
