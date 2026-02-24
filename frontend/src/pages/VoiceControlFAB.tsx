@@ -64,8 +64,8 @@ export const VoiceControlFAB = () => {
       const errorMsg =
         t.voiceAssistant?.unsupported ||
         (lang === "pl"
-          ? "Brak wsparcia mowy."
-          : "Speech recognition not supported.");
+          ? "Ta przeglądarka nie wspiera rozpoznawania mowy. Użyj przeglądarki opartej na Chromium lub Safari."
+          : "Speech recognition not supported. Please use a chromium-based browser or Safari");
       setFeedback({ type: "error", msg: errorMsg });
       return;
     }
