@@ -1,34 +1,33 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Faraday.API.Models
+namespace Faraday.API.Models;
+
+public enum AlertType
 {
-    public enum AlertType
-    {
-        TemperatureMismatch, 
-        WeightMismatch,      
-        ExpirationWarning,
-        ExpirationExpired
-    }
+    TemperatureMismatch, 
+    WeightMismatch,      
+    ExpirationWarning,
+    ExpirationExpired
+}
 
-    public class Alert
-    {
-        public int Id { get; set; }
+public class Alert
+{
+    public int Id { get; set; }
 
-        public int? RackId { get; set; } 
-        public Rack? Rack { get; set; }
+    public int? RackId { get; set; } 
+    public Rack? Rack { get; set; }
 
-        public int? ProductDefinitionId { get; set; }
-        public ProductDefinition? Product { get; set; }
+    public int? ProductDefinitionId { get; set; }
+    public ProductDefinition? Product { get; set; }
 
-        [Required]
-        public string Message { get; set; } = string.Empty;
+    [Required]
+    public string Message { get; set; } = string.Empty;
 
-        public AlertType Type { get; set; }
+    public AlertType Type { get; set; }
 
-        public bool IsResolved { get; set; } = false;
+    public bool IsResolved { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? ResolvedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? ResolvedAt { get; set; }
         
-    }
 }

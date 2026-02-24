@@ -3,72 +3,63 @@ using Faraday.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Faraday.API.Controllers
+namespace Faraday.API.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize]
+public class VoiceController(IVoiceCommandService voiceCommandService, ILogger<VoiceController> logger)
+    : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class VoiceController : ControllerBase
+    private int GetCurrentUserId()
     {
-        private readonly IVoiceCommandService _voiceCommandService;
-        private readonly ILogger<VoiceController> _logger;
-
-        public VoiceController(IVoiceCommandService voiceCommandService, ILogger<VoiceController> logger)
+        try
         {
-            _voiceCommandService = voiceCommandService;
-            _logger = logger;
-        }
-
-        private int GetCurrentUserId()
-        {
-            try
+            var idClaim = User.FindFirst("id");
+            if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
             {
-                var idClaim = User.FindFirst("id");
-                if (idClaim != null && int.TryParse(idClaim.Value, out int userId))
-                {
-                    return userId;
-                }
+                return userId;
             }
-            catch { }
-
-            return 1;
         }
+        catch { }
 
-        [HttpPost("command")]
-        public async Task<ActionResult<VoiceCommandResponseDto>> ProcessVoiceCommand([FromBody] VoiceCommandRequestDto request)
+        return 1;
+    }
+
+    [HttpPost("command")]
+    public async Task<ActionResult<VoiceCommandResponseDto>> ProcessVoiceCommand([FromBody] VoiceCommandRequestDto request)
+    {
+        try
         {
-            try
+            if (string.IsNullOrWhiteSpace(request.CommandText))
             {
-                if (string.IsNullOrWhiteSpace(request.CommandText))
-                {
-                    return BadRequest(new VoiceCommandResponseDto
-                    {
-                        Success = false,
-                        Message = "Komenda nie może być pusta"
-                    });
-                }
-
-                var userId = GetCurrentUserId();
-                _logger.LogInformation("Voice command received from user {UserId}: {CommandText}", userId, request.CommandText);
-
-                var result = await _voiceCommandService.ProcessVoiceCommandAsync(request.CommandText, userId);
-
-                if (!result.Success)
-                {
-                    return BadRequest(result);
-                }
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing voice command");
-                return StatusCode(500, new VoiceCommandResponseDto
+                return BadRequest(new VoiceCommandResponseDto
                 {
                     Success = false,
-                    Message = $"Błąd serwera: {ex.Message}"
+                    Message = "Komenda nie może być pusta"
                 });
             }
+
+            var userId = GetCurrentUserId();
+            logger.LogInformation("Voice command received from user {UserId}: {CommandText}", userId, request.CommandText);
+
+            var result = await voiceCommandService.ProcessVoiceCommandAsync(request.CommandText, userId);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing voice command");
+            return StatusCode(500, new VoiceCommandResponseDto
+            {
+                Success = false,
+                Message = $"Błąd serwera: {ex.Message}"
+            });
         }
     }
 }

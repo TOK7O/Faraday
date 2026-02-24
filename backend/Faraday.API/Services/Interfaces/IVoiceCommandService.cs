@@ -1,9 +1,8 @@
 using Faraday.API.DTOs;
 
-namespace Faraday.API.Services.Interfaces
+namespace Faraday.API.Services.Interfaces;
+
+public interface IVoiceCommandService
 {
-    public interface IVoiceCommandService
-    {
-        Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId);
-    }
+    Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId);
 }

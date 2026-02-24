@@ -150,7 +150,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Apply the defined security requirement globally to all endpoints.
-    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecuritySchemeReference("Bearer"),
@@ -245,7 +245,7 @@ using (var scope = app.Services.CreateScope())
         {
             // Apply any pending migrations
             var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
-            if (pendingMigrations.Any())
+            if (pendingMigrations.Count != 0)
             {
                 startupLogger.LogInformation("Applying {Count} pending migration(s)...", pendingMigrations.Count);
                 dbContext.Database.Migrate();
@@ -325,6 +325,7 @@ app.UseStaticFiles();
 startupLogger.LogInformation("=== Faraday WMS API Started Successfully ===");
 
 app.Run();
+return;
 
 // Database schema management helpers
 

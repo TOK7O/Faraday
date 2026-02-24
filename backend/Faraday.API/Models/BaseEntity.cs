@@ -1,8 +1,7 @@
-﻿namespace Faraday.API.Models
+﻿namespace Faraday.API.Models;
+
+public abstract class BaseEntity
 {
-    public abstract class BaseEntity
-    {
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
-    }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

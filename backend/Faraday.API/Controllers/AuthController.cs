@@ -1,313 +1,312 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Faraday.API.DTOs;
+﻿using Faraday.API.DTOs;
 using Faraday.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace Faraday.API.Controllers
+namespace Faraday.API.Controllers;
+
+/// <summary>
+/// API Controller handling user authentication, registration, session management,
+/// and administrative user oversight.
+/// </summary>
+[Route("api/[controller]")]
+[ApiController]
+public class AuthController(
+    IAuthService authService,
+    ILogger<AuthController> logger)
+    : ControllerBase
 {
     /// <summary>
-    /// API Controller handling user authentication, registration, session management,
-    /// and administrative user oversight.
+    /// Registers a new user in the system.
+    /// Restricted to Administrators to prevent unauthorized public sign-ups.
     /// </summary>
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController(
-        IAuthService authService,
-        ILogger<AuthController> logger)
-        : ControllerBase
+    [Authorize(Roles = "Administrator")]
+    [HttpPost("register")]
+    public async Task<ActionResult> Register(RegisterDto request)
     {
-        /// <summary>
-        /// Registers a new user in the system.
-        /// Restricted to Administrators to prevent unauthorized public sign-ups.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpPost("register")]
-        public async Task<ActionResult> Register(RegisterDto request)
+        try
         {
-            try
-            {
-                await authService.RegisterAsync(request);
-                return Ok("Registered successfully");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Registration endpoint error for username: {Username}", request.Username);
-                return BadRequest(ex.Message);
-            }
+            await authService.RegisterAsync(request);
+            return Ok("Registered successfully");
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Registration endpoint error for username: {Username}", request.Username);
+            return BadRequest(ex.Message);
+        }
+    }
 
-        /// <summary>
-        /// Authenticates a user and issues a JWT token.
-        /// Handles the Two-Factor Authentication (2FA) challenge flow.
-        /// </summary>
-        /// <returns>JWT Token if successful, or HTTP 428 if 2FA code is required.</returns>
-        [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseDto>> Login(LoginDto request)
+    /// <summary>
+    /// Authenticates a user and issues a JWT token.
+    /// Handles the Two-Factor Authentication (2FA) challenge flow.
+    /// </summary>
+    /// <returns>JWT Token if successful, or HTTP 428 if 2FA code is required.</returns>
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginDto request)
+    {
+        try
         {
-            try
-            {
-                var response = await authService.LoginAsync(request);
-                return Ok(response);
-            }
-            // We use 428 Precondition Required to signal the frontend that 2FA code is missing.
-            // This specific status code tells the UI to interrupt the login flow and show the "Enter 2FA Code" input.
-            catch (InvalidOperationException ex) when (ex.Message == "2FA_REQUIRED")
-            {
-                return StatusCode(428, new { Message = "Two-Factor Authentication required", Code = "2FA_REQUIRED" });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Login endpoint error for user: {Username}", request.Username);
-                return BadRequest(ex.Message);
-            }
+            var response = await authService.LoginAsync(request);
+            return Ok(response);
         }
+        // We use 428 Precondition Required to signal the frontend that 2FA code is missing.
+        // This specific status code tells the UI to interrupt the login flow and show the "Enter 2FA Code" input.
+        catch (InvalidOperationException ex) when (ex.Message == "2FA_REQUIRED")
+        {
+            return StatusCode(428, new { Message = "Two-Factor Authentication required", Code = "2FA_REQUIRED" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Login endpoint error for user: {Username}", request.Username);
+            return BadRequest(ex.Message);
+        }
+    }
 
-        /// <summary>
-        /// Initiates the 2FA setup process by generating a secret key and QR code.
-        /// </summary>
-        [Authorize]
-        [HttpPost("2fa/setup")]
-        public async Task<ActionResult<TwoFactorSetupDto>> SetupTwoFactor()
+    /// <summary>
+    /// Initiates the 2FA setup process by generating a secret key and QR code.
+    /// </summary>
+    [Authorize]
+    [HttpPost("2fa/setup")]
+    public async Task<ActionResult<TwoFactorSetupDto>> SetupTwoFactor()
+    {
+        try
         {
-            try
-            {
-                // Extract user ID securely from the JWT claims
-                var userId = int.Parse(User.FindFirst("id")!.Value);
-                logger.LogInformation("2FA setup initiated for user ID: {UserId}", userId);
-                
-                var result = await authService.InitiateTwoFactorSetupAsync(userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-        
-        /// <summary>
-        /// Allows an authenticated user to change their own password.
-        /// </summary>
-        [Authorize]
-        [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDto request)
-        {
-            try
-            {
-                var userId = int.Parse(User.FindFirst("id")!.Value);
-                await authService.ChangePasswordAsync(userId, request);
-                return Ok(new { Message = "Password changed successfully." });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Change password endpoint error");
-                return BadRequest(ex.Message);
-            }
-        }
+            // Extract user ID securely from the JWT claims
+            var userId = int.Parse(User.FindFirst("id")!.Value);
+            logger.LogInformation("2FA setup initiated for user ID: {UserId}", userId);
 
-        /// <summary>
-        /// Finalizes 2FA setup by verifying the first code generated by the user's app.
-        /// </summary>
-        [Authorize]
-        [HttpPost("2fa/enable")]
-        public async Task<IActionResult> EnableTwoFactor([FromBody] TwoFactorVerifyDto dto)
-        {
-            try
-            {
-                var userId = int.Parse(User.FindFirst("id")!.Value);
-                logger.LogInformation("2FA enable request for user ID: {UserId}", userId);
-                
-                await authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
-                return Ok(new { Message = "2FA has been enabled." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await authService.InitiateTwoFactorSetupAsync(userId);
+            return Ok(result);
         }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 
-        /// <summary>
-        /// Disables 2FA for the currently logged-in user.
-        /// </summary>
-        [Authorize]
-        [HttpPost("2fa/disable")]
-        public async Task<IActionResult> DisableTwoFactor()
+    /// <summary>
+    /// Allows an authenticated user to change their own password.
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordDto request)
+    {
+        try
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            logger.LogInformation("2FA disable request for user ID: {UserId}", userId);
-            
-            await authService.DisableTwoFactorAsync(userId);
-            return Ok(new { Message = "2FA disabled." });
+            await authService.ChangePasswordAsync(userId, request);
+            return Ok(new { Message = "Password changed successfully." });
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Change password endpoint error");
+            return BadRequest(ex.Message);
+        }
+    }
 
-        [Authorize]
-        [HttpGet("2fa/status")]
-        public async Task<IActionResult> GetTwoFactorStatus()
+    /// <summary>
+    /// Finalizes 2FA setup by verifying the first code generated by the user's app.
+    /// </summary>
+    [Authorize]
+    [HttpPost("2fa/enable")]
+    public async Task<IActionResult> EnableTwoFactor([FromBody] TwoFactorVerifyDto dto)
+    {
+        try
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            logger.LogInformation("2FA status check for user ID: {UserId}", userId);
-            
-            var isEnabled = await authService.GetTwoFactorEnabledStatusAsync(userId);
-            return Ok(new { IsEnabled = isEnabled });
-        }
-        
-        /// <summary>
-        /// Refreshes the JWT token to extend the user's session.
-        /// Requires a valid authentication token. Returns a new token.
-        /// </summary>
-        [Authorize]
-        [HttpPost("refresh-token")]
-        public async Task<ActionResult<LoginResponseDto>> RefreshToken()
-        {
-            try
-            {
-                var userId = int.Parse(User.FindFirst("id")!.Value);
-                logger.LogInformation("Token refresh requested by user ID: {UserId}", userId);
-                
-                var response = await authService.RefreshTokenAsync(userId);
-        
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Token refresh failed");
-                return BadRequest(ex.Message);
-            }
-        }
-        
-        /// <summary>
-        /// Get a list of all users in the system (including inactive).
-        /// Only accessible by Administrators.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpGet("users")]
-        public async Task<ActionResult<List<UserListDto>>> GetAllUsers()
-        {
-            var users = await authService.GetAllUsersAsync();
-            return Ok(users);
-        }
+            logger.LogInformation("2FA enable request for user ID: {UserId}", userId);
 
-        /// <summary>
-        /// Update user details: email, role, or active status.
-        /// Admins cannot edit themselves. Cannot demote/deactivate the last admin.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpPut("users/{targetUserId}")]
-        public async Task<ActionResult<UserListDto>> UpdateUser(int targetUserId, [FromBody] UserUpdateDto dto)
-        {
-            try
-            {
-                // We pass the admin's own ID to ensure they don't lock themselves out or edit their own permissions improperly.
-                var adminId = int.Parse(User.FindFirst("id")!.Value);
-                var updatedUser = await authService.UpdateUserAsync(targetUserId, adminId, dto);
-                return Ok(updatedUser);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
+            await authService.FinalizeTwoFactorSetupAsync(userId, dto.Code);
+            return Ok(new { Message = "2FA has been enabled." });
         }
-
-        /// <summary>
-        /// Admin can reset the user's password (e.g., when the user forgot it).
-        /// Admin cannot reset their own password this way; they must use the standard flow.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpPost("users/{targetUserId}/reset-password")]
-        public async Task<IActionResult> ResetUserPassword(int targetUserId, [FromBody] AdminPasswordResetDto dto)
+        catch (Exception ex)
         {
-            try
-            {
-                var adminId = int.Parse(User.FindFirst("id")!.Value);
-                await authService.ResetUserPasswordAsync(targetUserId, adminId, dto.NewPassword);
-                return Ok(new { Message = "Password reset successfully." });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
+            return BadRequest(ex.Message);
         }
+    }
 
-        /// <summary>
-        /// Admin can reset a user's 2FA (e.g., when a user lost their phone).
-        /// This disables 2FA and removes the secret key to allow the user to log in and set it up again.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpPost("users/{targetUserId}/reset-2fa")]
-        public async Task<IActionResult> ResetUser2Fa(int targetUserId)
+    /// <summary>
+    /// Disables 2FA for the currently logged-in user.
+    /// </summary>
+    [Authorize]
+    [HttpPost("2fa/disable")]
+    public async Task<IActionResult> DisableTwoFactor()
+    {
+        var userId = int.Parse(User.FindFirst("id")!.Value);
+        logger.LogInformation("2FA disable request for user ID: {UserId}", userId);
+
+        await authService.DisableTwoFactorAsync(userId);
+        return Ok(new { Message = "2FA disabled." });
+    }
+
+    [Authorize]
+    [HttpGet("2fa/status")]
+    public async Task<IActionResult> GetTwoFactorStatus()
+    {
+        var userId = int.Parse(User.FindFirst("id")!.Value);
+        logger.LogInformation("2FA status check for user ID: {UserId}", userId);
+
+        var isEnabled = await authService.GetTwoFactorEnabledStatusAsync(userId);
+        return Ok(new { IsEnabled = isEnabled });
+    }
+
+    /// <summary>
+    /// Refreshes the JWT token to extend the user's session.
+    /// Requires a valid authentication token. Returns a new token.
+    /// </summary>
+    [Authorize]
+    [HttpPost("refresh-token")]
+    public async Task<ActionResult<LoginResponseDto>> RefreshToken()
+    {
+        try
         {
-            try
-            {
-                var adminId = int.Parse(User.FindFirst("id")!.Value);
-                await authService.ResetUser2FAAsync(targetUserId, adminId);
-                return Ok(new { Message = "2FA has been reset for the user." });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-        }
+            var userId = int.Parse(User.FindFirst("id")!.Value);
+            logger.LogInformation("Token refresh requested by user ID: {UserId}", userId);
 
-        /// <summary>
-        /// Triggers the password recovery flow by sending an email with a reset link.
-        /// Public endpoint.
-        /// </summary>
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordDto request)
+            var response = await authService.RefreshTokenAsync(userId);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                await authService.ForgotPasswordAsync(request.Email);
-                // Return a generic success message to prevent email enumeration attacks.
-                return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Forgot password endpoint error");
-                // Always return OK here, even if the email address is invalid or service failed, to maintain security ambiguity.
-                return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
-            }
+            logger.LogError(ex, "Token refresh failed");
+            return BadRequest(ex.Message);
         }
+    }
 
-        /// <summary>
-        /// Resets the password using a token received via email.
-        /// Public endpoint.
-        /// </summary>
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
+    /// <summary>
+    /// Get a list of all users in the system (including inactive).
+    /// Only accessible by Administrators.
+    /// </summary>
+    [Authorize(Roles = "Administrator")]
+    [HttpGet("users")]
+    public async Task<ActionResult<List<UserListDto>>> GetAllUsers()
+    {
+        var users = await authService.GetAllUsersAsync();
+        return Ok(users);
+    }
+
+    /// <summary>
+    /// Update user details: email, role, or active status.
+    /// Admins cannot edit themselves. Cannot demote/deactivate the last admin.
+    /// </summary>
+    [Authorize(Roles = "Administrator")]
+    [HttpPut("users/{targetUserId}")]
+    public async Task<ActionResult<UserListDto>> UpdateUser(int targetUserId, [FromBody] UserUpdateDto dto)
+    {
+        try
         {
-            try
-            {
-                await authService.ResetPasswordAsync(request);
-                return Ok(new { Message = "Password has been reset successfully." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            // We pass the admin's own ID to ensure they don't lock themselves out or edit their own permissions improperly.
+            var adminId = int.Parse(User.FindFirst("id")!.Value);
+            var updatedUser = await authService.UpdateUserAsync(targetUserId, adminId, dto);
+            return Ok(updatedUser);
         }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
 
-        /// <summary>
-        /// Deletes a user from the db. Accessible only to the admin.
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpDelete("users/{targetUserId}")]
-        public async Task<IActionResult> DeleteUser(int targetUserId)
+    /// <summary>
+    /// Admin can reset the user's password (e.g., when the user forgot it).
+    /// Admin cannot reset their own password this way; they must use the standard flow.
+    /// </summary>
+    [Authorize(Roles = "Administrator")]
+    [HttpPost("users/{targetUserId}/reset-password")]
+    public async Task<IActionResult> ResetUserPassword(int targetUserId, [FromBody] AdminPasswordResetDto dto)
+    {
+        try
         {
             var adminId = int.Parse(User.FindFirst("id")!.Value);
-            await authService.DeleteUserAsync(targetUserId, adminId);
-            return Ok(new { Message = $"User with ID: {targetUserId} has been deleted." });
+            await authService.ResetUserPasswordAsync(targetUserId, adminId, dto.NewPassword);
+            return Ok(new { Message = "Password reset successfully." });
         }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Admin can reset a user's 2FA (e.g., when a user lost their phone).
+    /// This disables 2FA and removes the secret key to allow the user to log in and set it up again.
+    /// </summary>
+    [Authorize(Roles = "Administrator")]
+    [HttpPost("users/{targetUserId}/reset-2fa")]
+    public async Task<IActionResult> ResetUser2Fa(int targetUserId)
+    {
+        try
+        {
+            var adminId = int.Parse(User.FindFirst("id")!.Value);
+            await authService.ResetUser2FaAsync(targetUserId, adminId);
+            return Ok(new { Message = "2FA has been reset for the user." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Triggers the password recovery flow by sending an email with a reset link.
+    /// Public endpoint.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordDto request)
+    {
+        try
+        {
+            await authService.ForgotPasswordAsync(request.Email);
+            // Return a generic success message to prevent email enumeration attacks.
+            return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Forgot password endpoint error");
+            // Always return OK here, even if the email address is invalid or service failed, to maintain security ambiguity.
+            return Ok(new { Message = "If an account with that email exists, a reset link has been sent." });
+        }
+    }
+
+    /// <summary>
+    /// Resets the password using a token received via email.
+    /// Public endpoint.
+    /// </summary>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
+    {
+        try
+        {
+            await authService.ResetPasswordAsync(request);
+            return Ok(new { Message = "Password has been reset successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Deletes a user from the db. Accessible only to the admin.
+    /// </summary>
+    [Authorize(Roles = "Administrator")]
+    [HttpDelete("users/{targetUserId}")]
+    public async Task<IActionResult> DeleteUser(int targetUserId)
+    {
+        var adminId = int.Parse(User.FindFirst("id")!.Value);
+        await authService.DeleteUserAsync(targetUserId, adminId);
+        return Ok(new { Message = $"User with ID: {targetUserId} has been deleted." });
     }
 }

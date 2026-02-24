@@ -1,12 +1,11 @@
 ﻿using Faraday.API.Models;
 
-namespace Faraday.API.Services.Interfaces
+namespace Faraday.API.Services.Interfaces;
+
+public interface IAlertNotificationService
 {
-    public interface IAlertNotificationService
-    {
-        /// <summary>
-        /// Sends real-time notification to all connected clients about new alert
-        /// </summary>
-        Task SendNewAlertNotificationAsync(Alert alert);
-    }
+    /// <summary>
+    /// Sends real-time notification to all connected clients about new alert
+    /// </summary>
+    Task SendNewAlertNotificationAsync(Alert alert);
 }

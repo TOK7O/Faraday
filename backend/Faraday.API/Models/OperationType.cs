@@ -1,12 +1,11 @@
-﻿namespace Faraday.API.Models
+﻿namespace Faraday.API.Models;
+
+public enum OperationType
 {
-    public enum OperationType
-    {
-        Inbound,
-        Outbound,
-        Adjustment,
-        Movement,
-        SystemBackup,
-        SystemRestore
-    }
+    Inbound,
+    Outbound,
+    Adjustment,
+    Movement,
+    SystemBackup,
+    SystemRestore
 }

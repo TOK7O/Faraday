@@ -1,38 +1,37 @@
 ﻿using System.Net;
+using System.Text.Json;
 
-namespace Faraday.API.Middleware
+namespace Faraday.API.Middleware;
+
+public class ErrorHandlingMiddleware(RequestDelegate next)
 {
-    public class ErrorHandlingMiddleware(RequestDelegate next)
+    public async Task Invoke(HttpContext context)
     {
-        public async Task Invoke(HttpContext context)
+        try
         {
-            try
-            {
-                await next(context);
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex);
-            }
+            await next(context);
         }
-
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        catch (Exception ex)
         {
-            var code = exception switch
-            {
-                InvalidOperationException => HttpStatusCode.BadRequest,
-                KeyNotFoundException => HttpStatusCode.NotFound,
-                UnauthorizedAccessException => HttpStatusCode.Forbidden,
-                _ => HttpStatusCode.InternalServerError
-            };
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)code;
-
-            var result = System.Text.Json.JsonSerializer.Serialize(new { message = exception.Message });
-
-            return context.Response.WriteAsync(result);
+            await HandleExceptionAsync(context, ex);
         }
     }
-}
 
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        var code = exception switch
+        {
+            InvalidOperationException => HttpStatusCode.BadRequest,
+            KeyNotFoundException => HttpStatusCode.NotFound,
+            UnauthorizedAccessException => HttpStatusCode.Forbidden,
+            _ => HttpStatusCode.InternalServerError
+        };
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)code;
+
+        var result = JsonSerializer.Serialize(new { message = exception.Message });
+
+        return context.Response.WriteAsync(result);
+    }
+}
