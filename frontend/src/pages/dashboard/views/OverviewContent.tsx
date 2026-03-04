@@ -184,14 +184,14 @@ const OverviewContent = () => {
   }, [racks, inventory, spacingZ, bufferX]);
 
   return (
-    <div className="dashboard-content">
+    <div >
       <div className="bento-dashboard">
         <div
           className="bento-card"
           style={{
             gridColumn: "span 2",
             gridRow: "span 2",
-            minHeight: "550px",
+            height: "calc(80vh - 2rem)",
             padding: 0,
             overflow: "hidden",
             position: "relative",
