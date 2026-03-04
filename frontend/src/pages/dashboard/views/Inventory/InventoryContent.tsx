@@ -913,11 +913,11 @@ const InventoryContent = () => {
                 <span>{invT.inventoryHub}</span>
               </h1>
               <div
-                style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
+                  style={{ display: "flex", alignItems: "center", gap: "1.5rem"}}
               >
                 <Tabs.List
                   className="ht-tabs-list"
-                  style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}
+                  style={{ display: "flex", gap: "2rem", marginTop: "1rem", overflowX: "auto", overflowY: "hidden" }}
                 >
                   <Tabs.Trigger value="racks" className="ht-tabs-trigger">
                     {invT.racksStructure}

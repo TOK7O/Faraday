@@ -39,20 +39,26 @@
   flex-direction: column;
   padding: 2.5rem 1.5rem;
   flex-shrink: 0;
+  overflow: auto;
 }
 
 .mobile-interface {
   display: none;
   position: absolute;
+  align-items:center;
+  justify-content: center;
   top: 23px;
   left: 20px;
   z-index: 100;
 
   .hamburger-btn {
+    display:flex;
+    align-items:center;
+    justify-content: center;
     background: var(--bg-input);
     border: 1px solid var(--border-input);
     color: var(--text-main);
-    padding: 5px 6px;
+    padding: 6px 6px;
     border-radius: 10px;
     backdrop-filter: blur(10px);
   }
@@ -106,7 +112,7 @@
 }
 
 .dashboard-content {
-  padding: 3rem;
+  padding: 1rem;
   flex: 1;
   overflow-y: auto;
 

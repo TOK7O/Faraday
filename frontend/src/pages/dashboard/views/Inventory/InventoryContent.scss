@@ -261,25 +261,28 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeIn 0.4s ease-out;
 
   @media (min-width: 768px) {
-    padding: 2rem;
+    //padding: 2rem;
     max-height: 80vh;
   }
 
   .content-header {
     margin-bottom: 2.5rem;
 
-    .header-brand h1 {
-      font-size: 1.8rem;
-      margin-top: 0.5rem;
-      font-weight: 800;
+    .header-brand {
+      width: 100%;
+      h1 {
+        font-size: 1.8rem;
+        margin-top: 0.5rem;
+        font-weight: 800;
 
-      @media (min-width: 768px) {
-        font-size: 2.5rem;
-      }
+        @media (min-width: 768px) {
+          font-size: 2.5rem;
+        }
 
-      .outline-text {
-        -webkit-text-stroke: 1px var(--text-primary);
-        color: transparent;
+        .outline-text {
+          -webkit-text-stroke: 1px var(--text-primary);
+          color: transparent;
+        }
       }
     }
 
@@ -314,7 +317,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     .search-container {
       display: flex;
-      flex-direction: column;
       gap: 0.8rem;
       flex: 1;
 
@@ -645,7 +647,7 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
 .operations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   padding: 1rem 0;
   animation: fadeIn 0.5s ease-out;
