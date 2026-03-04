@@ -78,7 +78,6 @@
 
     &.active {
       background: rgba(var(--accent-primary-rgb), 0.1);
-      background: color-mix(in srgb, var(--accent-primary), transparent 85%);
       border-color: var(--accent-primary);
 
       .card-icon {

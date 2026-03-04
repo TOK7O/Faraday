@@ -53,10 +53,11 @@ const PreferencesContent = () => {
     try {
       const data = await setup2fa();
       setSetupData(data);
-    } catch (error) {
+    } catch (error: any) {
       setMessage({
         type: "error",
-        text: prefT.security.twoFactor.messages.setupError,
+        text:
+          error.response?.data || prefT.security.twoFactor.messages.setupError,
       });
     } finally {
       setLoading2fa(false);
@@ -76,7 +77,10 @@ const PreferencesContent = () => {
         text: prefT.security.twoFactor.messages.enableSuccess,
       });
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({
+        type: "error",
+        text: error.response?.data || error.message,
+      });
     } finally {
       setLoading2fa(false);
     }
@@ -92,10 +96,13 @@ const PreferencesContent = () => {
         type: "success",
         text: prefT.security.twoFactor.messages.disableSuccess,
       });
-    } catch (error) {
+    } catch (error: any) {
       setMessage({
         type: "error",
-        text: prefT.security.twoFactor.status.errorGen || "Error",
+        text:
+          error.response?.data ||
+          prefT.security.twoFactor.status.errorGen ||
+          "Error",
       });
     } finally {
       setLoading2fa(false);

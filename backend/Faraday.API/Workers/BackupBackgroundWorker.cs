@@ -1,39 +1,38 @@
 ﻿using Faraday.API.Services.Interfaces;
 
-namespace Faraday.API.Workers
+namespace Faraday.API.Workers;
+
+public class BackupBackgroundWorker(IServiceProvider serviceProvider, ILogger<BackupBackgroundWorker> logger)
+    : BackgroundService
 {
-    public class BackupBackgroundWorker(IServiceProvider serviceProvider, ILogger<BackupBackgroundWorker> logger)
-        : BackgroundService
+    // Schedule
+    private readonly TimeSpan _period = TimeSpan.FromHours(24);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Schedule
-        private readonly TimeSpan _period = TimeSpan.FromHours(24);
+        logger.LogInformation("Backup Background Worker started.");
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        // Create a timer that ticks periodically
+        using var timer = new PeriodicTimer(_period);
+
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            logger.LogInformation("Backup Background Worker started.");
-
-            // Create a timer that ticks periodically
-            using var timer = new PeriodicTimer(_period);
-
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            try
             {
-                try
-                {
-                    logger.LogInformation("Executing scheduled backup...");
+                logger.LogInformation("Executing scheduled backup...");
                     
-                    using (var scope = serviceProvider.CreateScope())
-                    {
-                        var backupService = scope.ServiceProvider.GetRequiredService<IBackupService>();
-                        var fileName = await backupService.CreateFullBackupAsync();
-                        
-                        logger.LogInformation($"Scheduled backup finished: {fileName}");
-                        
-                    }
-                }
-                catch (Exception ex)
+                using (var scope = serviceProvider.CreateScope())
                 {
-                    logger.LogError(ex, "Scheduled backup failed.");
+                    var backupService = scope.ServiceProvider.GetRequiredService<IBackupService>();
+                    var fileName = await backupService.CreateFullBackupAsync();
+                        
+                    logger.LogInformation($"Scheduled backup finished: {fileName}");
+                        
                 }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Scheduled backup failed.");
             }
         }
     }

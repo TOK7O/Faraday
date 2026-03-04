@@ -18,30 +18,40 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(
   undefined,
 );
 
-const getSystemTheme = (): Theme =>
-  window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+const getInitialTheme = (): Theme => {
+  const savedTheme = localStorage.getItem("app_theme");
+  if (savedTheme === "light" || savedTheme === "dark") {
+    return savedTheme;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(getSystemTheme);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
 
   useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("app_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
     const handleChange = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? "dark" : "light");
+      if (!localStorage.getItem("app_theme")) {
+        setTheme(e.matches ? "dark" : "light");
+      }
     };
 
     mq.addEventListener("change", handleChange);
     return () => mq.removeEventListener("change", handleChange);
   }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import pl from "../data/pl.json";
 import en from "../data/en.json";
 
@@ -20,7 +20,16 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [lang, setLang] = useState<Language>("en");
+  // 1. Inicjalizacja: sprawdzamy localStorage, w przeciwnym razie domyślnie "en"
+  const [lang, setLang] = useState<Language>(() => {
+    const savedLang = localStorage.getItem("app_language");
+    return savedLang === "pl" || savedLang === "en" ? savedLang : "en";
+  });
+
+  // 2. Zapis: przy każdej zmianie 'lang' aktualizujemy localStorage
+  useEffect(() => {
+    localStorage.setItem("app_language", lang);
+  }, [lang]);
 
   const value = {
     lang,

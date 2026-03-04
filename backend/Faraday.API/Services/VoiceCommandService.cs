@@ -1,373 +1,362 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Faraday.API.DTOs;
 using Faraday.API.Services.Interfaces;
 
-namespace Faraday.API.Services
+namespace Faraday.API.Services;
+
+public class VoiceCommandService(
+    IProductService productService,
+    IOperationService operationService,
+    IRackService rackService,
+    IReportService reportService,
+    IConfiguration configuration,
+    ILogger<VoiceCommandService> logger,
+    IHttpClientFactory httpClientFactory)
+    : IVoiceCommandService
 {
-    public class VoiceCommandService(
-        IProductService productService,
-        IOperationService operationService,
-        IRackService rackService,
-        IReportService reportService,
-        IConfiguration configuration,
-        ILogger<VoiceCommandService> logger,
-        IHttpClientFactory httpClientFactory)
-        : IVoiceCommandService
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
+
+    public async Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId)
     {
-        private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
-
-        public async Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId)
+        try
         {
-            try
-            {
-                logger.LogInformation("Processing voice command: {CommandText} for user {UserId}", commandText, userId);
-                
-                var executionPlan = await GetExecutionPlanFromGeminiAsync(commandText);
+            logger.LogInformation("Processing voice command: {CommandText} for user {UserId}", commandText, userId);
 
-                if (executionPlan == null || !executionPlan.Steps.Any())
-                {
-                    logger.LogWarning("No execution plan generated for command: {CommandText}", commandText);
-                    return new VoiceCommandResponseDto
-                    {
-                        Success = false,
-                        Message = "I couldn't understand that command. Could you please rephrase it?"
-                    };
-                }
-                
-                var result = await ExecutePlanAsync(executionPlan, userId);
-                return result;
-            }
-            catch (Exception ex)
+            var executionPlan = await GetExecutionPlanFromGeminiAsync(commandText);
+
+            if (executionPlan == null || executionPlan.Steps.Count == 0)
             {
-                logger.LogError(ex, "Error processing voice command: {CommandText}", commandText);
+                logger.LogWarning("No execution plan generated for command: {CommandText}", commandText);
                 return new VoiceCommandResponseDto
                 {
                     Success = false,
-                    Message = $"An error occurred while processing your command: {ex.Message}"
+                    Message = "I couldn't understand that command. Could you please rephrase it?"
                 };
             }
+
+            var result = await ExecutePlanAsync(executionPlan, userId);
+            return result;
         }
-
-        private async Task<VoiceExecutionPlanDto?> GetExecutionPlanFromGeminiAsync(string commandText)
+        catch (Exception ex)
         {
-            try
+            logger.LogError(ex, "Error processing voice command: {CommandText}", commandText);
+            return new VoiceCommandResponseDto
             {
-                var apiKey = configuration["Gemini:ApiKey"];
-                if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
+                Success = false,
+                Message = $"An error occurred while processing your command: {ex.Message}"
+            };
+        }
+    }
+
+    private async Task<VoiceExecutionPlanDto?> GetExecutionPlanFromGeminiAsync(string commandText)
+    {
+        try
+        {
+            var apiKey = configuration["Gemini:ApiKey"];
+            if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
+            {
+                logger.LogError("Gemini API Key is not configured properly");
+                throw new InvalidOperationException("Gemini API Key is not configured");
+            }
+
+            var model = configuration["Gemini:Model"] ?? "gemini-2.0-flash-exp";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+
+            var systemPrompt = BuildSystemPrompt();
+            var fullPrompt = $"{systemPrompt}\n\nUser Command: \"{commandText}\"\n\nGenerate execution plan:";
+
+            var requestBody = new
+            {
+                contents = new[]
                 {
-                    logger.LogError("Gemini API Key is not configured properly");
-                    throw new InvalidOperationException("Gemini API Key is not configured");
-                }
-
-                var model = configuration["Gemini:Model"] ?? "gemini-2.0-flash-exp";
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
-
-                var systemPrompt = BuildSystemPrompt();
-                var fullPrompt = $"{systemPrompt}\n\nUser Command: \"{commandText}\"\n\nGenerate execution plan:";
-
-                var requestBody = new
-                {
-                    contents = new[]
+                    new
                     {
-                        new
+                        parts = new[]
                         {
-                            parts = new[]
-                            {
-                                new { text = fullPrompt }
-                            }
+                            new { text = fullPrompt }
                         }
-                    },
-                    generationConfig = new
-                    {
-                        temperature = 0.1,
-                        maxOutputTokens = 2000
                     }
-                };
-
-                var jsonContent = JsonSerializer.Serialize(requestBody);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                logger.LogDebug("Calling Gemini API with enhanced prompt");
-
-                var response = await _httpClient.PostAsync(url, content);
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                logger.LogDebug("Gemini raw response: {Response}", responseBody);
-
-                if (!response.IsSuccessStatusCode)
+                },
+                generationConfig = new
                 {
-                    logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
-                    throw new InvalidOperationException($"Gemini API returned error: {response.StatusCode}");
-                }
-
-                var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
-                var generatedText = geminiResponse
-                    .GetProperty("candidates")[0]
-                    .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
-                    .GetString() ?? "{}";
-                
-                generatedText = CleanJsonResponse(generatedText);
-
-                logger.LogInformation("Gemini extracted plan: {Text}", generatedText);
-
-                var plan = JsonSerializer.Deserialize<VoiceExecutionPlanDto>(generatedText, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return plan;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error calling Gemini API for command: {CommandText}", commandText);
-                return null;
-            }
-        }
-
-        private async Task<VoiceCommandResponseDto> ExecutePlanAsync(VoiceExecutionPlanDto plan, int userId)
-        {
-            logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
-            var context = new VoiceExecutionContextDto
-            {
-                Variables =
-                {
-                    ["userId"] = userId
+                    temperature = 0.1,
+                    maxOutputTokens = 2000
                 }
             };
 
-            try
+            var jsonContent = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            logger.LogDebug("Calling Gemini API with enhanced prompt");
+
+            var response = await _httpClient.PostAsync(url, content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            logger.LogDebug("Gemini raw response: {Response}", responseBody);
+
+            if (!response.IsSuccessStatusCode)
             {
-                foreach (var step in plan.Steps.OrderBy(s => s.StepNumber))
+                logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
+                throw new InvalidOperationException($"Gemini API returned error: {response.StatusCode}");
+            }
+
+            var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
+            var generatedText = geminiResponse
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString() ?? "{}";
+
+            generatedText = CleanJsonResponse(generatedText);
+
+            logger.LogInformation("Gemini extracted plan: {Text}", generatedText);
+
+            var plan = JsonSerializer.Deserialize<VoiceExecutionPlanDto>(generatedText, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return plan;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error calling Gemini API for command: {CommandText}", commandText);
+            return null;
+        }
+    }
+
+    private async Task<VoiceCommandResponseDto> ExecutePlanAsync(VoiceExecutionPlanDto plan, int userId)
+    {
+        logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
+        var context = new VoiceExecutionContextDto
+        {
+            Variables =
+            {
+                ["userId"] = userId
+            }
+        };
+
+        try
+        {
+            foreach (var step in plan.Steps.OrderBy(s => s.StepNumber))
+            {
+                logger.LogInformation("Executing step {StepNumber}: {Description}", step.StepNumber, step.Description);
+
+                var stepResult = await ExecuteStepAsync(step, context, userId);
+
+                if (!stepResult.success)
                 {
-                    logger.LogInformation("Executing step {StepNumber}: {Description}", step.StepNumber, step.Description);
-                    
-                    var stepResult = await ExecuteStepAsync(step, context, userId);
-                    
-                    if (!stepResult.success)
+                    return new VoiceCommandResponseDto
                     {
-                        return new VoiceCommandResponseDto
-                        {
-                            Success = false,
-                            Message = $"Step {step.StepNumber} failed: {stepResult.error}",
-                            Data = context.ExecutionLog
-                        };
-                    }
-                    
-                    if (!string.IsNullOrEmpty(step.SaveResultAs) && stepResult.result != null)
-                    {
-                        context.Variables[step.SaveResultAs] = stepResult.result;
-                        context.ExecutionLog.Add($"Step {step.StepNumber}: {step.Description} - Success");
-                    }
+                        Success = false,
+                        Message = $"Step {step.StepNumber} failed: {stepResult.error}",
+                        Data = context.ExecutionLog
+                    };
                 }
-                
-                var finalMessage = ReplaceVariables(plan.FinalResponseTemplate, context.Variables);
 
-                return new VoiceCommandResponseDto
+                if (string.IsNullOrEmpty(step.SaveResultAs) || stepResult.result == null) continue;
+                context.Variables[step.SaveResultAs] = stepResult.result;
+                context.ExecutionLog.Add($"Step {step.StepNumber}: {step.Description} - Success");
+            }
+
+            var finalMessage = ReplaceVariables(plan.FinalResponseTemplate, context.Variables);
+
+            return new VoiceCommandResponseDto
+            {
+                Success = true,
+                Message = finalMessage,
+                ActionPerformed = "multi_step_execution",
+                Data = new
                 {
-                    Success = true,
-                    Message = finalMessage,
-                    ActionPerformed = "multi_step_execution",
-                    Data = new
-                    {
-                        ExecutedSteps = plan.Steps.Count,
-                        Log = context.ExecutionLog,
-                        Results = context.Variables
-                    }
-                };
-            }
-            catch (Exception ex)
+                    ExecutedSteps = plan.Steps.Count,
+                    Log = context.ExecutionLog,
+                    Results = context.Variables
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error executing plan");
+            return new VoiceCommandResponseDto
             {
-                logger.LogError(ex, "Error executing plan");
-                return new VoiceCommandResponseDto
+                Success = false,
+                Message = $"Execution failed: {ex.Message}",
+                Data = context.ExecutionLog
+            };
+        }
+    }
+
+    private async Task<(bool success, object? result, string? error)> ExecuteStepAsync(
+        VoiceExecutionStepDto step,
+        VoiceExecutionContextDto context,
+        int userId)
+    {
+        try
+        {
+            var endpoint = ReplaceVariables(step.Endpoint, context.Variables);
+            var parameters = ReplaceVariablesInDictionary(step.Parameters, context.Variables);
+
+            logger.LogDebug("Executing {Method} {Endpoint} with params: {Params}",
+                step.Method, endpoint, JsonSerializer.Serialize(parameters));
+
+            var result = await RouteToServiceAsync(step.Method, endpoint, parameters, userId);
+
+            return (true, result, null);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error executing step {StepNumber}", step.StepNumber);
+            return (false, null, ex.Message);
+        }
+    }
+
+    private async Task<object?> RouteToServiceAsync(string method, string endpoint, Dictionary<string, object> parameters, int userId)
+    {
+        var parts = endpoint.TrimStart('/').Split('/');
+        if (parts.Length < 2) throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+
+        var controller = parts[1].ToLower();
+        var action = parts.Length > 2 ? parts[2].ToLower() : "";
+        logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
+
+        return controller switch
+        {
+            "product" => await HandleProductEndpoint(method, action, parameters),
+            "operation" => await HandleOperationEndpoint(action, parameters, userId),
+            "rack" => await HandleRackEndpoint(method, action),
+            "report" => await HandleReportEndpoint(action, parameters),
+            _ => throw new InvalidOperationException($"Unsupported controller: {controller}")
+        };
+    }
+
+    private async Task<object?> HandleProductEndpoint(string method, string action, Dictionary<string, object> parameters)
+    {
+        switch (action)
+        {
+            case "scancode":
+                var scanCode = parameters.TryGetValue("scanCode", out var parameter)
+                    ? parameter.ToString()
+                    : parameters.Values.FirstOrDefault()?.ToString();
+                return await productService.GetProductByScanCodeAsync(scanCode!);
+
+            case "":
+                if (method == "GET")
+                    return await productService.GetAllProductsAsync();
+                break;
+
+            default:
+                if (int.TryParse(action, out int productId))
+                    return await productService.GetProductByIdAsync(productId);
+                break;
+        }
+
+        throw new InvalidOperationException($"Unsupported product action: {action}");
+    }
+
+    private async Task<object?> HandleOperationEndpoint(string action, Dictionary<string, object> parameters, int userId)
+    {
+        switch (action)
+        {
+            case "inbound":
+                var inboundDto = new OperationInboundDto
                 {
-                    Success = false,
-                    Message = $"Execution failed: {ex.Message}",
-                    Data = context.ExecutionLog
+                    Barcode = GetParameter<string>(parameters, "barcode")
                 };
-            }
+                return await operationService.ProcessInboundAsync(inboundDto, userId);
+
+            case "outbound":
+                var outboundDto = new OperationOutboundDto
+                {
+                    Barcode = GetParameter<string>(parameters, "barcode")
+                };
+                return await operationService.ProcessOutboundAsync(outboundDto, userId);
+
+            case "move":
+                var moveDto = new OperationMovementDto
+                {
+                    Barcode = GetParameter<string>(parameters, "barcode"),
+                    SourceRackCode = GetParameter<string>(parameters, "sourceRackCode"),
+                    SourceSlotX = GetParameter<int>(parameters, "sourceSlotX"),
+                    SourceSlotY = GetParameter<int>(parameters, "sourceSlotY"),
+                    TargetRackCode = GetParameter<string>(parameters, "targetRackCode"),
+                    TargetSlotX = GetParameter<int>(parameters, "targetSlotX"),
+                    TargetSlotY = GetParameter<int>(parameters, "targetSlotY")
+                };
+                return await operationService.ProcessMovementAsync(moveDto, userId);
+
+            case "history":
+                var limit = parameters.TryGetValue("limit", out var parameter)
+                    ? Convert.ToInt32(parameter)
+                    : (int?)null;
+                return await operationService.GetOperationHistoryAsync(limit);
+
+            default:
+                throw new InvalidOperationException($"Unsupported operation action: {action}");
+        }
+    }
+
+    private async Task<object?> HandleRackEndpoint(string method, string action)
+    {
+        switch (action)
+        {
+            case "":
+                if (method == "GET")
+                    return await rackService.GetAllRacksAsync();
+                break;
+
+            default:
+                if (int.TryParse(action, out int rackId))
+                    return await rackService.GetRackByIdAsync(rackId);
+                break;
         }
 
-        private async Task<(bool success, object? result, string? error)> ExecuteStepAsync(
-            VoiceExecutionStepDto step, 
-            VoiceExecutionContextDto context, 
-            int userId)
-        {
-            try
-            {
-                var endpoint = ReplaceVariables(step.Endpoint, context.Variables);
-                var parameters = ReplaceVariablesInDictionary(step.Parameters, context.Variables);
+        throw new InvalidOperationException($"Unsupported rack action: {action}");
+    }
 
-                logger.LogDebug("Executing {Method} {Endpoint} with params: {Params}", 
-                    step.Method, endpoint, JsonSerializer.Serialize(parameters));
-                
-                var result = await RouteToServiceAsync(step.Method, endpoint, parameters, userId);
-                
-                return (true, result, null);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error executing step {StepNumber}", step.StepNumber);
-                return (false, null, ex.Message);
-            }
+    private async Task<object?> HandleReportEndpoint(string action, Dictionary<string, object> parameters)
+    {
+        switch (action)
+        {
+            case "dashboard-stats":
+                return await reportService.GetDashboardStatsAsync();
+
+            case "inventory-summary":
+                return await reportService.GetInventorySummaryAsync();
+
+            case "expiring-items":
+                var days = parameters.TryGetValue("days", out var parameter)
+                    ? Convert.ToInt32(parameter)
+                    : 7;
+                return await reportService.GetExpiringItemsAsync(days);
+
+            case "rack-utilization":
+                return await reportService.GetRackUtilizationAsync();
+
+            case "full-inventory":
+                return await reportService.GetFullInventoryReportAsync();
+
+            case "active-alerts":
+                return await reportService.GetActiveAlertsAsync();
+
+            default:
+                throw new InvalidOperationException($"Unsupported report action: {action}");
         }
+    }
 
-        private async Task<object?> RouteToServiceAsync(string method, string endpoint, Dictionary<string, object> parameters, int userId)
+    private static T GetParameter<T>(Dictionary<string, object> parameters, string key)
+    {
+        if (!parameters.TryGetValue(key, out var value))
+            throw new InvalidOperationException($"Missing required parameter: {key}");
+
+        switch (value)
         {
-            var parts = endpoint.TrimStart('/').Split('/');
-            if (parts.Length < 2) throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
-
-            var controller = parts[1].ToLower();
-            var action = parts.Length > 2 ? parts[2].ToLower() : "";
-            logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
-
-            switch (controller)
-            {
-                case "product":
-                    return await HandleProductEndpoint(method, action, parameters);
-                
-                case "operation":
-                    return await HandleOperationEndpoint(action, parameters, userId);
-                
-                case "rack":
-                    return await HandleRackEndpoint(method, action);
-                
-                case "report":
-                    return await HandleReportEndpoint(action, parameters);
-                
-                default:
-                    throw new InvalidOperationException($"Unsupported controller: {controller}");
-            }
-        }
-
-        private async Task<object?> HandleProductEndpoint(string method, string action, Dictionary<string, object> parameters)
-        {
-            switch (action)
-            {
-                case "scancode":
-                    var scanCode = parameters.TryGetValue("scanCode", out var parameter) 
-                        ? parameter.ToString() 
-                        : parameters.Values.FirstOrDefault()?.ToString();
-                    return await productService.GetProductByScanCodeAsync(scanCode!);
-                
-                case "":
-                    if (method == "GET")
-                        return await productService.GetAllProductsAsync();
-                    break;
-                
-                default:
-                    if (int.TryParse(action, out int productId))
-                        return await productService.GetProductByIdAsync(productId);
-                    break;
-            }
-            
-            throw new InvalidOperationException($"Unsupported product action: {action}");
-        }
-
-        private async Task<object?> HandleOperationEndpoint(string action, Dictionary<string, object> parameters, int userId)
-        {
-            switch (action)
-            {
-                case "inbound":
-                    var inboundDto = new OperationInboundDto 
-                    { 
-                        Barcode = GetParameter<string>(parameters, "barcode") 
-                    };
-                    return await operationService.ProcessInboundAsync(inboundDto, userId);
-                
-                case "outbound":
-                    var outboundDto = new OperationOutboundDto 
-                    { 
-                        Barcode = GetParameter<string>(parameters, "barcode") 
-                    };
-                    return await operationService.ProcessOutboundAsync(outboundDto, userId);
-                
-                case "move":
-                    var moveDto = new OperationMovementDto
-                    {
-                        Barcode = GetParameter<string>(parameters, "barcode"),
-                        SourceRackCode = GetParameter<string>(parameters, "sourceRackCode"),
-                        SourceSlotX = GetParameter<int>(parameters, "sourceSlotX"),
-                        SourceSlotY = GetParameter<int>(parameters, "sourceSlotY"),
-                        TargetRackCode = GetParameter<string>(parameters, "targetRackCode"),
-                        TargetSlotX = GetParameter<int>(parameters, "targetSlotX"),
-                        TargetSlotY = GetParameter<int>(parameters, "targetSlotY")
-                    };
-                    return await operationService.ProcessMovementAsync(moveDto, userId);
-                
-                case "history":
-                    var limit = parameters.TryGetValue("limit", out var parameter) 
-                        ? Convert.ToInt32(parameter) 
-                        : (int?)null;
-                    return await operationService.GetOperationHistoryAsync(limit);
-                
-                default:
-                    throw new InvalidOperationException($"Unsupported operation action: {action}");
-            }
-        }
-
-        private async Task<object?> HandleRackEndpoint(string method, string action)
-        {
-            switch (action)
-            {
-                case "":
-                    if (method == "GET")
-                        return await rackService.GetAllRacksAsync();
-                    break;
-                
-                default:
-                    if (int.TryParse(action, out int rackId))
-                        return await rackService.GetRackByIdAsync(rackId);
-                    break;
-            }
-            
-            throw new InvalidOperationException($"Unsupported rack action: {action}");
-        }
-
-        private async Task<object?> HandleReportEndpoint(string action, Dictionary<string, object> parameters)
-        {
-            switch (action)
-            {
-                case "dashboard-stats":
-                    return await reportService.GetDashboardStatsAsync();
-                
-                case "inventory-summary":
-                    return await reportService.GetInventorySummaryAsync();
-                
-                case "expiring-items":
-                    var days = parameters.TryGetValue("days", out var parameter) 
-                        ? Convert.ToInt32(parameter) 
-                        : 7;
-                    return await reportService.GetExpiringItemsAsync(days);
-                
-                case "rack-utilization":
-                    return await reportService.GetRackUtilizationAsync();
-                
-                case "full-inventory":
-                    return await reportService.GetFullInventoryReportAsync();
-                
-                case "active-alerts":
-                    return await reportService.GetActiveAlertsAsync();
-                
-                default:
-                    throw new InvalidOperationException($"Unsupported report action: {action}");
-            }
-        }
-        
-        private T GetParameter<T>(Dictionary<string, object> parameters, string key)
-        {
-            if (!parameters.TryGetValue(key, out var value))
-                throw new InvalidOperationException($"Missing required parameter: {key}");
-
-            if (value is JsonElement jsonElement)
-            {
+            case JsonElement jsonElement:
                 return ConvertJsonElement<T>(jsonElement);
-            }
-            
-            if (value is string strValue)
+            case string strValue:
             {
                 if (typeof(T) == typeof(string))
                     return (T)(object)strValue;
@@ -375,153 +364,151 @@ namespace Faraday.API.Services
                     return (T)(object)int.Parse(strValue);
                 if (typeof(T) == typeof(decimal))
                     return (T)(object)decimal.Parse(strValue);
-            }
-            
-            if (value is T typedValue)
-                return typedValue;
-            
-            try
-            {
-                return (T)Convert.ChangeType(value, typeof(T));
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Cannot convert parameter '{key}' of type {value.GetType().Name} to {typeof(T).Name}");
+                break;
             }
         }
-        
-        private T ConvertJsonElement<T>(JsonElement element)
+
+        if (value is T typedValue)
+            return typedValue;
+
+        try
         {
-            if (typeof(T) == typeof(string))
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+        catch
+        {
+            throw new InvalidOperationException($"Cannot convert parameter '{key}' of type {value.GetType().Name} to {typeof(T).Name}");
+        }
+    }
+
+    private static T ConvertJsonElement<T>(JsonElement element)
+    {
+        if (typeof(T) == typeof(string))
+        {
+            return (T)(object)(element.ValueKind == JsonValueKind.String ? element.GetString()! : element.ToString());
+        }
+
+        if (typeof(T) == typeof(int))
+        {
+            return element.ValueKind switch
             {
-                return (T)(object)(element.ValueKind == JsonValueKind.String ? element.GetString()! : element.ToString());
-            }
-            
-            if (typeof(T) == typeof(int))
+                JsonValueKind.Number => (T)(object)element.GetInt32(),
+                JsonValueKind.String when int.TryParse(element.GetString(), out int intVal) => (T)(object)intVal,
+                _ => throw new InvalidOperationException($"Cannot convert JsonElement to int: {element}")
+            };
+        }
+
+        if (typeof(T) == typeof(decimal))
+        {
+            return element.ValueKind switch
             {
-                if (element.ValueKind == JsonValueKind.Number)
-                    return (T)(object)element.GetInt32();
-                if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out int intVal))
-                    return (T)(object)intVal;
-                throw new InvalidOperationException($"Cannot convert JsonElement to int: {element}");
-            }
-            
-            if (typeof(T) == typeof(decimal))
-            {
-                if (element.ValueKind == JsonValueKind.Number)
-                    return (T)(object)element.GetDecimal();
-                if (element.ValueKind == JsonValueKind.String && decimal.TryParse(element.GetString(), out decimal decVal))
-                    return (T)(object)decVal;
-                throw new InvalidOperationException($"Cannot convert JsonElement to decimal: {element}");
-            }
-            
-            if (typeof(T) == typeof(bool))
-            {
-                if (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
-                    return (T)(object)element.GetBoolean();
-                throw new InvalidOperationException($"Cannot convert JsonElement to bool: {element}");
-            }
-            
+                JsonValueKind.Number => (T)(object)element.GetDecimal(),
+                JsonValueKind.String when decimal.TryParse(element.GetString(), out decimal decVal) =>
+                    (T)(object)decVal,
+                _ => throw new InvalidOperationException($"Cannot convert JsonElement to decimal: {element}")
+            };
+        }
+
+        if (typeof(T) != typeof(bool))
             throw new InvalidOperationException($"Unsupported type conversion: {typeof(T).Name}");
-        }
-        private string ReplaceVariables(string template, Dictionary<string, object> variables)
+        if (element.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            return (T)(object)element.GetBoolean();
+        throw new InvalidOperationException($"Cannot convert JsonElement to bool: {element}");
+
+    }
+    private static string ReplaceVariables(string template, Dictionary<string, object> variables)
+    {
+        var result = template;
+        var regex = new Regex(@"\{\{([^}]+)\}\}");
+
+        var matches = regex.Matches(template);
+        foreach (Match match in matches)
         {
-            var result = template;
-            var regex = new Regex(@"\{\{([^}]+)\}\}");
-            
-            var matches = regex.Matches(template);
-            foreach (Match match in matches)
-            {
-                var path = match.Groups[1].Value.Trim();
-                var value = GetNestedValue(variables, path);
-                result = result.Replace(match.Value, value?.ToString() ?? "null");
-            }
-            
-            return result;
+            var path = match.Groups[1].Value.Trim();
+            var value = GetNestedValue(variables, path);
+            result = result.Replace(match.Value, value?.ToString() ?? "null");
         }
 
-        private Dictionary<string, object> ReplaceVariablesInDictionary(Dictionary<string, object> dict, Dictionary<string, object> variables)
-        {
-            var result = new Dictionary<string, object>();
-    
-            foreach (var kvp in dict)
-            {
-                var value = kvp.Value;
-                
-                if (value is JsonElement jsonElement)
-                {
-                    value = ConvertJsonElementToObject(jsonElement);
-                }
-                
-                if (value is string str && str.Contains("{{"))
-                {
-                    result[kvp.Key] = ReplaceVariables(str, variables);
-                }
-                else
-                {
-                    result[kvp.Key] = value;
-                }
-            }
-    
-            return result;
-        }
-        private object ConvertJsonElementToObject(JsonElement element)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.String:
-                    return element.GetString()!;
-        
-                case JsonValueKind.Number:
-                    if (element.TryGetInt32(out int intVal))
-                        return intVal;
-                    if (element.TryGetInt64(out long longVal))
-                        return longVal;
-                    return element.GetDecimal();
-        
-                case JsonValueKind.True:
-                    return true;
-        
-                case JsonValueKind.False:
-                    return false;
-        
-                case JsonValueKind.Null:
-                    return null!;
-        
-                case JsonValueKind.Object:
-                    var dict = new Dictionary<string, object>();
-                    foreach (var prop in element.EnumerateObject())
-                    {
-                        dict[prop.Name] = ConvertJsonElementToObject(prop.Value);
-                    }
-                    return dict;
-        
-                case JsonValueKind.Array:
-                    var list = new List<object>();
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        list.Add(ConvertJsonElementToObject(item));
-                    }
-                    return list;
-        
-                default:
-                    return element.ToString();
-            }
-        }
-        private object? GetNestedValue(Dictionary<string, object> variables, string path)
-        {
-            var parts = path.Split('.');
+        return result;
+    }
 
-            if (!variables.ContainsKey(parts[0]))
-                return null;
-    
-            var current = variables[parts[0]];
-    
-            for (int i = 1; i < parts.Length && current != null; i++)
+    private static Dictionary<string, object> ReplaceVariablesInDictionary(Dictionary<string, object> dict, Dictionary<string, object> variables)
+    {
+        var result = new Dictionary<string, object>();
+
+        foreach (var kvp in dict)
+        {
+            var value = kvp.Value;
+
+            if (value is JsonElement jsonElement)
             {
-                var property = parts[i];
-                
-                if (current is JsonElement jsonElement)
+                value = ConvertJsonElementToObject(jsonElement);
+            }
+
+            if (value is string str && str.Contains("{{"))
+            {
+                result[kvp.Key] = ReplaceVariables(str, variables);
+            }
+            else
+            {
+                result[kvp.Key] = value;
+            }
+        }
+
+        return result;
+    }
+    private static object ConvertJsonElementToObject(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return element.GetString()!;
+
+            case JsonValueKind.Number:
+                if (element.TryGetInt32(out int intVal))
+                    return intVal;
+                if (element.TryGetInt64(out long longVal))
+                    return longVal;
+                return element.GetDecimal();
+
+            case JsonValueKind.True:
+                return true;
+
+            case JsonValueKind.False:
+                return false;
+
+            case JsonValueKind.Null:
+                return null!;
+
+            case JsonValueKind.Object:
+                var dict = new Dictionary<string, object>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    dict[prop.Name] = ConvertJsonElementToObject(prop.Value);
+                }
+                return dict;
+
+            case JsonValueKind.Array:
+                var list = element.EnumerateArray().Select(ConvertJsonElementToObject).ToList();
+                return list;
+
+            default:
+                return element.ToString();
+        }
+    }
+    private static object? GetNestedValue(Dictionary<string, object> variables, string path)
+    {
+        var parts = path.Split('.');
+
+        if (!variables.TryGetValue(parts[0], out object? current))
+            return null;
+        for (int i = 1; i < parts.Length && current != null; i++)
+        {
+            var property = parts[i];
+
+            switch (current)
+            {
+                case JsonElement jsonElement:
                 {
                     if (jsonElement.ValueKind == JsonValueKind.Object && jsonElement.TryGetProperty(property, out var nestedElement))
                     {
@@ -530,62 +517,59 @@ namespace Faraday.API.Services
                     }
                     return null;
                 }
-                
-                if (current is Dictionary<string, object> dict)
+                case Dictionary<string, object> dict:
                 {
-                    if (dict.TryGetValue(property, out var value))
-                    {
-                        current = value;
-                        continue;
-                    }
-                    return null;
-                }
-                
-                var propInfo = current.GetType().GetProperty(property, 
-                    System.Reflection.BindingFlags.Public | 
-                    System.Reflection.BindingFlags.Instance | 
-                    System.Reflection.BindingFlags.IgnoreCase);
-        
-                if (propInfo != null)
-                {
-                    current = propInfo.GetValue(current);
-                }
-                else
-                {
-                    return null;
+                    if (!dict.TryGetValue(property, out var value)) return null;
+                    current = value;
+                    continue;
                 }
             }
-            if (current is JsonElement finalElement)
+
+            var propInfo = current.GetType().GetProperty(property,
+                BindingFlags.Public |
+                BindingFlags.Instance |
+                BindingFlags.IgnoreCase);
+
+            if (propInfo != null)
             {
-                return ConvertJsonElementToObject(finalElement);
+                current = propInfo.GetValue(current);
             }
-    
-            return current;
+            else
+            {
+                return null;
+            }
+        }
+        if (current is JsonElement finalElement)
+        {
+            return ConvertJsonElementToObject(finalElement);
         }
 
-        private string CleanJsonResponse(string text)
-        {
-            text = text.Trim();
-            
-            if (text.StartsWith("```json"))
-                text = text.Substring(7);
-            else if (text.StartsWith("```"))
-                text = text.Substring(3);
-            
-            if (text.EndsWith("```"))
-                text = text.Substring(0, text.Length - 3);
-            
-            return text.Trim();
-        }
+        return current;
+    }
 
-        public string GetApiDocumentation()
-        {
-            return BuildSystemPrompt();
-        }
+    private static string CleanJsonResponse(string text)
+    {
+        text = text.Trim();
 
-        private string BuildSystemPrompt()
-        {
-            return @"You are an AI assistant for Faraday Warehouse Management System. Your role is to convert natural language commands into structured execution plans.
+        if (text.StartsWith("```json"))
+            text = text[7..];
+        else if (text.StartsWith("```"))
+            text = text[3..];
+
+        if (text.EndsWith("```"))
+            text = text[..^3];
+
+        return text.Trim();
+    }
+
+    public string GetApiDocumentation()
+    {
+        return BuildSystemPrompt();
+    }
+
+    private static string BuildSystemPrompt()
+    {
+        return @"You are an AI assistant for Faraday Warehouse Management System. Your role is to convert natural language commands into structured execution plans.
 
 ## AVAILABLE API ENDPOINTS:
 
@@ -766,6 +750,5 @@ Response:
 8. Always use lowercase for method names (get, post, put, delete)
 9. Endpoints must start with /api/
 10. Parameter values can use {{variable}} substitution from previous steps";
-        }
     }
 }

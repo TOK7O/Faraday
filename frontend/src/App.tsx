@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/auth/login/LoginPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
-import Documentation from "./pages/docs/docs";
 import HomePage from "./pages/home/HomePage";
 import { useTranslation } from "./context/LanguageContext";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
@@ -24,7 +23,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/*<Route path="/docs" element={<Documentation />} />*/}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route

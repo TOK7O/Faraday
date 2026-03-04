@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import React, { useState } from "react";
 import * as Form from "@radix-ui/react-form";
 import { Loader2, CheckCircle, AlertCircle, Save } from "lucide-react";
 
@@ -70,8 +70,7 @@ export const ChangePasswordForm = () => {
       setMessage({ type: "success", text: securityT.status.success });
       form.reset();
     } catch (err: any) {
-      const errorMsg =
-        err.response?.data?.message || err.message || securityT.status.error;
+      const errorMsg = err.response?.data || securityT.status.error;
       setMessage({ type: "error", text: errorMsg });
     } finally {
       setIsLoading(false);

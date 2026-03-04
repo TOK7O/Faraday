@@ -1,4 +1,17 @@
 {
+  "common": {
+    "brandName": "FaradaySystems"
+  },
+  "voiceAssistant": {
+    "title": "Asystent Głosowy",
+    "processing": "Przetwarzanie...",
+    "listening": "Słucham...",
+    "unsupported": "Ta przeglądarka nie wspiera rozpoznawania mowy. Użyj przeglądarki opartej na Chromium lub Safari.",
+    "success": "Sukces",
+    "failure": "Niepowodzenie",
+    "serverError": "Błąd serwera.",
+    "genericError": "Wystąpił błąd."
+  },
   "loginPage": {
     "visualSection": {
       "title": "Witaj w Systemie",
@@ -44,7 +57,15 @@
       },
       "buttons": {
         "submit": "Zaloguj się",
-        "forgotPassword": "Zapomniałeś hasła?"
+        "forgotPassword": "Zapomniałeś hasła?",
+        "verifyCode": "Weryfikuj kod",
+        "processing": "Przetwarzanie..."
+      },
+      "twoFactor": {
+        "header": "Weryfikacja bezpieczeństwa",
+        "subtitle": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej.",
+        "label": "Kod uwierzytelniający",
+        "placeholder": "000 000"
       },
       "footer": {
         "text": "Nie masz konta?",
@@ -156,9 +177,15 @@
         "backups": "Kopie zapasowe",
         "settings": "Preferencje",
         "theme": "Motyw",
-        "language": "Język"
+        "language": "Język",
+        "logs": "Logi systemowe"
       },
-      "logout": "Wyloguj się"
+      "logout": "Wyloguj się",
+      "session": {
+        "expiring": "Sesja wygasa",
+        "timeRemaining": "Pozostały czas:",
+        "extend": "Przedłuż sesję"
+      }
     },
     "navbar": {
       "path": "root / dashboard",
@@ -169,7 +196,12 @@
         "title": "Przegląd",
         "throughput": "Przepustowość w czasie rzeczywistym",
         "warehouseLoad": "Obciążenie magazynu",
-        "securityProtocol": "Protokół bezpieczeństwa aktywny"
+        "securityProtocol": "Protokół bezpieczeństwa aktywny",
+        "interactive": {
+          "title": "Wizualizacja magazynu w 3D",
+          "fetching": "Ładowanie...",
+          "controls": "Naciśnij na regał, aby do niego podejść • Scrolluj, aby przybliżyć i oddalić"
+        }
       },
       "inventory": {
         "title": "System Inwentaryzacji (M x N)",
@@ -178,7 +210,7 @@
         "dimensions": "Wymiary",
         "temp": "Temp",
         "managementCenter": "Centrum Zarządzania Magazynem",
-        "inventoryHub": "Inventory Hub",
+        "inventoryHub": "Inwentarz",
         "racksStructure": "Struktura Regałów",
         "productCatalog": "Katalog Produktów",
         "importCSV": "Importuj CSV",
@@ -191,7 +223,7 @@
         "sectionPlaceholder": "np. Sektor A",
         "rowsM": "Rzędy (M)",
         "colsN": "Kolumny (N)",
-        "maxWeightKg": "Max waga (kg)",
+        "maxWeightKg": "Max obciążenie (kg)",
         "tempMinMax": "Temp. Min/Max",
         "slotDimensionsMm": "Wymiary slotu (mm)",
         "confirmChanges": "Zatwierdź zmiany",
@@ -242,8 +274,8 @@
           "outbound": "Błąd podczas wydawania produktu."
         },
         "import": {
-          "racksTitle": "Import: Regały",
-          "productsTitle": "Import: Produkty",
+          "racksTitle": "Regały",
+          "productsTitle": "Produkty",
           "processing": "Przetwarzanie importu...",
           "processed": "{current} z {total} operacji zakończonych",
           "summary": {
@@ -290,6 +322,39 @@
         "scanner": {
           "title": "Skaner kodów",
           "description": "Użyj kamery, aby zeskanować kod kreskowy produktu."
+        },
+        "referenceMedia": {
+          "title": "Zdjęcia referencyjne",
+          "countMaxSuffix": "/ 10 maks",
+          "addPhoto": "Dodaj zdjęcie",
+          "removeTooltip": "Usuń wzorzec",
+          "trainingTip": "Wskazówka treningowa: Prześlij zdjęcia produktu z różnych kątów i w różnych warunkach oświetleniowych. Pliki są wysyłane na serwer w celu zbudowania modelu AI przed rozpoczęciem rozpoznawania.",
+          "confirmDelete": "Czy na pewno chcesz usunąć to zdjęcie referencyjne? Może to wpłynąć na dokładność AI.",
+          "uploadFailed": "Nie udało się przesłać zdjęć. Upewnij się, że to poprawne obrazy mniejsze niż 10MB.",
+          "deleteFailed": "Nie udało się usunąć zdjęcia."
+        },
+        "identify": {
+          "tabTitle": "Rozpoznaj z AI",
+          "identifyCard": {
+            "title": "Identyfikuj Produkt",
+            "subtitle": "Zrób zdjęcie, aby zidentyfikować istniejący produkt.",
+            "cameraBtn": "Aparat",
+            "uploadBtn": "Wyślij plik",
+            "resultHeader": "WYNIK",
+            "weightLabel": "Waga:",
+            "hazardousLabel": "Niebezpieczny:",
+            "yes": "Tak",
+            "no": "Nie"
+          },
+          "trainingCard": {
+            "title": "Studio Treningowe AI",
+            "subtitle": "Przypisz zdjęcia referencyjne do kodów kreskowych.",
+            "selectLabel": "Wybierz produkt do treningu",
+            "chooseProduct": "-- Wybierz produkt --",
+            "activeContext": "Aktywny Kontekst:",
+            "barcodeLabel": "Kod:",
+            "emptyState": "Wybierz produkt z listy powyżej, aby zarządzać jego zdjęciami referencyjnymi dla AI."
+          }
         },
         "operations": {
           "inbound": {
@@ -387,7 +452,7 @@
             "depth": "Głęb.",
             "comment": "Komentarz",
             "adrClass": "Klasyfikacja ADR",
-            "validity": "Ważność (dni)",
+            "validity": "Termin ważności (dni)",
             "submitNew": "Zapisz w systemie",
             "submitEdit": "Zaktualizuj produkt",
             "errors": {
@@ -576,19 +641,19 @@
         },
         "tabs": {
           "inventory": "Inwentarz",
-          "utilization": "Utylizacja",
+          "utilization": "Wykorzystanie magazynu",
           "sensors": "Czujniki i Naruszenia",
           "alerts": "Alarmy"
         },
         "stats": {
-          "occupancy": "Zajętość",
+          "occupancy": "% zajęcia magazynu",
           "slots": "Sloty",
-          "totalWeight": "Waga Całkowita",
+          "totalWeight": "Całkowita Waga Inwentarza",
           "cap": "Poj.",
           "opsToday": "Operacje Dzisiaj",
           "totalItems": "Wszystkie Towary",
           "blockedItems": "Zablokowane",
-          "expiring": "Wygasające (7 dni)"
+          "expiring": "Towary z upływającym terminem ważności"
         },
         "filters": {
           "rackId": "ID Regału",
@@ -598,9 +663,9 @@
           "refresh": "Odśwież"
         },
         "inventory": {
-          "expiringTitle": "Towary Wygasające Wkrótce",
+          "expiringTitle": "Towary z upływającym terminem ważności",
           "fullTitle": "Pełna Lista Inwentarza",
-          "emptyExpiring": "Brak towarów wygasających wkrótce.",
+          "emptyExpiring": "Brak towarów z upływającym terminem ważności.",
           "showingFirst": "Pokazano pierwsze {count} z {total} pozycji",
           "table": {
             "product": "Produkt",
@@ -615,12 +680,12 @@
           "days": "dni"
         },
         "utilization": {
-          "title": "Utylizacja Regałów",
+          "title": "Wykorzystanie Regałów",
           "table": {
             "rack": "Regał",
-            "occupancy": "Zajętość (Sloty)",
-            "weight": "Obciążenie Wagowe",
-            "maxWeight": "Max Waga"
+            "occupancy": "% zajęcia regału",
+            "weight": "Obciążenie (kg)",
+            "maxWeight": "Max Obciążenie (kg)"
           }
         },
         "sensors": {
@@ -645,7 +710,7 @@
           "historyTitle": "Historia Alarmów",
           "emptyActive": "Brak aktywnych alarmów. System sprawny.",
           "table": {
-            "severity": "Ważność",
+            "severity": "Typ alarmu",
             "rack": "Regał",
             "message": "Wiadomość",
             "duration": "Czas trwania",
@@ -716,7 +781,7 @@
         "title": "Logi",
         "system": "Systemowe",
         "status": {
-          "pill": "Live Sync",
+          "pill": "Online",
           "lost": "Połączenie utracone"
         },
         "searchPlaceholder": "Szukaj pakietów...",
@@ -749,8 +814,8 @@
           "title": "Motyw",
           "darkMode": "Tryb Ciemny",
           "lightMode": "Tryb Jasny",
-          "darkModeDesc": "Ciemna estetyka",
-          "lightModeDesc": "Jasna estetyka"
+          "darkModeDesc": "Ciemny motyw",
+          "lightModeDesc": "Jasny motyw"
         },
         "language": {
           "title": "Język",
@@ -912,7 +977,8 @@
         "tooShort": "Min 8 znaków",
         "noNumber": "Wymagana cyfra",
         "noSpecialChar": "Wymagany znak spec."
-      }
+      },
+      "backToLogin": "Powrót do logowania"
     },
     "invalidLink": {
       "title": "Nieprawidłowy link",

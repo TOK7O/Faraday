@@ -74,7 +74,7 @@ export const RackCard = ({
             <Thermometer size={10} /> {invT.tempRange}
           </span>
           <span className="value">
-            {rack.tempMin}° / {rack.tempMax}°C
+            {rack.tempMin.toFixed(1)}° / {rack.tempMax.toFixed(1)}°C
           </span>
         </div>
         <div className="data">

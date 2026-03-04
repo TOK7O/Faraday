@@ -39,10 +39,9 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  recognizeProduct, // <--- NOWA FUNKCJA API
+  recognizeProduct,
 } from "@/api/axios";
 
-// POPRAWIONY IMPORT TYPÓW (TS1484)
 import type {
   Rack,
   Product,
@@ -159,9 +158,12 @@ const InventoryContent = () => {
       } else {
         alert(invT.errors.notFound || "Product not recognized");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Recognition failed", error);
-      alert("Recognition failed. Please check your internet connection.");
+      alert(
+        error.response?.data ||
+          "Recognition failed. Please check your internet connection.",
+      );
     } finally {
       setAiProcessing(false);
     }
@@ -528,7 +530,7 @@ const InventoryContent = () => {
         setIsImportPreviewModalOpen(true);
       } catch (err) {
         console.error("CSV Import error:", err);
-        alert(invT.errors.csv.parseError);
+        alert(err.response?.data || invT.errors.csv.parseError);
       }
     };
     reader.onerror = () => alert(invT.errors.csv.readError);
@@ -556,7 +558,7 @@ const InventoryContent = () => {
         setIsImportPreviewModalOpen(true);
       } catch (err) {
         console.error("Product CSV Import error:", err);
-        alert(invT.errors.csv.parseError);
+        alert(err.response?.data || invT.errors.csv.parseError);
       }
     };
     reader.onerror = () => alert(invT.errors.csv.readError);
@@ -579,7 +581,7 @@ const InventoryContent = () => {
     setBatchProgress({ current: 0, total: toProcess.length });
 
     let success = 0;
-    let errors: string[] = [];
+    const errors: string[] = [];
     for (let i = 0; i < toProcess.length; i++) {
       const item = toProcess[i];
       setBatchProgress({ current: i + 1, total: toProcess.length });
@@ -613,7 +615,7 @@ const InventoryContent = () => {
         const identifier =
           item.data.code || item.data.scanCode || `Wiersz ${i + 1}`;
         errors.push(
-          `Błąd dla ${identifier}: ${err.response?.data?.message || err.message}`,
+          `Błąd dla ${identifier}: ${err.response?.data || err.message}`,
         );
       }
     }
@@ -690,7 +692,7 @@ const InventoryContent = () => {
 
             setIsScannerOpen(false);
           },
-          (error) => {},
+          () => {},
         );
       }, 500);
 
@@ -716,7 +718,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setInboundResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.inbound,
+        message: e.response?.data || invT.errors.inbound,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -737,7 +739,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setOutboundResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.outbound,
+        message: e.response?.data || invT.errors.outbound,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -774,7 +776,7 @@ const InventoryContent = () => {
     } catch (e: any) {
       setMoveResult({
         success: false,
-        message: e.response?.data?.message || invT.errors.move,
+        message: e.response?.data || invT.errors.move,
         timestamp: new Date().toLocaleString(),
         operator: localStorage.getItem("username") || "Admin",
       });
@@ -790,8 +792,8 @@ const InventoryContent = () => {
     try {
       await deleteRack(id);
       await fetchData();
-    } catch (e) {
-      alert(invT.errors.deleteRack);
+    } catch (e: any) {
+      alert(e.response?.data || invT.errors.deleteRack);
     } finally {
       setIsLoading(false);
     }
@@ -803,8 +805,8 @@ const InventoryContent = () => {
     try {
       await deleteProduct(id);
       await fetchData();
-    } catch (e) {
-      alert(invT.errors.deleteProduct);
+    } catch (e: any) {
+      alert(e.response?.data || invT.errors.deleteProduct);
     } finally {
       setIsLoading(false);
     }
@@ -848,7 +850,7 @@ const InventoryContent = () => {
       await fetchData();
       closeModal();
     } catch (error: any) {
-      alert(error.response?.data?.message || invT.errors.connection);
+      alert(error.response?.data || invT.errors.connection);
     } finally {
       setIsLoading(false);
     }
@@ -883,7 +885,7 @@ const InventoryContent = () => {
       await fetchData();
       closeModal();
     } catch (error: any) {
-      alert(error.response?.data?.message || invT.errors.connection);
+      alert(error.response?.data || invT.errors.connection);
     } finally {
       setIsLoading(false);
     }
@@ -908,14 +910,14 @@ const InventoryContent = () => {
                 <span>{invT.managementCenter}</span>
               </div>
               <h1>
-                Inventory <span className="outline-text">Hub</span>
+                <span>{invT.inventoryHub}</span>
               </h1>
               <div
-                style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
+                  style={{ display: "flex", alignItems: "center", gap: "1.5rem"}}
               >
                 <Tabs.List
                   className="ht-tabs-list"
-                  style={{ display: "flex", gap: "2rem", marginTop: "1rem" }}
+                  style={{ display: "flex", gap: "2rem", marginTop: "1rem", overflowX: "auto", overflowY: "hidden" }}
                 >
                   <Tabs.Trigger value="racks" className="ht-tabs-trigger">
                     {invT.racksStructure}
@@ -937,8 +939,11 @@ const InventoryContent = () => {
                       borderColor: "var(--accent-primary)",
                     }}
                   >
-                    <BrainCircuit size={16} style={{ marginRight: 6 }} />{" "}
-                    Identify
+                    <BrainCircuit
+                      size={16}
+                      style={{ marginRight: 6, marginTop: "2px" }}
+                    />{" "}
+                    {invT.identify.tabTitle}
                   </Tabs.Trigger>
                 </Tabs.List>
                 <button
@@ -1135,7 +1140,7 @@ const InventoryContent = () => {
                           <span
                             className={
                               item.daysUntilExpiration &&
-                              item.daysUntilExpiration < 5
+                              item.daysUntilExpiration <= 7
                                 ? "text-danger"
                                 : ""
                             }
@@ -1154,7 +1159,8 @@ const InventoryContent = () => {
                           <Box size={12} /> {item.productWeightKg}kg
                         </div>
                         <div className="info-chip">
-                          <RefreshCw size={12} /> {item.currentRackTemperature}
+                          <RefreshCw size={12} />{" "}
+                          {item.currentRackTemperature.toFixed(1)}
                           °C
                         </div>
                       </div>
@@ -1195,7 +1201,6 @@ const InventoryContent = () => {
                 gap: "2rem",
               }}
             >
-              {/* LEWA KOLUMNA: IDENTYFIKACJA */}
               <div
                 style={{
                   display: "flex",
@@ -1229,10 +1234,10 @@ const InventoryContent = () => {
                   </div>
                   <div>
                     <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
-                      Identify Product
+                      {invT.identify.identifyCard.title}
                     </h2>
                     <p className="text-muted">
-                      Take a photo to identify an existing product.
+                      {invT.identify.identifyCard.subtitle}
                     </p>
                   </div>
                   <div
@@ -1248,7 +1253,8 @@ const InventoryContent = () => {
                       style={{ padding: "0.8rem 1.5rem" }}
                       onClick={() => setIsAiScannerOpen(true)}
                     >
-                      <Camera size={20} /> Camera
+                      <Camera size={20} />{" "}
+                      {invT.identify.identifyCard.cameraBtn}
                     </button>
                     <button
                       className="btn-secondary"
@@ -1260,11 +1266,11 @@ const InventoryContent = () => {
                       }}
                       onClick={() => aiFileInputRef.current?.click()}
                     >
-                      <Upload size={20} /> Upload
+                      <Upload size={20} />{" "}
+                      {invT.identify.identifyCard.uploadBtn}
                     </button>
                   </div>
 
-                  {/* WYNIK IDENTYFIKACJI */}
                   {identifiedProduct && (
                     <div
                       style={{
@@ -1290,7 +1296,7 @@ const InventoryContent = () => {
                             color: "var(--text-muted)",
                           }}
                         >
-                          RESULT
+                          {invT.identify.identifyCard.resultHeader}
                         </span>
                         <span
                           className={`status-badge ${identifiedProduct.confidenceLevel === "Excellent" ? "new" : "conflict"}`}
@@ -1331,13 +1337,15 @@ const InventoryContent = () => {
                         }}
                       >
                         <div>
-                          Weight:{" "}
+                          {invT.identify.identifyCard.weightLabel}{" "}
                           <strong>{identifiedProduct.weightKg} kg</strong>
                         </div>
                         <div>
-                          Hazardous:{" "}
+                          {invT.identify.identifyCard.hazardousLabel}{" "}
                           <strong>
-                            {identifiedProduct.isHazardous ? "Yes" : "No"}
+                            {identifiedProduct.isHazardous
+                              ? invT.identify.identifyCard.yes
+                              : invT.identify.identifyCard.no}
                           </strong>
                         </div>
                       </div>
@@ -1346,7 +1354,6 @@ const InventoryContent = () => {
                 </div>
               </div>
 
-              {/* PRAWA KOLUMNA: TRENING / ZARZĄDZANIE OBRAZAMI */}
               <div className="glass-card" style={{ padding: "2rem" }}>
                 <div
                   style={{
@@ -1369,20 +1376,20 @@ const InventoryContent = () => {
                   </div>
                   <div>
                     <h2 style={{ fontSize: "1.3rem", margin: 0 }}>
-                      AI Training Studio
+                      {invT.identify.trainingCard.title}
                     </h2>
                     <p
                       className="text-muted"
                       style={{ fontSize: "0.85rem", margin: 0 }}
                     >
-                      Attach reference images to barcodes.
+                      {invT.identify.trainingCard.subtitle}
                     </p>
                   </div>
                 </div>
 
                 <div className="ht-form">
                   <div className="input-group">
-                    <label>Select Product to Train</label>
+                    <label>{invT.identify.trainingCard.selectLabel}</label>
                     <select
                       className="ht-input"
                       value={trainingProduct?.id || ""}
@@ -1393,7 +1400,9 @@ const InventoryContent = () => {
                         setTrainingProduct(prod || null);
                       }}
                     >
-                      <option value="">-- Choose a product --</option>
+                      <option value="">
+                        {invT.identify.trainingCard.chooseProduct}
+                      </option>
                       {products.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.scanCode})
@@ -1423,17 +1432,17 @@ const InventoryContent = () => {
                             marginBottom: "4px",
                           }}
                         >
-                          Active Context:
+                          {invT.identify.trainingCard.activeContext}
                         </div>
                         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
                           {trainingProduct.name}
                         </div>
                         <div style={{ fontFamily: "monospace", opacity: 0.8 }}>
-                          Barcode: {trainingProduct.scanCode}
+                          {invT.identify.trainingCard.barcodeLabel}{" "}
+                          {trainingProduct.scanCode}
                         </div>
                       </div>
 
-                      {/* Tutaj wstawiamy komponent zarządzania zdjęciami */}
                       <ReferenceImageManager
                         productId={trainingProduct.id}
                         scanCode={trainingProduct.scanCode}
@@ -1454,10 +1463,7 @@ const InventoryContent = () => {
                         size={32}
                         style={{ opacity: 0.3, marginBottom: "1rem" }}
                       />
-                      <p>
-                        Select a product from the list above to manage its AI
-                        reference images.
-                      </p>
+                      <p>{invT.identify.trainingCard.emptyState}</p>
                     </div>
                   )}
                 </div>
@@ -1488,6 +1494,7 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
+                        className="operation-barcode-input"
                         value={inboundBarcode}
                         onChange={(e) => setInboundBarcode(e.target.value)}
                         placeholder={invT.operations.inbound.placeholder}
@@ -1555,6 +1562,7 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
+                        className="operation-barcode-input"
                         type="text"
                         placeholder={invT.operations.move.placeholder}
                         value={moveBarcode}
@@ -1665,6 +1673,7 @@ const InventoryContent = () => {
                   <div className="input-group">
                     <div className="input-wrapper">
                       <input
+                        className="operation-barcode-input"
                         value={outboundBarcode}
                         onChange={(e) => setOutboundBarcode(e.target.value)}
                         placeholder={invT.operations.outbound.placeholder}

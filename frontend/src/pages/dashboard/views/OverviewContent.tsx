@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useEffect, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -10,18 +10,13 @@ import {
   Bounds,
   useBounds,
 } from "@react-three/drei";
-import {
-  Activity,
-  ShieldCheck,
-  Box,
-  MousePointer2,
-  Loader2,
-} from "lucide-react";
+import { Box, MousePointer2, Loader2 } from "lucide-react";
 import { getRacks, getFullInventoryList } from "@/api/axios";
 import type {
   Rack,
   FullInventoryItem,
 } from "@/components/layouts/dashboard/inventory/InventoryContent.types";
+import { useTranslation } from "@/context/LanguageContext";
 
 const Rack3D = ({
   position,
@@ -106,6 +101,7 @@ const Rack3D = ({
 };
 
 const OverviewContent = () => {
+  const { t } = useTranslation();
   const [racks, setRacks] = useState<Rack[]>([]);
   const [inventory, setInventory] = useState<FullInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -153,7 +149,7 @@ const OverviewContent = () => {
   // Obliczanie pozycji regałów w siatce z uwzględnieniem ich szerokości
   const rackElements = useMemo(() => {
     const itemsPerRow = 2;
-    const elements: JSX.Element[] = [];
+    const elements: React.JSX.Element[] = [];
 
     let currentX = 0;
 
@@ -188,14 +184,14 @@ const OverviewContent = () => {
   }, [racks, inventory, spacingZ, bufferX]);
 
   return (
-    <div className="dashboard-content">
+    <div >
       <div className="bento-dashboard">
         <div
           className="bento-card"
           style={{
             gridColumn: "span 2",
             gridRow: "span 2",
-            minHeight: "550px",
+            height: "calc(80vh - 2rem)",
             padding: 0,
             overflow: "hidden",
             position: "relative",
@@ -221,8 +217,8 @@ const OverviewContent = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <MousePointer2 size={12} /> Click rack to focus • Scroll to zoom •
-              Drag to rotate
+              <MousePointer2 size={12} />{" "}
+              {t.dashboardPage.content.overview.interactive.controls}
             </div>
           </div>
 
@@ -235,7 +231,8 @@ const OverviewContent = () => {
             }}
           >
             <div className="card-header" style={{ color: "white" }}>
-              <Box size={14} /> Interactive Warehouse
+              <Box size={14} />{" "}
+              {t.dashboardPage.content.overview.interactive.title}
             </div>
             {isLoading && (
               <div
@@ -248,8 +245,8 @@ const OverviewContent = () => {
                   fontSize: "0.8rem",
                 }}
               >
-                <Loader2 size={12} className="animate-spin" /> Fetching live
-                data...
+                <Loader2 size={12} className="animate-spin" />{" "}
+                {t.dashboardPage.content.overview.interactive.fetching}
               </div>
             )}
           </div>

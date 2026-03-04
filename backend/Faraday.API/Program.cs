@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Faraday.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
 using Faraday.API.Workers;
@@ -150,18 +150,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Apply the defined security requirement globally to all endpoints.
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+            new OpenApiSecuritySchemeReference("Bearer"),
+            []
         }
     });
 });
@@ -202,6 +195,9 @@ builder.Services.AddHostedService<ExpirationMonitoringWorker>();
 startupLogger.LogInformation("Background workers registered successfully");
 
 var app = builder.Build();
+
+// Make sure this is added early in the pipeline, right after builder.Build()
+app.UseMiddleware<Faraday.API.Middleware.ErrorHandlingMiddleware>();
 
 
 // Register SignalR Logger Provider
@@ -249,7 +245,7 @@ using (var scope = app.Services.CreateScope())
         {
             // Apply any pending migrations
             var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
-            if (pendingMigrations.Any())
+            if (pendingMigrations.Count != 0)
             {
                 startupLogger.LogInformation("Applying {Count} pending migration(s)...", pendingMigrations.Count);
                 dbContext.Database.Migrate();
@@ -329,6 +325,7 @@ app.UseStaticFiles();
 startupLogger.LogInformation("=== Faraday WMS API Started Successfully ===");
 
 app.Run();
+return;
 
 // Database schema management helpers
 

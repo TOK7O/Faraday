@@ -446,7 +446,7 @@ $radius-modal: 24px;
 }
 
 .personnel-view-container {
-  padding: 2rem;
+  //padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
   font-family: "Space Grotesk", sans-serif;
@@ -547,7 +547,7 @@ $radius-modal: 24px;
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-input);
     border-radius: 20px;
-    overflow-x: scroll;
+    overflow-x: auto;
     margin-top: 1rem;
 
     .ht-table {
@@ -655,7 +655,6 @@ $radius-modal: 24px;
       transition: 0.2s;
       &:hover {
         color: var(--text-main);
-        transform: rotate(90deg);
       }
     }
   }

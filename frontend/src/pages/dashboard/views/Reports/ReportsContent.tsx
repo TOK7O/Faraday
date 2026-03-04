@@ -127,7 +127,7 @@ const ReportsContent = () => {
   const [limit] = useState<number>(100);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [inventorySummary, setInventorySummary] = useState<any[]>([]); // Summary is just a POJO from backend
+  const [inventorySummary, setInventorySummary] = useState<any[]>([]);
   const [fullInventory, setFullInventory] = useState<InventoryItem[]>([]);
   const [expiringItems, setExpiringItems] = useState<ExpiringItem[]>([]);
   const [rackUtilization, setRackUtilization] = useState<RackUtilization[]>([]);
@@ -146,6 +146,11 @@ const ReportsContent = () => {
     fetchDashboardStats();
     handleFetchData();
   }, [activeTab]);
+
+  const formatWarningText = (text) => {
+    if (!text) return "";
+    return text.replace(/([a-z])([A-Z])/g, "$1 $2");
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -167,7 +172,7 @@ const ReportsContent = () => {
       };
 
       switch (activeTab) {
-        case "inventory":
+        case "inventory": {
           const [summary, full, expiring] = await Promise.all([
             getInventorySummary(),
             getFullInventory(),
@@ -177,13 +182,15 @@ const ReportsContent = () => {
           setFullInventory(full);
           setExpiringItems(expiring);
           break;
+        }
 
-        case "utilization":
+        case "utilization": {
           const util = await getRackUtilization();
           setRackUtilization(util);
           break;
+        }
 
-        case "sensors":
+        case "sensors": {
           const [temp, weight, rackV, itemV] = await Promise.all([
             getTemperatureHistory(filterParams),
             getWeightHistory(filterParams),
@@ -198,8 +205,9 @@ const ReportsContent = () => {
           setRackViolations(rackV);
           setItemViolations(itemV);
           break;
+        }
 
-        case "alerts":
+        case "alerts": {
           const [active, history] = await Promise.all([
             getActiveAlerts(),
             getAlertHistory({
@@ -211,6 +219,7 @@ const ReportsContent = () => {
           setActiveAlerts(active);
           setAlertHistory(history);
           break;
+        }
       }
     } catch (error) {
       console.error("Failed to fetch report data", error);
@@ -327,7 +336,7 @@ const ReportsContent = () => {
                           : "inherit",
                     }}
                   >
-                    {item.currentRackTemperature}°C
+                    {item.currentRackTemperature.toFixed(1)}°C
                   </span>
                 </td>
                 <td>{formatDate(item.entryDate)}</td>
@@ -439,9 +448,10 @@ const ReportsContent = () => {
                   {reportsT.common?.rackPrefix || "Rack"} {v.rackCode}
                 </td>
                 <td>-</td>
-                <td>{v.recordedTemperature}°C</td>
+                <td>{v.recordedTemperature.toFixed(1)}°C</td>
                 <td>
-                  {v.allowedMinTemperature} - {v.allowedMaxTemperature}°C
+                  {v.allowedMinTemperature.toFixed(1)} -{" "}
+                  {v.allowedMaxTemperature.toFixed(1)}°C
                 </td>
                 <td>
                   <span className="badge danger">
@@ -457,9 +467,10 @@ const ReportsContent = () => {
                 <td>
                   {v.productName} ({v.rackCode})
                 </td>
-                <td>{v.recordedTemperature}°C</td>
+                <td>{v.recordedTemperature.toFixed(1)}°C</td>
                 <td>
-                  {v.requiredMinTemperature} - {v.requiredMaxTemperature}°C
+                  {v.requiredMinTemperature.toFixed(1)} -{" "}
+                  {v.requiredMaxTemperature.toFixed(1)}°C
                 </td>
                 <td>
                   <span className="badge danger">
@@ -503,7 +514,7 @@ const ReportsContent = () => {
               {tempHistory.map((t) => (
                 <tr key={t.id}>
                   <td>{t.rackCode}</td>
-                  <td>{t.recordedTemperature}°C</td>
+                  <td>{t.recordedTemperature.toFixed(1)}°C</td>
                   <td>{formatDate(t.timestamp)}</td>
                 </tr>
               ))}
@@ -570,7 +581,8 @@ const ReportsContent = () => {
                   <span
                     className={`badge ${a.type === "Critical" ? "danger" : "warn"}`}
                   >
-                    {reportsT.alerts.severityLevels?.[a.type] || a.type}
+                    {reportsT.alerts.severityLevels?.[a.type] ||
+                      formatWarningText(a.type)}
                   </span>
                 </td>
                 <td>{a.rackCode || reportsT.alerts.general}</td>

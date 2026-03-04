@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
@@ -17,7 +17,7 @@ import { useTranslation } from "../context/LanguageContext";
 import "./VoiceControlFAB.scss";
 
 export const VoiceControlFAB = () => {
-  const { lang } = useTranslation();
+  const { lang, t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isWaitingForProcessing, setIsWaitingForProcessing] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -29,6 +29,11 @@ export const VoiceControlFAB = () => {
 
   const locale = useMemo(() => (lang === "pl" ? "pl-PL" : "en-US"), [lang]);
 
+  // Ref to always have the latest transcript value (avoids stale closures)
+  const transcriptRef = useRef("");
+  // Ref to track if stop was triggered manually (by button click)
+  const isManualStopRef = useRef(false);
+
   const {
     transcript,
     listening,
@@ -37,16 +42,26 @@ export const VoiceControlFAB = () => {
   } = useSpeechRecognition();
 
   useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+
+  // Auto-trigger: when the browser stops listening on its own (not manual),
+  // and there's a transcript available, process it.
+  useEffect(() => {
     if (
       !listening &&
       transcript.length > 0 &&
       !isProcessing &&
       !isWaitingForProcessing &&
-      !feedback
+      !feedback &&
+      !isManualStopRef.current
     ) {
-      handleStopAndSend();
+      processTranscript();
     }
-  }, [listening, transcript, isProcessing, isWaitingForProcessing, feedback]);
+    if (!listening) {
+      isManualStopRef.current = false;
+    }
+  }, [listening]);
 
   useEffect(() => {
     if (feedback) {
@@ -62,15 +77,18 @@ export const VoiceControlFAB = () => {
   const handleStartListening = () => {
     if (!browserSupportsSpeechRecognition) {
       const errorMsg =
-        lang === "pl"
-          ? "Brak wsparcia mowy."
-          : "Speech recognition not supported.";
+        t.voiceAssistant?.unsupported ||
+        (lang === "pl"
+          ? "Ta przeglądarka nie wspiera rozpoznawania mowy. Użyj przeglądarki opartej na Chromium lub Safari."
+          : "Speech recognition not supported. Please use a chromium-based browser or Safari");
       setFeedback({ type: "error", msg: errorMsg });
       return;
     }
     setFeedback(null);
     setResponseData(null);
+    setIsProcessing(false);
     setIsWaitingForProcessing(false);
+    isManualStopRef.current = false;
     resetTranscript();
     SpeechRecognition.startListening({ language: locale, continuous: false });
   };
@@ -131,68 +149,81 @@ export const VoiceControlFAB = () => {
     return message;
   };
 
+  // Called when the user manually clicks stop
   const handleStopAndSend = async () => {
-    SpeechRecognition.stopListening();
+    isManualStopRef.current = true;
+    await SpeechRecognition.stopListening();
+    await processTranscript();
+  };
+
+  const processTranscript = async () => {
+    const currentTranscript = transcriptRef.current.trim();
+    if (!currentTranscript) {
+      resetTranscript();
+      return;
+    }
+
     setIsWaitingForProcessing(true);
-    setTimeout(async () => {
-      const currentTranscript = transcript;
-      if (!currentTranscript) {
-        setIsWaitingForProcessing(false);
-        return;
-      }
+    try {
       setIsProcessing(true);
       setIsWaitingForProcessing(false);
-      try {
-        const result = await sendVoiceCommand(currentTranscript);
-        console.log("[Faraday Voice] API Result:", result);
 
-        const spokenSummary = summarizeResponseForSpeech(result);
-        if (result.success) {
-          setFeedback({
-            type: "success",
-            msg: result.message || (lang === "pl" ? "Sukces" : "Success"),
-          });
-          let dataToDisplay = null;
-          if (result.data?.results) {
-            const res = result.data.results;
-            const arrayKey = Object.keys(res).find((k) =>
-              Array.isArray(res[k]),
-            );
-            if (arrayKey) {
-              dataToDisplay = res[arrayKey];
-            } else {
-              dataToDisplay = res;
-            }
-          } else if (result.data?.inventory) {
-            dataToDisplay = result.data.inventory;
-          } else if (Array.isArray(result.data)) {
-            dataToDisplay = result.data;
-          } else if (result.data && typeof result.data === "object") {
-            dataToDisplay = result.data;
+      const result = await sendVoiceCommand(currentTranscript);
+      console.log("[Faraday Voice] API Result:", result);
+
+      const spokenSummary = summarizeResponseForSpeech(result);
+      if (result.success) {
+        setFeedback({
+          type: "success",
+          msg:
+            result.message ||
+            t.voiceAssistant?.success ||
+            (lang === "pl" ? "Sukces" : "Success"),
+        });
+        let dataToDisplay = null;
+        if (result.data?.results) {
+          const res = result.data.results;
+          const arrayKey = Object.keys(res).find((k) => Array.isArray(res[k]));
+          if (arrayKey) {
+            dataToDisplay = res[arrayKey];
+          } else {
+            dataToDisplay = res;
           }
-          if (dataToDisplay) setResponseData(dataToDisplay);
-          speak(spokenSummary);
-          setIsExpanded(true);
-        } else {
-          setFeedback({
-            type: "error",
-            msg:
-              result.message || (lang === "pl" ? "Niepowodzenie" : "Failure"),
-          });
-          speak(spokenSummary);
+        } else if (result.data?.inventory) {
+          dataToDisplay = result.data.inventory;
+        } else if (Array.isArray(result.data)) {
+          dataToDisplay = result.data;
+        } else if (result.data && typeof result.data === "object") {
+          dataToDisplay = result.data;
         }
-      } catch (error: any) {
-        console.error("[Faraday Voice] API Error:", error);
-        const apiErrorMsg =
-          error.response?.data?.message ||
-          (lang === "pl" ? "Błąd serwera." : "Server error.");
-        setFeedback({ type: "error", msg: apiErrorMsg });
-        speak(lang === "pl" ? "Wystąpił błąd." : "An error occurred.");
-      } finally {
-        setIsProcessing(false);
-        resetTranscript();
+        if (dataToDisplay) setResponseData(dataToDisplay);
+        speak(spokenSummary);
+        setIsExpanded(true);
+      } else {
+        setFeedback({
+          type: "error",
+          msg:
+            result.message ||
+            t.voiceAssistant?.failure ||
+            (lang === "pl" ? "Niepowodzenie" : "Failure"),
+        });
+        speak(spokenSummary);
       }
-    }, 300);
+    } catch (error: any) {
+      console.error("[Faraday Voice] API Error:", error);
+      const apiErrorMsg =
+        error.response?.data?.message ||
+        t.voiceAssistant?.serverError ||
+        (lang === "pl" ? "Błąd serwera." : "Server error.");
+      setFeedback({ type: "error", msg: apiErrorMsg });
+      speak(
+        t.voiceAssistant?.genericError ||
+          (lang === "pl" ? "Wystąpił błąd." : "An error occurred."),
+      );
+    } finally {
+      setIsProcessing(false);
+      resetTranscript();
+    }
   };
 
   const closeBubble = () => {
@@ -286,12 +317,12 @@ export const VoiceControlFAB = () => {
             </div>
             <span className="bubble-text">
               {isProcessing || isWaitingForProcessing
-                ? lang === "pl"
-                  ? "Przetwarzanie..."
-                  : "Processing..."
+                ? t.voiceAssistant?.processing ||
+                  (lang === "pl" ? "Przetwarzanie..." : "Processing...")
                 : feedback
                   ? feedback.msg
                   : transcript ||
+                    t.voiceAssistant?.listening ||
                     (lang === "pl" ? "Słucham..." : "Listening...")}
             </span>
             <div className="bubble-actions">
@@ -339,7 +370,10 @@ export const VoiceControlFAB = () => {
         }
         disabled={isProcessing || isWaitingForProcessing}
         className={`fab-button ${listening ? "is-listening" : ""} ${!browserSupportsSpeechRecognition ? "is-unsupported" : ""}`}
-        title={lang === "pl" ? "Asystent Głosowy" : "Voice Assistant"}
+        title={
+          t.voiceAssistant?.title ||
+          (lang === "pl" ? "Asystent Głosowy" : "Voice Assistant")
+        }
       >
         {isProcessing || isWaitingForProcessing ? (
           <Loader2 className="animate-spin" size={28} />

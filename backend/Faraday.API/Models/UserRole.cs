@@ -1,8 +1,7 @@
-﻿namespace Faraday.API.Models
+﻿namespace Faraday.API.Models;
+
+public enum UserRole
 {
-    public enum UserRole
-    {
-        Administrator,
-        WarehouseWorker,
-    }
+    Administrator,
+    WarehouseWorker
 }

@@ -54,6 +54,10 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--bg-form);
 }
 
+.operation-barcode-input {
+  height: 3.5rem !important;
+}
+
 .inventory-container {
   padding: 2rem;
 
@@ -148,6 +152,7 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
 .ht-tabs-trigger {
   all: unset;
+  display: flex;
   padding: 0.75rem 0.25rem;
   font-size: 0.85rem;
   font-weight: 700;
@@ -256,25 +261,28 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeIn 0.4s ease-out;
 
   @media (min-width: 768px) {
-    padding: 2rem;
+    //padding: 2rem;
     max-height: 80vh;
   }
 
   .content-header {
     margin-bottom: 2.5rem;
 
-    .header-brand h1 {
-      font-size: 1.8rem;
-      margin-top: 0.5rem;
-      font-weight: 800;
+    .header-brand {
+      width: 100%;
+      h1 {
+        font-size: 1.8rem;
+        margin-top: 0.5rem;
+        font-weight: 800;
 
-      @media (min-width: 768px) {
-        font-size: 2.5rem;
-      }
+        @media (min-width: 768px) {
+          font-size: 2.5rem;
+        }
 
-      .outline-text {
-        -webkit-text-stroke: 1px var(--text-primary);
-        color: transparent;
+        .outline-text {
+          -webkit-text-stroke: 1px var(--text-primary);
+          color: transparent;
+        }
       }
     }
 
@@ -309,7 +317,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     .search-container {
       display: flex;
-      flex-direction: column;
       gap: 0.8rem;
       flex: 1;
 
@@ -450,11 +457,6 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--accent-primary);
     border-color: var(--accent-primary);
     color: #000;
-
-    svg {
-      transform: rotate(90deg) scale(1.1);
-      filter: none;
-    }
   }
 
   &.btn-delete-ht:hover {
@@ -645,7 +647,7 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
 .operations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   padding: 1rem 0;
   animation: fadeIn 0.5s ease-out;
@@ -954,33 +956,20 @@ $transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       letter-spacing: -1px;
       margin: 0;
       color: var(--text-main);
-
-      &::before {
-        content: "[ ";
-        color: var(--accent-primary);
-        opacity: 0.5;
-      }
-      &::after {
-        content: " ]";
-        color: var(--accent-primary);
-        opacity: 0.5;
-      }
     }
 
     .close-btn {
       background: rgba(var(--bg-input-rgb), 0.5);
       border: 1px solid var(--border-input);
       color: var(--text-muted);
-      padding: 8px;
+      display:flex;
+      justify-content: center;
+      align-items: center;
+      padding: 6px;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
       &:hover {
-        color: var(--error-color);
-        border-color: var(--error-color);
-        transform: rotate(90deg);
-        background: var(--error-bg-subtle);
+        color: var(--white);
       }
     }
   }

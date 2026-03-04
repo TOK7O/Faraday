@@ -48,7 +48,7 @@ const NotificationsPopover = () => {
 
           <div className="notification-list">
             {loading && alerts.length === 0 ? (
-              <div className="status-msg">Ładowanie...</div>
+              <div className="notification-item">Ładowanie...</div>
             ) : alerts.length > 0 ? (
               alerts.map((alert, index) => (
                 <div
@@ -67,7 +67,7 @@ const NotificationsPopover = () => {
                 </div>
               ))
             ) : (
-              <div className="status-msg">Brak nowych powiadomień</div>
+              <div className="notification-item">Brak nowych powiadomień</div>
             )}
           </div>
           <Popover.Arrow className="popover-arrow" />
