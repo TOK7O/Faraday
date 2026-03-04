@@ -1,4 +1,3 @@
-import React from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Search, MapPin, Box, RefreshCw } from "lucide-react";
 import type { FullInventoryItem } from "@/components/layouts/dashboard/inventory/InventoryContent.types";

@@ -1,5 +1,3 @@
-import React from "react";
-
 export const formatMessageNumbers = (msg: string) => {
   if (!msg) return msg;
   return msg.replace(/(\.\d*[1-9])0+(?!\d)/g, "$1").replace(/\.0+(?!\d)/g, "");
