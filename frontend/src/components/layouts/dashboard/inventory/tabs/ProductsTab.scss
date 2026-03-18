@@ -1,0 +1,124 @@
+.product-card {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.2rem;
+    position: relative;
+
+    .product-visual {
+        width: 60px;
+        height: 60px;
+        background: var(--bg-input);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+
+        .alert-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            color: #ef4444;
+            background: var(--bg-form);
+            border-radius: 50%;
+        }
+    }
+
+    .product-data {
+        flex: 1;
+
+        .p-id {
+            font-size: 0.7rem;
+            color: var(--accent-primary);
+            font-family: monospace;
+        }
+
+        h3 {
+            margin: 4px 0;
+            font-size: 1.1rem;
+        }
+
+        .p-specs,
+        .p-dims {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            align-items: center;
+            margin-top: 4px;
+        }
+    }
+
+    .p-abs {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+    }
+}
+
+.view-mode-toggle {
+    display: flex;
+    background-color: var(--bg-input);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    .toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &.active {
+            background-color: var(--accent-color);
+            color: white;
+
+            svg {
+                transform: scale(1.1);
+            }
+        }
+
+        &:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    }
+}
+
+.product-modal {
+    max-width: 750px !important;
+
+    .modal-accent-line {
+        height: 4px;
+        background: linear-gradient(90deg,
+                var(--accent-secondary) 0%,
+                transparent 100%);
+    }
+
+    .checkbox-group {
+        background: rgba(255, 165, 0, 0.05);
+        border: 1px dashed rgba(255, 165, 0, 0.3);
+        border-radius: 8px;
+        padding: 1rem !important;
+        margin: 0.5rem 0;
+
+        &:has(input:checked) {
+            background: rgba(255, 165, 0, 0.1);
+            border-style: solid;
+        }
+
+        .ht-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #ffa500;
+            cursor: pointer;
+        }
+    }
+}
