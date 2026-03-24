@@ -12,6 +12,8 @@ using Faraday.API.Services;
 using Faraday.API.Services.Interfaces;
 using Faraday.API.Workers;
 using Faraday.API.Hubs;
+using Faraday.API.Middleware;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +73,11 @@ startupLogger.LogInformation("JWT Authentication configured. Issuer: {Issuer}, A
 // Gemini API key loaded
 builder.Configuration["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
+// Sensor API Key (for IoT device authentication)
+builder.Configuration["SensorApi:ApiKey"] = Environment.GetEnvironmentVariable("SENSOR_API_KEY");
+startupLogger.LogInformation("Sensor API Key configured: {Configured}", 
+    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SENSOR_API_KEY")));
+
 // Configure the authentication service to use JWT Bearer tokens as the default scheme.
 builder.Services.AddAuthentication(options =>
 {
@@ -101,7 +108,7 @@ builder.Services.AddAuthentication(options =>
             // Jeśli zapytanie ma token i idzie do Huba (Logs lub Alerts)
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) &&
-                (path.StartsWithSegments("/hubs/logs") || path.StartsWithSegments("/hubs/alerts")))
+                (path.StartsWithSegments("/hubs/logs") || path.StartsWithSegments("/hubs/alerts") || path.StartsWithSegments("/hubs/sensors")))
             {
                 // Przypisz token z URL do kontekstu autoryzacji
                 context.Token = accessToken;
@@ -109,7 +116,11 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
-});
+})
+// Register SensorApiKey authentication scheme alongside JWT Bearer.
+// IoT devices use X-Api-Key header, users use JWT Bearer token.
+.AddScheme<AuthenticationSchemeOptions, SensorApiKeyAuthHandler>(
+    SensorApiKeyAuthHandler.SchemeName, null);
 
 
 builder.Services.AddControllers();
@@ -149,11 +160,25 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
 
-    // Apply the defined security requirement globally to all endpoints.
+    // Define the security scheme for IoT sensor devices (API Key in header).
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "Sensor API Key. Enter your SENSOR_API_KEY value.",
+        Name = "X-Api-Key",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "ApiKey"
+    });
+
+    // Apply both security requirements globally to all endpoints.
     c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecuritySchemeReference("Bearer"),
+            []
+        },
+        {
+            new OpenApiSecuritySchemeReference("ApiKey"),
             []
         }
     });
@@ -185,12 +210,13 @@ builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only on
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
 builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
+builder.Services.AddScoped<ISensorService, SensorService>();
 builder.Services.AddSingleton<ILogsService, LogsService>();
 startupLogger.LogInformation("All services registered successfully");
 
 // Registration of WMS workers.
 builder.Services.AddHostedService<BackupBackgroundWorker>();
-builder.Services.AddHostedService<SimulationBackgroundWorker>();
+
 builder.Services.AddHostedService<ExpirationMonitoringWorker>();
 startupLogger.LogInformation("Background workers registered successfully");
 
@@ -317,6 +343,7 @@ app.UseAuthorization();
 
 app.MapHub<AlertsHub>("/hubs/alerts");
 app.MapHub<LogsHub>("/hubs/logs");
+app.MapHub<SensorHub>("/hubs/sensors");
 
 app.MapControllers();
 

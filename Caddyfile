@@ -1,0 +1,13 @@
+faradaywms.pl, www.faradaywms.pl {
+	# Frontend — default route
+	reverse_proxy frontend:5173
+
+	# Backend API
+	reverse_proxy /api/* backend:8080
+
+	# SignalR Hubs (WebSocket support included automatically)
+	reverse_proxy /hubs/* backend:8080
+
+	# Swagger UI
+	reverse_proxy /swagger/* backend:8080
+}
