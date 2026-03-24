@@ -58,7 +58,7 @@ services:
       dockerfile: Dockerfile
     container_name: faraday-frontend
     environment:
-      - VITE_API_URL=
+      - VITE_API_URL=https://faradaywms.pl
     depends_on:
       - backend
     networks:
