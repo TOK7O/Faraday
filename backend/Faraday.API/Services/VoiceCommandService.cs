@@ -1,7 +1,6 @@
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
 using Faraday.API.DTOs;
 using Faraday.API.Services.Interfaces;
 
@@ -19,736 +18,511 @@ public class VoiceCommandService(
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = false
+    };
+
+    #region Public API
+
     public async Task<VoiceCommandResponseDto> ProcessVoiceCommandAsync(string commandText, int userId)
     {
         try
         {
-            logger.LogInformation("Processing voice command: {CommandText} for user {UserId}", commandText, userId);
+            logger.LogInformation("Voice command received: \"{Command}\" from user {UserId}", commandText, userId);
 
-            var executionPlan = await GetExecutionPlanFromGeminiAsync(commandText);
+            var (functionName, arguments) = await GetFunctionCallFromGeminiAsync(commandText);
 
-            if (executionPlan == null || executionPlan.Steps.Count == 0)
+            if (string.IsNullOrEmpty(functionName))
             {
-                logger.LogWarning("No execution plan generated for command: {CommandText}", commandText);
+                logger.LogWarning("Gemini did not return a function call for: \"{Command}\"", commandText);
                 return new VoiceCommandResponseDto
                 {
                     Success = false,
-                    Message = "I couldn't understand that command. Could you please rephrase it?"
+                    Message = "Nie udało mi się zrozumieć tej komendy. Spróbuj powiedzieć ją inaczej."
                 };
             }
 
-            var result = await ExecutePlanAsync(executionPlan, userId);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing voice command: {CommandText}", commandText);
-            return new VoiceCommandResponseDto
-            {
-                Success = false,
-                Message = $"An error occurred while processing your command: {ex.Message}"
-            };
-        }
-    }
+            logger.LogInformation("Gemini selected function: {Function} with args: {Args}",
+                functionName, JsonSerializer.Serialize(arguments));
 
-    private async Task<VoiceExecutionPlanDto?> GetExecutionPlanFromGeminiAsync(string commandText)
-    {
-        try
-        {
-            var apiKey = configuration["Gemini:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
-            {
-                logger.LogError("Gemini API Key is not configured properly");
-                throw new InvalidOperationException("Gemini API Key is not configured");
-            }
+            var (actionResult, resultData) = await DispatchFunctionAsync(functionName, arguments, userId);
 
-            var model = configuration["Gemini:Model"] ?? "gemini-2.0-flash-exp";
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
-
-            var systemPrompt = BuildSystemPrompt();
-            var fullPrompt = $"{systemPrompt}\n\nUser Command: \"{commandText}\"\n\nGenerate execution plan:";
-
-            var requestBody = new
-            {
-                contents = new[]
-                {
-                    new
-                    {
-                        parts = new[]
-                        {
-                            new { text = fullPrompt }
-                        }
-                    }
-                },
-                generationConfig = new
-                {
-                    temperature = 0.1,
-                    maxOutputTokens = 2000
-                }
-            };
-
-            var jsonContent = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            logger.LogDebug("Calling Gemini API with enhanced prompt");
-
-            var response = await _httpClient.PostAsync(url, content);
-            var responseBody = await response.Content.ReadAsStringAsync();
-
-            logger.LogDebug("Gemini raw response: {Response}", responseBody);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
-                throw new InvalidOperationException($"Gemini API returned error: {response.StatusCode}");
-            }
-
-            var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
-            var generatedText = geminiResponse
-                .GetProperty("candidates")[0]
-                .GetProperty("content")
-                .GetProperty("parts")[0]
-                .GetProperty("text")
-                .GetString() ?? "{}";
-
-            generatedText = CleanJsonResponse(generatedText);
-
-            logger.LogInformation("Gemini extracted plan: {Text}", generatedText);
-
-            var plan = JsonSerializer.Deserialize<VoiceExecutionPlanDto>(generatedText, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            return plan;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error calling Gemini API for command: {CommandText}", commandText);
-            return null;
-        }
-    }
-
-    private async Task<VoiceCommandResponseDto> ExecutePlanAsync(VoiceExecutionPlanDto plan, int userId)
-    {
-        logger.LogDebug("Starting execution plan with {StepCount} steps", plan.Steps.Count);
-        var context = new VoiceExecutionContextDto
-        {
-            Variables =
-            {
-                ["userId"] = userId
-            }
-        };
-
-        try
-        {
-            foreach (var step in plan.Steps.OrderBy(s => s.StepNumber))
-            {
-                logger.LogInformation("Executing step {StepNumber}: {Description}", step.StepNumber, step.Description);
-
-                var stepResult = await ExecuteStepAsync(step, context, userId);
-
-                if (!stepResult.success)
-                {
-                    return new VoiceCommandResponseDto
-                    {
-                        Success = false,
-                        Message = $"Step {step.StepNumber} failed: {stepResult.error}",
-                        Data = context.ExecutionLog
-                    };
-                }
-
-                if (string.IsNullOrEmpty(step.SaveResultAs) || stepResult.result == null) continue;
-                context.Variables[step.SaveResultAs] = stepResult.result;
-                context.ExecutionLog.Add($"Step {step.StepNumber}: {step.Description} - Success");
-            }
-
-            var finalMessage = ReplaceVariables(plan.FinalResponseTemplate, context.Variables);
+            var summary = await GenerateNaturalResponseAsync(commandText, functionName, actionResult);
 
             return new VoiceCommandResponseDto
             {
                 Success = true,
-                Message = finalMessage,
-                ActionPerformed = "multi_step_execution",
-                Data = new
-                {
-                    ExecutedSteps = plan.Steps.Count,
-                    Log = context.ExecutionLog,
-                    Results = context.Variables
-                }
+                Message = summary,
+                ActionPerformed = functionName,
+                Data = resultData
             };
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error executing plan");
+            logger.LogError(ex, "Error processing voice command: \"{Command}\"", commandText);
             return new VoiceCommandResponseDto
             {
                 Success = false,
-                Message = $"Execution failed: {ex.Message}",
-                Data = context.ExecutionLog
+                Message = $"Wystąpił błąd podczas przetwarzania komendy: {ex.Message}"
             };
         }
     }
 
-    private async Task<(bool success, object? result, string? error)> ExecuteStepAsync(
-        VoiceExecutionStepDto step,
-        VoiceExecutionContextDto context,
-        int userId)
+    #endregion
+
+    #region Gemini Communication
+
+    private string GetApiKey()
     {
+        var apiKey = configuration["Gemini:ApiKey"];
+        if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
+            throw new InvalidOperationException("Gemini API Key is not configured");
+        return apiKey;
+    }
+
+    private string GetModel() => configuration["Gemini:Model"] ?? "gemini-2.5-flash";
+
+    private string GetApiUrl() =>
+        $"https://generativelanguage.googleapis.com/v1beta/models/{GetModel()}:generateContent?key={GetApiKey()}";
+
+    private async Task<(string? functionName, Dictionary<string, JsonElement> arguments)>
+        GetFunctionCallFromGeminiAsync(string commandText)
+    {
+        var requestBody = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    role = "user",
+                    parts = new[] { new { text = commandText } }
+                }
+            },
+            systemInstruction = new
+            {
+                parts = new[]
+                {
+                    new
+                    {
+                        text = """
+                            Jesteś asystentem głosowym systemu zarządzania magazynem Faraday WMS.
+                            Użytkownicy mówią do ciebie po polsku lub angielsku - komendy dotyczą operacji magazynowych.
+                            Twoim zadaniem jest dobrać odpowiednią funkcję (tool) do wykonania komendy użytkownika.
+                            Jeśli komenda nie dotyczy operacji magazynowych lub nie pasuje do żadnej dostępnej funkcji, nie wywołuj żadnej funkcji.
+                            """
+                    }
+                }
+            },
+            tools = new[] { new { functionDeclarations = BuildToolDeclarations() } },
+            toolConfig = new
+            {
+                functionCallingConfig = new
+                {
+                    mode = "AUTO"
+                }
+            },
+            generationConfig = new
+            {
+                temperature = 0.0
+            }
+        };
+
+        var responseBody = await CallGeminiApiAsync(requestBody);
+
+        var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
+
+        var candidates = response.GetProperty("candidates");
+        if (candidates.GetArrayLength() == 0)
+            return (null, new Dictionary<string, JsonElement>());
+
+        var parts = candidates[0].GetProperty("content").GetProperty("parts");
+
+        foreach (var part in parts.EnumerateArray())
+        {
+            if (!part.TryGetProperty("functionCall", out var functionCall)) continue;
+            var name = functionCall.GetProperty("name").GetString();
+            var args = new Dictionary<string, JsonElement>();
+
+            if (functionCall.TryGetProperty("args", out var argsElement))
+            {
+                foreach (var prop in argsElement.EnumerateObject())
+                {
+                    args[prop.Name] = prop.Value.Clone();
+                }
+            }
+
+            return (name, args);
+        }
+
+        return (null, new Dictionary<string, JsonElement>());
+    }
+
+    private async Task<string> GenerateNaturalResponseAsync(
+        string originalCommand, string functionName, object result)
+    {
+        var resultJson = JsonSerializer.Serialize(result, JsonOptions);
+
+        // Truncate very large results for the summarization call
+        if (resultJson.Length > 4000)
+            resultJson = resultJson[..4000] + "... (dane obcięte)";
+
+        var requestBody = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    role = "user",
+                    parts = new[]
+                    {
+                        new
+                        {
+                            text = $"""
+                                Użytkownik wydał komendę głosową: "{originalCommand}"
+                                Wykonana funkcja: {functionName}
+                                Wynik: {resultJson}
+
+                                Wygeneruj krótkie, naturalne podsumowanie wyniku po polsku (1-2 zdania).
+                                Jeśli wynik to lista, podaj liczbę elementów i kilka przykładów.
+                                Jeśli wynik to statystyki, podaj kluczowe liczby.
+                                Nie używaj formatowania markdown. Odpowiadaj tak jakbyś mówił do kogoś.
+                                """
+                        }
+                    }
+                }
+            },
+            generationConfig = new
+            {
+                temperature = 0.3,
+                maxOutputTokens = 300
+            }
+        };
+
         try
         {
-            var endpoint = ReplaceVariables(step.Endpoint, context.Variables);
-            var parameters = ReplaceVariablesInDictionary(step.Parameters, context.Variables);
+            var responseBody = await CallGeminiApiAsync(requestBody);
+            var response = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
-            logger.LogDebug("Executing {Method} {Endpoint} with params: {Params}",
-                step.Method, endpoint, JsonSerializer.Serialize(parameters));
-
-            var result = await RouteToServiceAsync(step.Method, endpoint, parameters, userId);
-
-            return (true, result, null);
+            return response
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString() ?? "Operacja zakończona pomyślnie.";
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error executing step {StepNumber}", step.StepNumber);
-            return (false, null, ex.Message);
+            logger.LogWarning(ex, "Failed to generate natural response, using fallback");
+            return "Operacja zakończona pomyślnie.";
         }
     }
 
-    private async Task<object?> RouteToServiceAsync(string method, string endpoint, Dictionary<string, object> parameters, int userId)
+    private async Task<string> CallGeminiApiAsync(object requestBody)
     {
-        var parts = endpoint.TrimStart('/').Split('/');
-        if (parts.Length < 2) throw new InvalidOperationException($"Invalid endpoint: {endpoint}");
+        var jsonContent = JsonSerializer.Serialize(requestBody, JsonOptions);
+        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        var controller = parts[1].ToLower();
-        var action = parts.Length > 2 ? parts[2].ToLower() : "";
-        logger.LogTrace("Routing request: {Method} /{Controller}/{Action}", method, controller, action);
+        logger.LogDebug("Calling Gemini API");
+        var response = await _httpClient.PostAsync(GetApiUrl(), content);
+        var responseBody = await response.Content.ReadAsStringAsync();
 
-        return controller switch
+        if (!response.IsSuccessStatusCode)
         {
-            "product" => await HandleProductEndpoint(method, action, parameters),
-            "operation" => await HandleOperationEndpoint(action, parameters, userId),
-            "rack" => await HandleRackEndpoint(method, action),
-            "report" => await HandleReportEndpoint(action, parameters),
-            _ => throw new InvalidOperationException($"Unsupported controller: {controller}")
-        };
-    }
-
-    private async Task<object?> HandleProductEndpoint(string method, string action, Dictionary<string, object> parameters)
-    {
-        switch (action)
-        {
-            case "scancode":
-                var scanCode = parameters.TryGetValue("scanCode", out var parameter)
-                    ? parameter.ToString()
-                    : parameters.Values.FirstOrDefault()?.ToString();
-                return await productService.GetProductByScanCodeAsync(scanCode!);
-
-            case "":
-                if (method == "GET")
-                    return await productService.GetAllProductsAsync();
-                break;
-
-            default:
-                if (int.TryParse(action, out int productId))
-                    return await productService.GetProductByIdAsync(productId);
-                break;
+            logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseBody);
+            throw new InvalidOperationException($"Gemini API returned error: {response.StatusCode}");
         }
 
-        throw new InvalidOperationException($"Unsupported product action: {action}");
+        return responseBody;
     }
 
-    private async Task<object?> HandleOperationEndpoint(string action, Dictionary<string, object> parameters, int userId)
+    #endregion
+
+    #region Tool Declarations
+
+    private static object[] BuildToolDeclarations()
     {
-        switch (action)
-        {
-            case "inbound":
-                var inboundDto = new OperationInboundDto
+        return
+        [
+            new
+            {
+                name = "get_dashboard_stats",
+                description =
+                    "Pobiera ogólne statystyki magazynu: zajętość slotów, wagę, liczbę operacji dzisiaj, liczbę towarów z kończącym się terminem ważności. Użyj gdy użytkownik pyta o stan magazynu, statystyki, obłożenie, podsumowanie.",
+                parameters = new
                 {
-                    Barcode = GetParameter<string>(parameters, "barcode")
-                };
-                return await operationService.ProcessInboundAsync(inboundDto, userId);
-
-            case "outbound":
-                var outboundDto = new OperationOutboundDto
-                {
-                    Barcode = GetParameter<string>(parameters, "barcode")
-                };
-                return await operationService.ProcessOutboundAsync(outboundDto, userId);
-
-            case "move":
-                var moveDto = new OperationMovementDto
-                {
-                    Barcode = GetParameter<string>(parameters, "barcode"),
-                    SourceRackCode = GetParameter<string>(parameters, "sourceRackCode"),
-                    SourceSlotX = GetParameter<int>(parameters, "sourceSlotX"),
-                    SourceSlotY = GetParameter<int>(parameters, "sourceSlotY"),
-                    TargetRackCode = GetParameter<string>(parameters, "targetRackCode"),
-                    TargetSlotX = GetParameter<int>(parameters, "targetSlotX"),
-                    TargetSlotY = GetParameter<int>(parameters, "targetSlotY")
-                };
-                return await operationService.ProcessMovementAsync(moveDto, userId);
-
-            case "history":
-                var limit = parameters.TryGetValue("limit", out var parameter)
-                    ? Convert.ToInt32(parameter)
-                    : (int?)null;
-                return await operationService.GetOperationHistoryAsync(limit);
-
-            default:
-                throw new InvalidOperationException($"Unsupported operation action: {action}");
-        }
-    }
-
-    private async Task<object?> HandleRackEndpoint(string method, string action)
-    {
-        switch (action)
-        {
-            case "":
-                if (method == "GET")
-                    return await rackService.GetAllRacksAsync();
-                break;
-
-            default:
-                if (int.TryParse(action, out int rackId))
-                    return await rackService.GetRackByIdAsync(rackId);
-                break;
-        }
-
-        throw new InvalidOperationException($"Unsupported rack action: {action}");
-    }
-
-    private async Task<object?> HandleReportEndpoint(string action, Dictionary<string, object> parameters)
-    {
-        switch (action)
-        {
-            case "dashboard-stats":
-                return await reportService.GetDashboardStatsAsync();
-
-            case "inventory-summary":
-                return await reportService.GetInventorySummaryAsync();
-
-            case "expiring-items":
-                var days = parameters.TryGetValue("days", out var parameter)
-                    ? Convert.ToInt32(parameter)
-                    : 7;
-                return await reportService.GetExpiringItemsAsync(days);
-
-            case "rack-utilization":
-                return await reportService.GetRackUtilizationAsync();
-
-            case "full-inventory":
-                return await reportService.GetFullInventoryReportAsync();
-
-            case "active-alerts":
-                return await reportService.GetActiveAlertsAsync();
-
-            default:
-                throw new InvalidOperationException($"Unsupported report action: {action}");
-        }
-    }
-
-    private static T GetParameter<T>(Dictionary<string, object> parameters, string key)
-    {
-        if (!parameters.TryGetValue(key, out var value))
-            throw new InvalidOperationException($"Missing required parameter: {key}");
-
-        switch (value)
-        {
-            case JsonElement jsonElement:
-                return ConvertJsonElement<T>(jsonElement);
-            case string strValue:
-            {
-                if (typeof(T) == typeof(string))
-                    return (T)(object)strValue;
-                if (typeof(T) == typeof(int))
-                    return (T)(object)int.Parse(strValue);
-                if (typeof(T) == typeof(decimal))
-                    return (T)(object)decimal.Parse(strValue);
-                break;
-            }
-        }
-
-        if (value is T typedValue)
-            return typedValue;
-
-        try
-        {
-            return (T)Convert.ChangeType(value, typeof(T));
-        }
-        catch
-        {
-            throw new InvalidOperationException($"Cannot convert parameter '{key}' of type {value.GetType().Name} to {typeof(T).Name}");
-        }
-    }
-
-    private static T ConvertJsonElement<T>(JsonElement element)
-    {
-        if (typeof(T) == typeof(string))
-        {
-            return (T)(object)(element.ValueKind == JsonValueKind.String ? element.GetString()! : element.ToString());
-        }
-
-        if (typeof(T) == typeof(int))
-        {
-            return element.ValueKind switch
-            {
-                JsonValueKind.Number => (T)(object)element.GetInt32(),
-                JsonValueKind.String when int.TryParse(element.GetString(), out int intVal) => (T)(object)intVal,
-                _ => throw new InvalidOperationException($"Cannot convert JsonElement to int: {element}")
-            };
-        }
-
-        if (typeof(T) == typeof(decimal))
-        {
-            return element.ValueKind switch
-            {
-                JsonValueKind.Number => (T)(object)element.GetDecimal(),
-                JsonValueKind.String when decimal.TryParse(element.GetString(), out decimal decVal) =>
-                    (T)(object)decVal,
-                _ => throw new InvalidOperationException($"Cannot convert JsonElement to decimal: {element}")
-            };
-        }
-
-        if (typeof(T) != typeof(bool))
-            throw new InvalidOperationException($"Unsupported type conversion: {typeof(T).Name}");
-        if (element.ValueKind is JsonValueKind.True or JsonValueKind.False)
-            return (T)(object)element.GetBoolean();
-        throw new InvalidOperationException($"Cannot convert JsonElement to bool: {element}");
-
-    }
-    private static string ReplaceVariables(string template, Dictionary<string, object> variables)
-    {
-        var result = template;
-        var regex = new Regex(@"\{\{([^}]+)\}\}");
-
-        var matches = regex.Matches(template);
-        foreach (Match match in matches)
-        {
-            var path = match.Groups[1].Value.Trim();
-            var value = GetNestedValue(variables, path);
-            result = result.Replace(match.Value, value?.ToString() ?? "null");
-        }
-
-        return result;
-    }
-
-    private static Dictionary<string, object> ReplaceVariablesInDictionary(Dictionary<string, object> dict, Dictionary<string, object> variables)
-    {
-        var result = new Dictionary<string, object>();
-
-        foreach (var kvp in dict)
-        {
-            var value = kvp.Value;
-
-            if (value is JsonElement jsonElement)
-            {
-                value = ConvertJsonElementToObject(jsonElement);
-            }
-
-            if (value is string str && str.Contains("{{"))
-            {
-                result[kvp.Key] = ReplaceVariables(str, variables);
-            }
-            else
-            {
-                result[kvp.Key] = value;
-            }
-        }
-
-        return result;
-    }
-    private static object ConvertJsonElementToObject(JsonElement element)
-    {
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.String:
-                return element.GetString()!;
-
-            case JsonValueKind.Number:
-                if (element.TryGetInt32(out int intVal))
-                    return intVal;
-                if (element.TryGetInt64(out long longVal))
-                    return longVal;
-                return element.GetDecimal();
-
-            case JsonValueKind.True:
-                return true;
-
-            case JsonValueKind.False:
-                return false;
-
-            case JsonValueKind.Null:
-                return null!;
-
-            case JsonValueKind.Object:
-                var dict = new Dictionary<string, object>();
-                foreach (var prop in element.EnumerateObject())
-                {
-                    dict[prop.Name] = ConvertJsonElementToObject(prop.Value);
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
                 }
-                return dict;
-
-            case JsonValueKind.Array:
-                var list = element.EnumerateArray().Select(ConvertJsonElementToObject).ToList();
-                return list;
-
-            default:
-                return element.ToString();
-        }
-    }
-    private static object? GetNestedValue(Dictionary<string, object> variables, string path)
-    {
-        var parts = path.Split('.');
-
-        if (!variables.TryGetValue(parts[0], out object? current))
-            return null;
-        for (int i = 1; i < parts.Length && current != null; i++)
-        {
-            var property = parts[i];
-
-            switch (current)
+            },
+            new
             {
-                case JsonElement jsonElement:
+                name = "get_inventory_summary",
+                description =
+                    "Pobiera podsumowanie stanów magazynowych pogrupowane po produktach - ile sztuk każdego produktu jest w magazynie. Użyj gdy użytkownik pyta o stan magazynowy, inwentarz, co jest na stanie, jakie produkty mamy.",
+                parameters = new
                 {
-                    if (jsonElement.ValueKind == JsonValueKind.Object && jsonElement.TryGetProperty(property, out var nestedElement))
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "get_expiring_items",
+                description =
+                    "Pobiera listę towarów z kończącym się terminem ważności. Użyj gdy użytkownik pyta o produkty które wygasają, przeterminowane, kończący się termin ważności.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
                     {
-                        current = nestedElement;
-                        continue;
-                    }
-                    return null;
+                        days = new
+                        {
+                            type = "integer",
+                            description =
+                                "Liczba dni do przodu do sprawdzenia. Domyślnie 7 jeśli użytkownik nie podał."
+                        }
+                    },
+                    required = Array.Empty<string>()
                 }
-                case Dictionary<string, object> dict:
+            },
+            new
+            {
+                name = "get_active_alerts",
+                description =
+                    "Pobiera listę aktywnych (nierozwiązanych) alarmów w magazynie. Użyj gdy użytkownik pyta o alarmy, ostrzeżenia, problemy, alerty.",
+                parameters = new
                 {
-                    if (!dict.TryGetValue(property, out var value)) return null;
-                    current = value;
-                    continue;
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "get_rack_utilization",
+                description =
+                    "Pobiera informacje o wykorzystaniu regałów - procent zajętości slotów i wagi każdego regału. Użyj gdy użytkownik pyta o wykorzystanie regałów, obłożenie regałów, wolne miejsce na regałach.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "get_all_products",
+                description =
+                    "Pobiera listę wszystkich zdefiniowanych produktów (katalog asortymentu). Użyj gdy użytkownik pyta o produkty, listę produktów, katalog, asortyment.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "get_product_by_barcode",
+                description =
+                    "Wyszukuje produkt po kodzie kreskowym (barcode/scanCode). Użyj gdy użytkownik pyta o konkretny produkt podając jego kod.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        barcode = new
+                        {
+                            type = "string",
+                            description = "Kod kreskowy (barcode/scanCode) produktu"
+                        }
+                    },
+                    required = new[] { "barcode" }
+                }
+            },
+            new
+            {
+                name = "get_all_racks",
+                description =
+                    "Pobiera listę wszystkich regałów w magazynie. Użyj gdy użytkownik pyta o regały, strukturę magazynu, ile mamy regałów.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "inbound_product",
+                description =
+                    "Przyjmuje towar do magazynu - automatycznie przydziela miejsce na regale. Użyj gdy użytkownik chce przyjąć towar, dodać produkt do magazynu, zrobić inbound. Wymaga kodu kreskowego produktu.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        barcode = new
+                        {
+                            type = "string",
+                            description = "Kod kreskowy produktu do przyjęcia"
+                        }
+                    },
+                    required = new[] { "barcode" }
+                }
+            },
+            new
+            {
+                name = "outbound_product",
+                description =
+                    "Wydaje towar z magazynu (FIFO - najstarszy najpierw). Użyj gdy użytkownik chce wydać towar, usunąć produkt z magazynu, zrobić outbound, wypuścić towar.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        barcode = new
+                        {
+                            type = "string",
+                            description = "Kod kreskowy produktu do wydania"
+                        }
+                    },
+                    required = new[] { "barcode" }
+                }
+            },
+            new
+            {
+                name = "get_operation_history",
+                description =
+                    "Pobiera historię operacji magazynowych (przyjęcia, wydania, przesunięcia). Użyj gdy użytkownik pyta o historię operacji, ostatnie operacje, logi.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        limit = new
+                        {
+                            type = "integer",
+                            description = "Maksymalna liczba rekordów do pobrania. Domyślnie 20."
+                        }
+                    },
+                    required = Array.Empty<string>()
+                }
+            },
+            new
+            {
+                name = "get_full_inventory",
+                description =
+                    "Pobiera pełny raport inwentaryzacyjny ze szczegółami każdego towaru w magazynie - lokalizacja, status, daty ważności, temperatura. Użyj gdy użytkownik pyta o pełny inwentarz, szczegółowy raport, pełną listę towarów w magazynie.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    required = Array.Empty<string>()
                 }
             }
+        ];
+    }
 
-            var propInfo = current.GetType().GetProperty(property,
-                BindingFlags.Public |
-                BindingFlags.Instance |
-                BindingFlags.IgnoreCase);
+    #endregion
 
-            if (propInfo != null)
-            {
-                current = propInfo.GetValue(current);
-            }
-            else
-            {
-                return null;
-            }
-        }
-        if (current is JsonElement finalElement)
+    #region Function Dispatch
+
+    private async Task<(object result, object? displayData)> DispatchFunctionAsync(
+        string functionName, Dictionary<string, JsonElement> args, int userId)
+    {
+        switch (functionName)
         {
-            return ConvertJsonElementToObject(finalElement);
+            case "get_dashboard_stats":
+            {
+                var stats = await reportService.GetDashboardStatsAsync();
+                return (stats, stats);
+            }
+
+            case "get_inventory_summary":
+            {
+                var summary = await reportService.GetInventorySummaryAsync();
+                return (summary, summary);
+            }
+
+            case "get_expiring_items":
+            {
+                var days = args.TryGetValue("days", out var d) ? d.GetInt32() : 7;
+                var items = await reportService.GetExpiringItemsAsync(days);
+                return (items, items);
+            }
+
+            case "get_active_alerts":
+            {
+                var alerts = await reportService.GetActiveAlertsAsync();
+                return (alerts, alerts);
+            }
+
+            case "get_rack_utilization":
+            {
+                var utilization = await reportService.GetRackUtilizationAsync();
+                return (utilization, utilization);
+            }
+
+            case "get_all_products":
+            {
+                var products = await productService.GetAllProductsAsync();
+                return (products, products);
+            }
+
+            case "get_product_by_barcode":
+            {
+                var barcode = args["barcode"].GetString()!;
+                var product = await productService.GetProductByScanCodeAsync(barcode);
+                if (product == null)
+                    throw new InvalidOperationException($"Nie znaleziono produktu o kodzie: {barcode}");
+                return (product, product);
+            }
+
+            case "get_all_racks":
+            {
+                var racks = await rackService.GetAllRacksAsync();
+                return (racks, racks);
+            }
+
+            case "inbound_product":
+            {
+                var barcode = args["barcode"].GetString()!;
+                var result = await operationService.ProcessInboundAsync(
+                    new OperationInboundDto { Barcode = barcode }, userId);
+                return (result, result);
+            }
+
+            case "outbound_product":
+            {
+                var barcode = args["barcode"].GetString()!;
+                var result = await operationService.ProcessOutboundAsync(
+                    new OperationOutboundDto { Barcode = barcode }, userId);
+                return (result, result);
+            }
+
+            case "get_operation_history":
+            {
+                var limit = args.TryGetValue("limit", out var l) ? l.GetInt32() : 20;
+                var history = await operationService.GetOperationHistoryAsync(limit);
+                return (history, history);
+            }
+
+            case "get_full_inventory":
+            {
+                var inventory = await reportService.GetFullInventoryReportAsync();
+                return (inventory, inventory);
+            }
+
+            default:
+                throw new InvalidOperationException($"Nieznana funkcja: {functionName}");
         }
-
-        return current;
     }
 
-    private static string CleanJsonResponse(string text)
-    {
-        text = text.Trim();
-
-        if (text.StartsWith("```json"))
-            text = text[7..];
-        else if (text.StartsWith("```"))
-            text = text[3..];
-
-        if (text.EndsWith("```"))
-            text = text[..^3];
-
-        return text.Trim();
-    }
-
-    public string GetApiDocumentation()
-    {
-        return BuildSystemPrompt();
-    }
-
-    private static string BuildSystemPrompt()
-    {
-        return @"You are an AI assistant for Faraday Warehouse Management System. Your role is to convert natural language commands into structured execution plans.
-
-## AVAILABLE API ENDPOINTS:
-
-### Products
-- GET /api/product - Get all products
-- GET /api/product/{id} - Get product by ID
-- GET /api/product/scanCode/{scanCode} - Get product by barcode/QR code
-
-### Operations
-- POST /api/operation/inbound - Receive product into warehouse
-  Parameters: { ""barcode"": ""string"" }
-  
-- POST /api/operation/outbound - Release product from warehouse
-  Parameters: { ""barcode"": ""string"" }
-  
-- POST /api/operation/move - Move product between slots
-  Parameters: { 
-    ""barcode"": ""string"",
-    ""sourceRackCode"": ""string"",
-    ""sourceSlotX"": int,
-    ""sourceSlotY"": int,
-    ""targetRackCode"": ""string"",
-    ""targetSlotX"": int,
-    ""targetSlotY"": int
-  }
-  
-- GET /api/operation/history?limit={int} - Get operation history
-
-### Racks
-- GET /api/rack - Get all racks
-- GET /api/rack/{id} - Get rack by ID
-
-### Reports
-- GET /api/report/dashboard-stats - Get warehouse statistics
-- GET /api/report/inventory-summary - Get inventory summary by product
-- GET /api/report/expiring-items?days={int} - Get items expiring soon (default 7 days)
-- GET /api/report/rack-utilization - Get rack usage statistics
-- GET /api/report/full-inventory - Get complete inventory report
-- GET /api/report/active-alerts - Get all active unresolved alerts
-
-## OUTPUT FORMAT:
-
-You MUST respond with ONLY a JSON object (no markdown, no explanations) in this exact format:
-
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""GET"",
-      ""endpoint"": ""/api/product/scanCode/ABC123"",
-      ""parameters"": {},
-      ""saveResultAs"": ""product"",
-      ""description"": ""Fetch product details by barcode""
-    },
-    {
-      ""stepNumber"": 2,
-      ""method"": ""POST"",
-      ""endpoint"": ""/api/operation/inbound"",
-      ""parameters"": { ""barcode"": ""{{product.scanCode}}"" },
-      ""saveResultAs"": ""inboundResult"",
-      ""description"": ""Receive product into warehouse""
-    }
-  ],
-  ""finalResponseTemplate"": ""Product {{product.name}} has been received and stored in rack {{inboundResult.rackCode}} at slot [{{inboundResult.slotX}},{{inboundResult.slotY}}].""
-}
-
-## VARIABLE SUBSTITUTION:
-
-Use {{variableName}} or {{variableName.property}} to reference data from previous steps.
-Example: {{product.name}}, {{inboundResult.rackCode}}
-
-## EXAMPLES:
-
-User: ""Receive product ABC123""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""POST"",
-      ""endpoint"": ""/api/operation/inbound"",
-      ""parameters"": { ""barcode"": ""ABC123"" },
-      ""saveResultAs"": ""result"",
-      ""description"": ""Receive product into warehouse""
-    }
-  ],
-  ""finalResponseTemplate"": ""Product received successfully. Stored in rack {{result.rackCode}} at position [{{result.slotX}},{{result.slotY}}].""
-}
-
-User: ""Show me warehouse statistics""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""GET"",
-      ""endpoint"": ""/api/report/dashboard-stats"",
-      ""parameters"": {},
-      ""saveResultAs"": ""stats"",
-      ""description"": ""Fetch warehouse statistics""
-    }
-  ],
-  ""finalResponseTemplate"": ""Warehouse status: {{stats.occupiedSlots}} of {{stats.totalSlots}} slots occupied ({{stats.occupancyPercentage}}% full). Total weight: {{stats.totalWeightKg}}kg. {{stats.expiringItemsCount}} items expiring soon.""
-}
-
-User: ""What items are expiring in next 3 days?""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""GET"",
-      ""endpoint"": ""/api/report/expiring-items"",
-      ""parameters"": { ""days"": 3 },
-      ""saveResultAs"": ""items"",
-      ""description"": ""Get items expiring in 3 days""
-    }
-  ],
-  ""finalResponseTemplate"": ""Found expiring items in the next 3 days. Check the detailed list in response data.""
-}
-
-User: ""Release product XYZ789""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""POST"",
-      ""endpoint"": ""/api/operation/outbound"",
-      ""parameters"": { ""barcode"": ""XYZ789"" },
-      ""saveResultAs"": ""result"",
-      ""description"": ""Release product from warehouse""
-    }
-  ],
-  ""finalResponseTemplate"": ""Product released successfully from rack {{result.rackCode}} at position [{{result.slotX}},{{result.slotY}}].""
-}
-
-User: ""Show me all products""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""GET"",
-      ""endpoint"": ""/api/product"",
-      ""parameters"": {},
-      ""saveResultAs"": ""products"",
-      ""description"": ""Get all products""
-    }
-  ],
-  ""finalResponseTemplate"": ""Retrieved all products from the system. Check response data for details.""
-}
-
-User: ""Are there any alerts?""
-Response:
-{
-  ""steps"": [
-    {
-      ""stepNumber"": 1,
-      ""method"": ""GET"",
-      ""endpoint"": ""/api/report/active-alerts"",
-      ""parameters"": {},
-      ""saveResultAs"": ""alerts"",
-      ""description"": ""Get active alerts""
-    }
-  ],
-  ""finalResponseTemplate"": ""Active alerts retrieved. Check response data for details.""
-}
-
-## RULES:
-1. ALWAYS return ONLY valid JSON - no markdown, no explanations, no text before or after
-2. Use multiple steps when you need information from one endpoint to use in another
-3. Reference previous step results using {{variableName.property}} syntax
-4. Keep finalResponseTemplate natural and user-friendly
-5. Use appropriate HTTP methods (GET for queries, POST for actions)
-6. For parameters in GET requests, include them in the parameters object
-7. If command is unclear or impossible, still return valid JSON with an appropriate error message in finalResponseTemplate
-8. Always use lowercase for method names (get, post, put, delete)
-9. Endpoints must start with /api/
-10. Parameter values can use {{variable}} substitution from previous steps";
-    }
+    #endregion
 }
