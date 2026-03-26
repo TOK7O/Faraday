@@ -23,6 +23,8 @@ import {
   Scale,
   RefreshCw,
   Notebook,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 type ReportTab = "inventory" | "utilization" | "sensors" | "alerts";
@@ -129,6 +131,7 @@ const ReportsContent = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [inventorySummary, setInventorySummary] = useState<any[]>([]);
   const [fullInventory, setFullInventory] = useState<InventoryItem[]>([]);
+  const [inventoryPage, setInventoryPage] = useState(1);
   const [expiringItems, setExpiringItems] = useState<ExpiringItem[]>([]);
   const [rackUtilization, setRackUtilization] = useState<RackUtilization[]>([]);
   const [tempHistory, setTempHistory] = useState<TempReading[]>([]);
@@ -180,6 +183,7 @@ const ReportsContent = () => {
           ]);
           setInventorySummary(summary);
           setFullInventory(full);
+          setInventoryPage(1);
           setExpiringItems(expiring);
           break;
         }
@@ -239,123 +243,150 @@ const ReportsContent = () => {
     });
   };
 
-  const renderInventoryView = () => (
-    <div className="view-container">
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h4>{reportsT.stats.totalItems}</h4>
-          <div className="value">
-            {inventorySummary.reduce((acc, i) => acc + i.totalQuantity, 0)}
-          </div>
-        </div>
-        <div className="stat-card">
-          <h4>{reportsT.stats.blockedItems}</h4>
-          <div className="value" style={{ color: "#f87171" }}>
-            {inventorySummary.reduce((acc, i) => acc + i.blockedQuantity, 0)}
-          </div>
-        </div>
-        <div className="stat-card">
-          <h4>{reportsT.stats.expiring}</h4>
-          <div className="value" style={{ color: "#facc15" }}>
-            {expiringItems.length}
-          </div>
-        </div>
-      </div>
+  const renderInventoryView = () => {
+    const itemsPerPage = 50;
+    const totalPages = Math.ceil(fullInventory.length / itemsPerPage);
+    const startIndex = (inventoryPage - 1) * itemsPerPage;
+    const currentInventory = fullInventory.slice(startIndex, startIndex + itemsPerPage);
 
-      <div className="table-container" style={{ marginBottom: "2rem" }}>
-        <h3>{reportsT.inventory.expiringTitle}</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{reportsT.inventory.table.product}</th>
-              <th>{reportsT.inventory.table.barcode}</th>
-              <th>{reportsT.inventory.table.location}</th>
-              <th>{reportsT.inventory.table.expDate}</th>
-              <th>{reportsT.inventory.table.daysLeft}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expiringItems.map((item) => (
-              <tr key={item.id}>
-                <td>{item.productName}</td>
-                <td>{item.barcode}</td>
-                <td>{item.locationCode}</td>
-                <td>{formatDate(item.expirationDate)}</td>
-                <td>
-                  <span className="badge warn">
-                    {item.daysRemaining} {reportsT.inventory?.days || "days"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {expiringItems.length === 0 && (
-              <tr>
-                <td colSpan={5} className="empty-state">
-                  {reportsT.inventory.emptyExpiring}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="table-container">
-        <h3>{reportsT.inventory.fullTitle}</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{reportsT.inventory.table.location}</th>
-              <th>{reportsT.inventory.table.product}</th>
-              <th>{reportsT.inventory.table.status}</th>
-              <th>{reportsT.inventory.table.temp}</th>
-              <th>{reportsT.inventory.table.entryDate}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fullInventory.slice(0, 100).map((item) => (
-              <tr key={item.itemId}>
-                <td>{item.locationCode}</td>
-                <td>
-                  <div>{item.productName}</div>
-                  <small style={{ color: "#64748b" }}>{item.barcode}</small>
-                </td>
-                <td>
-                  <span
-                    className={`badge ${item.status === "InStock" ? "success" : "danger"}`}
-                  >
-                    {reportsT.inventoryStatus?.[item.status] || item.status}
-                  </span>
-                </td>
-                <td>
-                  <span
-                    style={{
-                      color:
-                        item.currentRackTemperature < item.requiredMinTemp ||
-                        item.currentRackTemperature > item.requiredMaxTemp
-                          ? "#f87171"
-                          : "inherit",
-                    }}
-                  >
-                    {item.currentRackTemperature.toFixed(1)}°C
-                  </span>
-                </td>
-                <td>{formatDate(item.entryDate)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {fullInventory.length > 100 && (
-          <div
-            style={{ padding: "10px", textAlign: "center", color: "#64748b" }}
+    const renderPagination = () => {
+      if (totalPages <= 1) return null;
+      return (
+        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem', color: '#64748b' }}>
+          <button
+            onClick={() => setInventoryPage(p => Math.max(1, p - 1))}
+            disabled={inventoryPage === 1}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #334155', background: 'transparent', color: inventoryPage === 1 ? '#475569' : '#e2e8f0', cursor: inventoryPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            {reportsT.inventory.showingFirst
-              .replace("{count}", "100")
-              .replace("{total}", fullInventory.length.toString())}
+            <ChevronLeft size={16} />
+          </button>
+          <span>
+            {inventoryPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => setInventoryPage(p => Math.min(totalPages, p + 1))}
+            disabled={inventoryPage === totalPages}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #334155', background: 'transparent', color: inventoryPage === totalPages ? '#475569' : '#e2e8f0', cursor: inventoryPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      );
+    };
+
+    return (
+      <div className="view-container">
+        <div className="stats-grid">
+          <div className="stat-card">
+            <h4>{reportsT.stats.totalItems}</h4>
+            <div className="value">
+              {inventorySummary.reduce((acc, i) => acc + i.totalQuantity, 0)}
+            </div>
           </div>
-        )}
+          <div className="stat-card">
+            <h4>{reportsT.stats.blockedItems}</h4>
+            <div className="value" style={{ color: "#f87171" }}>
+              {inventorySummary.reduce((acc, i) => acc + i.blockedQuantity, 0)}
+            </div>
+          </div>
+          <div className="stat-card">
+            <h4>{reportsT.stats.expiring}</h4>
+            <div className="value" style={{ color: "#facc15" }}>
+              {expiringItems.length}
+            </div>
+          </div>
+        </div>
+
+        <div className="table-container" style={{ marginBottom: "2rem" }}>
+          <h3>{reportsT.inventory.expiringTitle}</h3>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{reportsT.inventory.table.product}</th>
+                <th>{reportsT.inventory.table.barcode}</th>
+                <th>{reportsT.inventory.table.location}</th>
+                <th>{reportsT.inventory.table.expDate}</th>
+                <th>{reportsT.inventory.table.daysLeft}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expiringItems.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.productName}</td>
+                  <td>{item.barcode}</td>
+                  <td>{item.locationCode}</td>
+                  <td>{formatDate(item.expirationDate)}</td>
+                  <td>
+                    <span className="badge warn">
+                      {item.daysRemaining} {reportsT.inventory?.days || "days"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {expiringItems.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="empty-state">
+                    {reportsT.inventory.emptyExpiring}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="table-container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>{reportsT.inventory.fullTitle}</h3>
+            {renderPagination()}
+          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{reportsT.inventory.table.location}</th>
+                <th>{reportsT.inventory.table.product}</th>
+                <th>{reportsT.inventory.table.status}</th>
+                <th>{reportsT.inventory.table.temp}</th>
+                <th>{reportsT.inventory.table.entryDate}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentInventory.map((item) => (
+                <tr key={item.itemId}>
+                  <td>{item.locationCode}</td>
+                  <td>
+                    <div>{item.productName}</div>
+                    <small style={{ color: "#64748b" }}>{item.barcode}</small>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge ${item.status === "InStock" ? "success" : "danger"}`}
+                    >
+                      {reportsT.inventoryStatus?.[item.status] || item.status}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      style={{
+                        color:
+                          item.currentRackTemperature < item.requiredMinTemp ||
+                            item.currentRackTemperature > item.requiredMaxTemp
+                            ? "#f87171"
+                            : "inherit",
+                      }}
+                    >
+                      {item.currentRackTemperature.toFixed(1)}°C
+                    </span>
+                  </td>
+                  <td>{formatDate(item.entryDate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {renderPagination()}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderUtilizationView = () => (
     <div className="view-container">
