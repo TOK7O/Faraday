@@ -38,7 +38,9 @@ public class SensorApiKeyAuthHandler(
 
         if (string.IsNullOrEmpty(extractedApiKey))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Missing API key. Provide via X-Api-Key header or api_key query parameter."));
+            // NoResult (not Fail!) — tells ASP.NET Core this scheme doesn't apply,
+            // so the JWT Bearer handler can authenticate the request instead.
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         // Read the expected key from configuration (set via SENSOR_API_KEY env var)

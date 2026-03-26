@@ -17,187 +17,168 @@ using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Log application startup
-var startupLogger = LoggerFactory.Create(config => 
-{
-    config.AddConsole();
-}).CreateLogger("Startup");
-
+// ─── Logging ────────────────────────────────────────────────────────────────
+var startupLogger = LoggerFactory.Create(c => c.AddConsole()).CreateLogger("Startup");
 startupLogger.LogInformation("=== Faraday WMS API Starting ===");
-startupLogger.LogInformation("Environment: {Environment}", builder.Environment.EnvironmentName);
+startupLogger.LogInformation("Environment: {Env}", builder.Environment.EnvironmentName);
 
+// ─── Environment variables ───────────────────────────────────────────────────
 Env.TraversePath().Load();
+Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER: {Environment.GetEnvironmentVariable("SMTP_SERVER") ?? "NULL"}");
 
-var testEnv = Environment.GetEnvironmentVariable("SMTP_SERVER");
-Console.WriteLine($"[BOOTSTRAP] .env loaded. SMTP_SERVER found: {testEnv ?? "NULL"}");
-
-startupLogger.LogInformation("Environment variables loaded successfully from .env file");
-
+// ─── Database ────────────────────────────────────────────────────────────────
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "faraday_db";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
-var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD");
-
-startupLogger.LogInformation("Database Host: {DbHost}", dbHost);
-
-if (string.IsNullOrEmpty(dbPass))
-{
-    throw new InvalidOperationException("No password for the database inside .env!");
-}
+var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD")
+    ?? throw new InvalidOperationException("DB_PASSWORD not found in environment");
 
 var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;Trust Server Certificate=true";
-
 builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+builder.Services.AddDbContext<FaradayDbContext>(o => o.UseNpgsql(connectionString));
 
-
-// DB CONFIG
-// Register Entity Framework Core context with PostgreSQL provider.
-builder.Services.AddDbContext<FaradayDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
+// ─── Misc configuration ──────────────────────────────────────────────────────
 builder.Configuration["BACKUP_ENCRYPTION_KEY"] = Environment.GetEnvironmentVariable("BACKUP_ENCRYPTION_KEY");
 builder.Configuration["BACKUP_ENCRYPTION_IV"] = Environment.GetEnvironmentVariable("BACKUP_ENCRYPTION_IV");
-
-// Auth and JWT configuration
-builder.Configuration["Jwt:Key"] = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("JWT_KEY not found in environment");
-builder.Configuration["Jwt:Issuer"] = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "FaradayServer";
-builder.Configuration["Jwt:Audience"] = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "FaradayClient";
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-
-startupLogger.LogInformation("JWT Authentication configured. Issuer: {Issuer}, Audience: {Audience}", 
-    jwtIssuer, jwtAudience);
-
-// Gemini API key loaded
 builder.Configuration["Gemini:ApiKey"] = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-
-// Sensor API Key (for IoT device authentication)
 builder.Configuration["SensorApi:ApiKey"] = Environment.GetEnvironmentVariable("SENSOR_API_KEY");
-startupLogger.LogInformation("Sensor API Key configured: {Configured}", 
-    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SENSOR_API_KEY")));
 
-// Configure the authentication service to use JWT Bearer tokens as the default scheme.
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    // Define parameters for validating incoming tokens.
-    // IssuerSigningKey validation is critical to ensure the token was signed by this server.
-    options.TokenValidationParameters = new TokenValidationParameters
+// ─── JWT configuration ───────────────────────────────────────────────────────
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? throw new InvalidOperationException("JWT_KEY not found in environment");
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "FaradayServer";
+var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "FaradayClient";
+
+builder.Configuration["Jwt:Key"] = jwtKey;
+builder.Configuration["Jwt:Issuer"] = jwtIssuer;
+builder.Configuration["Jwt:Audience"] = jwtAudience;
+
+startupLogger.LogInformation("JWT configured. Issuer={Issuer}, Audience={Audience}", jwtIssuer, jwtAudience);
+
+// ─── Authentication ──────────────────────────────────────────────────────────
+builder.Services
+    .AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-    };
-    // Konfiguracja pozwalająca SignalR na przesyłanie tokena w URL (Query String)
-    options.Events = new JwtBearerEvents
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
     {
-        OnMessageReceived = context =>
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var accessToken = context.Request.Query["access_token"];
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer              = jwtIssuer,
+            ValidAudience            = jwtAudience,
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
 
-            // Jeśli zapytanie ma token i idzie do Huba (Logs lub Alerts)
-            var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) &&
-                (path.StartsWithSegments("/hubs/logs") || path.StartsWithSegments("/hubs/alerts") || path.StartsWithSegments("/hubs/sensors")))
+        // Allow SignalR to pass the token via query string
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
             {
-                // Przypisz token z URL do kontekstu autoryzacji
-                context.Token = accessToken;
+                var token = ctx.Request.Query["access_token"].ToString();
+                var path  = ctx.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(token) &&
+                    (path.StartsWithSegments("/hubs/logs") ||
+                     path.StartsWithSegments("/hubs/alerts") ||
+                     path.StartsWithSegments("/hubs/sensors")))
+                {
+                    ctx.Token = token;
+                }
+                return Task.CompletedTask;
             }
-            return Task.CompletedTask;
-        }
-    };
-})
-// Register SensorApiKey authentication scheme alongside JWT Bearer.
-// IoT devices use X-Api-Key header, users use JWT Bearer token.
-.AddScheme<AuthenticationSchemeOptions, SensorApiKeyAuthHandler>(
-    SensorApiKeyAuthHandler.SchemeName, null);
+        };
+    })
+    // Static API-key scheme for IoT sensor devices (X-Api-Key header)
+    .AddScheme<AuthenticationSchemeOptions, SensorApiKeyAuthHandler>(
+        SensorApiKeyAuthHandler.SchemeName, null);
 
+// ─── Authorization ───────────────────────────────────────────────────────────
+builder.Services.AddAuthorization();
 
+// ─── Controllers ─────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
 
-// Configure CORS
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 var clientUrl = Environment.GetEnvironmentVariable("CLIENT_APP_BASE_URL") ?? "http://localhost:5173";
 Console.WriteLine($"[CORS] Allowing origin: {clientUrl}");
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy =>
-        {
-            
-            policy.WithOrigins(clientUrl, "http://localhost:5173", "http://localhost:3000")
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
-        });
+    options.AddPolicy("AllowAll", policy =>
+        policy
+            .WithOrigins(clientUrl, "http://localhost:5173", "http://localhost:3000")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
 });
 
-builder.Services.AddEndpointsApiExplorer();
-
+// ─── SignalR ──────────────────────────────────────────────────────────────────
 builder.Services.AddSignalR();
 
-// Configure Swagger generation to include support for JWT Bearer Authentication.
+// ─── Swagger / OpenAPI ────────────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Faraday WMS API", Version = "v1" });
+    c.SwaggerDoc("v2", new OpenApiInfo { Title = "Faraday WMS API", Version = "v2" });
 
-    // Define the security scheme for the Swagger UI (Bearer token input).
+    // JWT Bearer security definition – Swagger UI will send "Authorization: Bearer <token>"
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer [space] [token]'. Example: 'Bearer 12345abcdef'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Name         = "Authorization",
+        Type         = SecuritySchemeType.Http,
+        Scheme       = "bearer",
+        BearerFormat = "JWT",
+        In           = ParameterLocation.Header,
+        Description  = "Wklej token JWT (bez prefiksu 'Bearer'). Swagger doda go automatycznie."
     });
 
-    // Define the security scheme for IoT sensor devices (API Key in header).
+    // API Key security definition for IoT sensors
     c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
     {
-        Description = "Sensor API Key. Enter your SENSOR_API_KEY value.",
-        Name = "X-Api-Key",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "ApiKey"
+        Name        = "X-Api-Key",
+        Type        = SecuritySchemeType.ApiKey,
+        In          = ParameterLocation.Header,
+        Description = "Klucz API dla urządzeń IoT (SENSOR_API_KEY)."
     });
 
-    // Apply both security requirements globally to all endpoints.
-    c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+    // Apply Bearer JWT scheme globally to every operation
+    // Swashbuckle 10 changed AddSecurityRequirement to accept a factory Func
+    c.AddSecurityRequirement(doc =>
     {
-        {
-            new OpenApiSecuritySchemeReference("Bearer"),
-            []
-        },
-        {
-            new OpenApiSecuritySchemeReference("ApiKey"),
-            []
-        }
+        var req = new OpenApiSecurityRequirement();
+        req.Add(new OpenApiSecuritySchemeReference("Bearer", doc), new List<string>());
+        return req;
+    });
+
+    // Apply API Key scheme globally to every operation
+    c.AddSecurityRequirement(doc =>
+    {
+        var req = new OpenApiSecurityRequirement();
+        req.Add(new OpenApiSecuritySchemeReference("ApiKey", doc), new List<string>());
+        return req;
     });
 });
 
+// ─── HTTP helpers ─────────────────────────────────────────────────────────────
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-builder.Services.Configure<EmailSettings>(options =>
+// ─── Email settings ───────────────────────────────────────────────────────────
+builder.Services.Configure<EmailSettings>(o =>
 {
-    options.SMTP_SERVER = Environment.GetEnvironmentVariable("SMTP_SERVER");
-    var portEnv = Environment.GetEnvironmentVariable("SMTP_PORT");
-    options.SMTP_PORT = int.TryParse(portEnv, out var port) ? port : 587;
-    options.SMTP_EMAIL = Environment.GetEnvironmentVariable("SMTP_EMAIL");
-    options.SMTP_NAME = Environment.GetEnvironmentVariable("SMTP_NAME") ?? "Faraday System";
-    options.SMTP_PASSWORD = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+    o.SMTP_SERVER  = Environment.GetEnvironmentVariable("SMTP_SERVER");
+    o.SMTP_PORT    = int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out var p) ? p : 587;
+    o.SMTP_EMAIL   = Environment.GetEnvironmentVariable("SMTP_EMAIL");
+    o.SMTP_NAME    = Environment.GetEnvironmentVariable("SMTP_NAME") ?? "Faraday System";
+    o.SMTP_PASSWORD = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
 });
 
-// Register Services (Scoped)
+// ─── Application services ────────────────────────────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRackService, RackService>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -206,43 +187,40 @@ builder.Services.AddScoped<IOperationService, OperationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
-builder.Services.AddScoped<IEmailService, EmailService>(); // Registered only once here
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IImageRecognitionService, ImageRecognitionService>();
 builder.Services.AddScoped<IVoiceCommandService, VoiceCommandService>();
 builder.Services.AddScoped<IAlertNotificationService, AlertNotificationService>();
 builder.Services.AddScoped<ISensorService, SensorService>();
 builder.Services.AddSingleton<ILogsService, LogsService>();
-startupLogger.LogInformation("All services registered successfully");
 
-// Registration of WMS workers.
+// ─── Background workers ───────────────────────────────────────────────────────
 builder.Services.AddHostedService<BackupBackgroundWorker>();
-
 builder.Services.AddHostedService<ExpirationMonitoringWorker>();
-startupLogger.LogInformation("Background workers registered successfully");
 
+startupLogger.LogInformation("All services and workers registered.");
+
+// ═════════════════════════════════════════════════════════════════════════════
 var app = builder.Build();
+// ═════════════════════════════════════════════════════════════════════════════
 
-// Make sure this is added early in the pipeline, right after builder.Build()
-app.UseMiddleware<Faraday.API.Middleware.ErrorHandlingMiddleware>();
+// Global error handling – must be first
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
-
-// Register SignalR Logger Provider
+// SignalR real-time log streaming
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 loggerFactory.AddProvider(new SignalRLoggerProvider(app.Services));
-app.Logger.LogInformation("SignalR Logger Provider registered for real-time log streaming");
 
-// Create a temporary service scope to access the DbContext during application startup.
-// This block ensures the database schema is up-to-date and the default admin user exists.
+// ─── Database initialisation ─────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FaradayDbContext>();
 
-    // Ensure the database schema is up-to-date.
     try
     {
         startupLogger.LogInformation("Checking database schema...");
-
         bool hasTables = false;
+
         if (dbContext.Database.CanConnect())
         {
             try
@@ -252,115 +230,88 @@ using (var scope = app.Services.CreateScope())
                 cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'";
                 hasTables = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             }
-            catch { /* Database might not exist yet */ }
-            finally
-            {
-                dbContext.Database.CloseConnection();
-            }
+            catch { /* may not exist yet */ }
+            finally { dbContext.Database.CloseConnection(); }
         }
 
         if (!hasTables)
         {
-            // Fresh database — create schema from current model
-            startupLogger.LogInformation("Fresh database detected. Creating schema...");
+            startupLogger.LogInformation("Fresh database – creating schema...");
             dbContext.Database.EnsureCreated();
             StoreModelHash(dbContext);
-            startupLogger.LogInformation("Database schema created successfully");
         }
         else
         {
-            // Apply any pending migrations
-            var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
-            if (pendingMigrations.Count != 0)
+            var pending = dbContext.Database.GetPendingMigrations().ToList();
+            if (pending.Count > 0)
             {
-                startupLogger.LogInformation("Applying {Count} pending migration(s)...", pendingMigrations.Count);
+                startupLogger.LogInformation("Applying {Count} pending migration(s)...", pending.Count);
                 dbContext.Database.Migrate();
                 StoreModelHash(dbContext);
-                startupLogger.LogInformation("Migrations applied successfully");
             }
 
-            // Check if model changed since last migration/startup
             var currentHash = ComputeModelHash(dbContext);
-            var storedHash = ReadStoredModelHash(dbContext);
-
-            if (currentHash != storedHash)
+            if (currentHash != ReadStoredModelHash(dbContext))
             {
-                startupLogger.LogWarning("============================================================");
-                startupLogger.LogWarning("  MODEL CHANGE DETECTED — database schema is out of date!");
-                startupLogger.LogWarning("  Run the following commands to update the database (inside Faraday.API folder):");
-                startupLogger.LogWarning("    dotnet ef migrations add <MigrationName>");
-                startupLogger.LogWarning("    dotnet ef database update");
-                startupLogger.LogWarning("============================================================");
+                startupLogger.LogWarning("MODEL CHANGE DETECTED – run: dotnet ef migrations add <Name> && dotnet ef database update");
             }
             else
             {
-                startupLogger.LogInformation("Database schema is up to date");
+                startupLogger.LogInformation("Database schema is up to date.");
             }
         }
     }
     catch (Exception ex)
     {
-        startupLogger.LogError(ex, "Database initialization failed: {Message}. Attempting to continue...", ex.Message);
+        startupLogger.LogError(ex, "Database init error: {Msg}. Continuing...", ex.Message);
     }
 
-    // Seed default administrator account if the Users table is empty.
+    // Seed default admin if users table is empty
     if (!dbContext.Users.Any())
     {
         dbContext.Users.Add(new User
         {
-            Username = "admin",
-            Email = "admin@faraday.com",
-            Role = UserRole.Administrator,
+            Username     = "admin",
+            Email        = "admin@faraday.com",
+            Role         = UserRole.Administrator,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-            IsActive = true
+            IsActive     = true
         });
         dbContext.SaveChanges();
-        startupLogger.LogInformation("Default administrator account seeded: admin / admin123");
+        startupLogger.LogInformation("Default admin seeded: admin / admin123");
     }
 }
 
-// Swagger on VPS also enabled
-// if (app.Environment.IsDevelopment())
-// {
+// ─── Middleware pipeline ──────────────────────────────────────────────────────
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Faraday WMS API v1");
+    c.SwaggerEndpoint("/swagger/v2/swagger.json", "Faraday WMS API v2");
     c.RoutePrefix = "swagger";
 });
-// }
-// Enable CORS
+
 app.UseCors("AllowAll");
 
-// app.UseHttpsRedirection(); // Commented out to prevent Docker port issues
-
-// Note: DO NOT move UseAuthorization before UseAuthentication! Ask Dawid if you don't know why.
-// Enable Authentication middleware to validate the JWT token.
+// ORDER MATTERS: Authentication must come before Authorization
 app.UseAuthentication();
-
-// Enable Authorization middleware to check user permissions/roles.
 app.UseAuthorization();
 
 app.MapHub<AlertsHub>("/hubs/alerts");
 app.MapHub<LogsHub>("/hubs/logs");
 app.MapHub<SensorHub>("/hubs/sensors");
-
 app.MapControllers();
-
 app.UseStaticFiles();
 
 startupLogger.LogInformation("=== Faraday WMS API Started Successfully ===");
-
 app.Run();
 return;
 
-// Database schema management helpers
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 string ComputeModelHash(FaradayDbContext context)
 {
-    var modelString = context.Model.ToDebugString(MetadataDebugStringOptions.LongDefault);
-    var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(modelString));
-    return Convert.ToHexString(hashBytes);
+    var str = context.Model.ToDebugString(MetadataDebugStringOptions.LongDefault);
+    return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(str)));
 }
 
 string? ReadStoredModelHash(FaradayDbContext context)
@@ -370,25 +321,16 @@ string? ReadStoredModelHash(FaradayDbContext context)
         context.Database.OpenConnection();
         using var cmd = context.Database.GetDbConnection().CreateCommand();
         cmd.CommandText = "SELECT \"Hash\" FROM \"__SchemaVersion\" LIMIT 1";
-        var result = cmd.ExecuteScalar()?.ToString();
-        return result;
+        return cmd.ExecuteScalar()?.ToString();
     }
-    catch
-    {
-        return null;
-    }
-    finally
-    {
-        try { context.Database.CloseConnection(); } catch { }
-    }
+    catch { return null; }
+    finally { try { context.Database.CloseConnection(); } catch { } }
 }
 
 void StoreModelHash(FaradayDbContext context)
 {
     var hash = ComputeModelHash(context);
-    context.Database.ExecuteSqlRaw(
-        "CREATE TABLE IF NOT EXISTS \"__SchemaVersion\" (\"Hash\" TEXT NOT NULL)");
+    context.Database.ExecuteSqlRaw("CREATE TABLE IF NOT EXISTS \"__SchemaVersion\" (\"Hash\" TEXT NOT NULL)");
     context.Database.ExecuteSqlRaw("DELETE FROM \"__SchemaVersion\"");
-    context.Database.ExecuteSqlRaw(
-        "INSERT INTO \"__SchemaVersion\" (\"Hash\") VALUES ({0})", hash);
+    context.Database.ExecuteSqlRaw("INSERT INTO \"__SchemaVersion\" (\"Hash\") VALUES ({0})", hash);
 }
