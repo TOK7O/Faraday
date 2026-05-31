@@ -182,6 +182,15 @@ graph TB
 | Lefthook                | Git hooks                          |
 | ESLint + Prettier       | Code linting and formatting        |
 
+### Testing
+
+| Technology               | Purpose                                |
+| ------------------------ | -------------------------------------- |
+| xUnit                    | Testing framework                      |
+| Moq                      | Mocking dependencies                   |
+| FluentAssertions         | Fluent API for assertions              |
+| EF Core InMemory         | In-memory database for testing         |
+
 ---
 
 ## Quick Start

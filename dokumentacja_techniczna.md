@@ -603,3 +603,20 @@ Przy starcie aplikacji backend automatycznie:
 4. Uruchamia zadania w tle (symulacja, kopie zapasowe, monitoring ważności).
 
 Swagger UI jest dostępny pod adresem `/swagger` i pozwala na testowanie API z autoryzacją JWT.
+
+---
+
+## 12. Testy jednostkowe
+
+Projekt backendowy (`Faraday.API`) został wyposażony w osobny projekt z testami jednostkowymi `Faraday.API.Tests` zbudowany w oparciu o framework **xUnit**.
+
+Do uruchomienia testów służy standardowe polecenie `dotnet test` wykonywane w katalogu projektu testowego.
+
+Architektura testów wykorzystuje nowoczesne wzorce i narzędzia:
+* **Moq** — symulacja zależności zewnętrznych (serwisów, dostawców loggerów).
+* **FluentAssertions** — deklaratywne i czytelne sprawdzanie wyników operacji (asercje).
+* **EF Core InMemory Database** — w pełni funkcjonująca baza danych w pamięci RAM do testowania skomplikowanej logiki zapytań (szczególnie przydatna przy `WarehouseAlgorithmService`), ze zmodyfikowaną konfiguracją pomijającą domyślnie rzucane przez EF Core błędy użycia transakcji (`TransactionIgnoredWarning`).
+
+Główne obiekty pokryte testami:
+1. **WarehouseAlgorithmService** — sprawdzanie wymiarów regału, wymagań temperaturowych produktów, zabezpieczenia przed przekroczeniem maksymalnej wagi, weryfikacja algorytmu układania jednorodnego (Stacking) oraz pomyślnego przydziału slotów.
+2. **OperationService** — weryfikacja poprawności przebiegu logiki FIFO (wydawanie najstarszych produktów), dodawania encji i modyfikacji wirtualnego regału.
